@@ -1,147 +1,150 @@
 import {
+  ArrowUpDown,
+  Coins,
+  Globe,
+  Landmark,
+} from "lucide-react";
+
+import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 
-import ProviderStatusBadge from "@/features/billing/components/ProviderStatusBadge";
-import ProviderEnvironmentBadge from "@/features/billing/components/ProviderEnvironmentBadge";
+import CurrencyGrid from "@/features/billing/components/CurrencyGrid";
+import { mockCurrencies } from "@/features/billing/data/mockCurrencies";
 
 export default function CurrencyPage() {
-  const exchangeProvider = {
-    name: "ExchangeRate.host",
-    status: "healthy" as const,
-    environment: "live" as const,
-    lastUpdated: "2 minutes ago",
-  };
+  const africanCurrencies =
+    mockCurrencies.filter(
+      (currency) => currency.region === "Africa"
+    );
 
-  const supportedCurrencies = [
-    "NGN",
-    "USD",
-    "EUR",
-    "KES",
-    "GHS",
+  const globalCurrencies =
+    mockCurrencies.filter(
+      (currency) => currency.region === "Global"
+    );
+
+  const operationalCurrencies =
+    mockCurrencies.filter(
+      (currency) =>
+        currency.role === "Operational"
+    );
+
+  const settlementCurrencies =
+    mockCurrencies.filter(
+      (currency) =>
+        currency.role === "Settlement"
+    );
+
+  const defaultCurrency =
+    mockCurrencies.find(
+      (currency) => currency.isDefault
+    );
+
+  const stats = [
+    {
+      title: "Total Currencies",
+      value: mockCurrencies.length,
+      icon: Coins,
+    },
+    {
+      title: "Operational",
+      value: operationalCurrencies.length,
+      icon: Landmark,
+    },
+    {
+      title: "Settlement",
+      value: settlementCurrencies.length,
+      icon: Globe,
+    },
+    {
+      title: "Default",
+      value: defaultCurrency?.code ?? "--",
+      icon: ArrowUpDown,
+    },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+
       <div>
         <h1 className="text-3xl font-semibold">
           Currency Management
         </h1>
 
         <p className="mt-2 text-muted-foreground">
-          Manage supported currencies and monitor the platform&apos;s
-          exchange-rate provider.
+          Manage supported currencies, exchange
+          rates and settlement currencies across
+          the platform.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Base Currency</CardTitle>
-          </CardHeader>
+      {/* Snapshot */}
 
-          <CardContent>
-            <p className="text-3xl font-bold">NGN</p>
-            <p className="text-muted-foreground">
-              Nigerian Naira
-            </p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Supported</CardTitle>
-          </CardHeader>
+          return (
+            <Card key={stat.title}>
+              <CardContent className="flex items-center justify-between p-6">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {stat.title}
+                  </p>
 
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {supportedCurrencies.length}
-            </p>
+                  <p className="mt-2 text-3xl font-bold">
+                    {stat.value}
+                  </p>
+                </div>
 
-            <p className="text-muted-foreground">
-              Active currencies
-            </p>
-          </CardContent>
-        </Card>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Icon className="h-6 w-6" />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Exchange Provider</CardTitle>
-          </CardHeader>
+      {/* African */}
 
-          <CardContent>
-            <p className="text-lg font-semibold">
-              {exchangeProvider.name}
-            </p>
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">
+            African Currencies
+          </h2>
 
-            <div className="mt-3 flex gap-2">
-              <ProviderStatusBadge
-                status={exchangeProvider.status}
-              />
+          <p className="text-sm text-muted-foreground">
+            Operational currencies supported across
+            African markets.
+          </p>
+        </div>
 
-              <ProviderEnvironmentBadge
-                environment={exchangeProvider.environment}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <CurrencyGrid
+          currencies={africanCurrencies}
+        />
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Supported Currencies</CardTitle>
+      {/* Global */}
 
-          <CardDescription>
-            These currencies are currently enabled across the
-            platform.
-          </CardDescription>
-        </CardHeader>
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">
+            Global Settlement Currencies
+          </h2>
 
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {supportedCurrencies.map((currency) => (
-              <span
-                key={currency}
-                className="rounded-lg border px-3 py-2 text-sm font-medium"
-              >
-                {currency}
-              </span>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          <p className="text-sm text-muted-foreground">
+            International currencies available for
+            cross-border settlements.
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Exchange Rate Provider</CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">
-              Provider
-            </span>
-
-            <span className="font-medium">
-              {exchangeProvider.name}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">
-              Last Updated
-            </span>
-
-            <span className="font-medium">
-              {exchangeProvider.lastUpdated}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        <CurrencyGrid
+          currencies={globalCurrencies}
+        />
+      </section>
     </div>
   );
 }
