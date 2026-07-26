@@ -2,6 +2,7 @@
 
 import { Menu } from "lucide-react";
 
+import ThemeToggle from "@/components/shared/ThemeToggle";
 import Breadcrumbs from "./Breadcrumbs";
 import UserMenu from "./UserMenu";
 
@@ -23,7 +24,11 @@ export default function Header({ onToggle }: Props) {
         <Breadcrumbs />
       </div>
 
-      <UserMenu />
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+
+        <UserMenu />
+      </div>
     </header>
   );
 }

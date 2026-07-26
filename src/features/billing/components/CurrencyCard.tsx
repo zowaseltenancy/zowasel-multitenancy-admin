@@ -10,11 +10,17 @@ import { Currency } from "@/types/currency";
 
 interface Props {
   currency: Currency;
+
+  markupPercentage: number;
 }
 
 export default function CurrencyCard({
   currency,
+  markupPercentage,
 }: Props) {
+  const markedUpRate =
+    currency.exchangeRate *
+    (1 + markupPercentage / 100);
   return (
     <Link
       href={`/admin/billing/currency/${currency.code}`}
@@ -62,11 +68,25 @@ export default function CurrencyCard({
           <div className="space-y-2 border-t pt-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">
-                Exchange Rate
+                Base Rate
               </span>
 
               <span className="font-medium">
-                {currency.exchangeRate}
+                {currency.exchangeRate.toFixed(
+                  currency.decimals
+                )}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg bg-primary/5 px-2 py-1.5">
+              <span className="text-muted-foreground">
+                With Markup ({markupPercentage}%)
+              </span>
+
+              <span className="font-semibold text-primary">
+                {markedUpRate.toFixed(
+                  Math.max(currency.decimals, 4)
+                )}
               </span>
             </div>
 

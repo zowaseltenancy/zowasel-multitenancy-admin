@@ -8,9 +8,9 @@ export const mockProviders: Provider[] = [
 
     slug: "paystack",
 
-    description: "Online payment processing.",
+    description: "Collects card, bank and USSD payments from customers.",
 
-    category: "payment",
+    category: "pay_in",
 
     environment: "live",
 
@@ -44,15 +44,15 @@ export const mockProviders: Provider[] = [
 
     slug: "flutterwave",
 
-    description: "Payments across Africa.",
+    description: "Collects payments across Africa via card, transfer and mobile money.",
 
-    category: "payment",
+    category: "pay_in",
 
     environment: "test",
 
     health: "healthy",
 
-    isActive: false,
+    isActive: true,
 
     credentials: {
       publicKey: "pk_test_xxxxxxxxx",
@@ -80,21 +80,97 @@ export const mockProviders: Provider[] = [
   },
 
   {
+    id: "papss",
+
+    name: "PAPSS",
+
+    slug: "papss",
+
+    description: "Afreximbank's Pan-African Payment and Settlement System — instant cross-border collections settled in local currency via participating central banks.",
+
+    category: "pay_in",
+
+    environment: "live",
+
+    health: "healthy",
+
+    isActive: false,
+
+    credentials: {
+      apiKey: "papss_live_xxxxxxxxx",
+    },
+
+    supportedCurrencies: [
+      "NGN",
+      "GHS",
+      "KES",
+      "ZAR",
+      "XOF",
+    ],
+
+    lastHealthCheck: "3 minutes ago",
+
+    responseTime: 210,
+
+    createdAt: "2026-07-20",
+
+    updatedAt: "2026-07-22",
+  },
+
+  {
+    id: "fincra",
+
+    name: "Fincra",
+
+    slug: "fincra",
+
+    description: "CBN-licensed collections across 50+ currencies and 40+ countries, built for cross-border African trade.",
+
+    category: "pay_in",
+
+    environment: "test",
+
+    health: "healthy",
+
+    isActive: false,
+
+    credentials: {
+      publicKey: "pk_test_xxxxxxxxx",
+      secretKey: "sk_test_xxxxxxxxx",
+    },
+
+    supportedCurrencies: [
+      "NGN",
+      "USD",
+      "GBP",
+      "EUR",
+    ],
+
+    lastHealthCheck: "5 minutes ago",
+
+    responseTime: 143,
+
+    createdAt: "2026-07-20",
+
+    updatedAt: "2026-07-22",
+  },
+
+  {
     id: "monnify",
 
     name: "Monnify",
 
     slug: "monnify",
 
-    description: "Bank transfer infrastructure.",
+    description: "Disburses payouts and settlements to bank accounts.",
 
-    category: "payment",
+    category: "pay_out",
 
     environment: "live",
 
     health: "degraded",
 
-    isActive: false,
+    isActive: true,
 
     credentials: {},
 
@@ -103,6 +179,80 @@ export const mockProviders: Provider[] = [
     lastHealthCheck: "6 minutes ago",
 
     responseTime: 487,
+
+    createdAt: "2026-07-20",
+
+    updatedAt: "2026-07-22",
+  },
+
+  {
+    id: "paystack-transfers",
+
+    name: "Paystack Transfers",
+
+    slug: "paystack-transfers",
+
+    description: "Sends payouts and refunds directly to bank accounts.",
+
+    category: "pay_out",
+
+    environment: "test",
+
+    health: "healthy",
+
+    isActive: false,
+
+    credentials: {
+      publicKey: "pk_test_xxxxxxxxx",
+
+      secretKey: "sk_test_xxxxxxxxx",
+
+      webhookSecret: "whsec_xxxxxxxxx",
+    },
+
+    supportedCurrencies: ["NGN"],
+
+    lastHealthCheck: "4 minutes ago",
+
+    responseTime: 132,
+
+    createdAt: "2026-07-20",
+
+    updatedAt: "2026-07-22",
+  },
+
+  {
+    id: "onafriq",
+
+    name: "Onafriq",
+
+    slug: "onafriq",
+
+    description: "Bulk payouts and remittances to bank accounts, mobile wallets and cash pickup across 1B+ connected mobile money users in Africa.",
+
+    category: "pay_out",
+
+    environment: "live",
+
+    health: "healthy",
+
+    isActive: false,
+
+    credentials: {
+      apiKey: "onafriq_live_xxxxxxxxx",
+    },
+
+    supportedCurrencies: [
+      "NGN",
+      "GHS",
+      "KES",
+      "UGX",
+      "TZS",
+    ],
+
+    lastHealthCheck: "2 minutes ago",
+
+    responseTime: 176,
 
     createdAt: "2026-07-20",
 

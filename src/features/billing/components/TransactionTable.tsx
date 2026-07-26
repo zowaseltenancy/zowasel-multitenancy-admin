@@ -1,9 +1,10 @@
 import Link from "next/link";
 
-import { ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Transaction } from "@/types/transaction";
+import { ORGANIZATION_TYPE_LABELS } from "@/constants/organization";
 import TransactionStatusBadge from "./TransactionStatusBadge";
 
 interface Props {
@@ -13,6 +14,14 @@ interface Props {
 export default function TransactionTable({
   transactions,
 }: Props) {
+  if (transactions.length === 0) {
+    return (
+      <Card className="flex min-h-[160px] items-center justify-center p-6 text-sm text-muted-foreground">
+        No transactions match this filter.
+      </Card>
+    );
+  }
+
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -21,6 +30,7 @@ export default function TransactionTable({
             <tr className="text-left">
               <th className="px-6 py-4 font-medium">Reference</th>
               <th className="px-6 py-4 font-medium">Organization</th>
+              <th className="px-6 py-4 font-medium">Entity</th>
               <th className="px-6 py-4 font-medium">Amount</th>
               <th className="px-6 py-4 font-medium">Provider</th>
               <th className="px-6 py-4 font-medium">Method</th>
@@ -39,11 +49,25 @@ export default function TransactionTable({
                 className="border-b transition-colors hover:bg-muted/40"
               >
                 <td className="px-6 py-4 font-medium">
-                  {transaction.reference}
+                  <div className="flex items-center gap-2">
+                    {transaction.disputed && (
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                    )}
+
+                    {transaction.reference}
+                  </div>
                 </td>
 
                 <td className="px-6 py-4">
                   {transaction.organization}
+                </td>
+
+                <td className="px-6 py-4 text-muted-foreground">
+                  {
+                    ORGANIZATION_TYPE_LABELS[
+                      transaction.entityType
+                    ]
+                  }
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap">

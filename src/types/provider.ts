@@ -1,4 +1,7 @@
-export type ProviderCategory = "payment" | "currency";
+export type ProviderCategory =
+  | "pay_in"
+  | "pay_out"
+  | "currency";
 
 export type ProviderEnvironment = "test" | "live";
 

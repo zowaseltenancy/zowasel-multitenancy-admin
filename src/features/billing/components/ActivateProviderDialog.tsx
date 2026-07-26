@@ -13,6 +13,12 @@ import {
 
 import { Provider } from "@/types/provider";
 
+const CATEGORY_LABELS: Record<string, string> = {
+  pay_in: "pay-in",
+  pay_out: "pay-out",
+  currency: "currency",
+};
+
 interface ActivateProviderDialogProps {
   open: boolean;
 
@@ -31,6 +37,12 @@ export default function ActivateProviderDialog({
 }: ActivateProviderDialogProps) {
   if (!provider) return null;
 
+  const categoryLabel =
+    CATEGORY_LABELS[provider.category] ??
+    provider.category;
+
+  const willActivate = !provider.isActive;
+
   return (
     <AlertDialog
       open={open}
@@ -41,19 +53,15 @@ export default function ActivateProviderDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Activate {provider.name}?
+            {willActivate
+              ? `Activate ${provider.name}?`
+              : `Deactivate ${provider.name}?`}
           </AlertDialogTitle>
 
           <AlertDialogDescription>
-            {`This will make ${provider.name} the active ${provider.category} provider for the platform.`}
-          </AlertDialogDescription>
-
-          <AlertDialogDescription>
-            All new{" "}
-            {provider.category === "payment"
-              ? "payment requests"
-              : "currency conversions"}{" "}
-            will immediately begin using this provider.
+            {willActivate
+              ? `New ${categoryLabel} traffic will start routing through ${provider.name}, alongside any other currently active ${categoryLabel} providers.`
+              : `${provider.name} will stop receiving new ${categoryLabel} traffic. Other active ${categoryLabel} providers are unaffected.`}
           </AlertDialogDescription>
 
           <AlertDialogDescription className="font-medium text-destructive">
@@ -69,7 +77,7 @@ export default function ActivateProviderDialog({
           <AlertDialogAction
             onClick={onConfirm}
           >
-            Activate Provider
+            {willActivate ? "Activate" : "Deactivate"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

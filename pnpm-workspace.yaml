@@ -1,5 +1,6 @@
 allowBuilds:
   bcrypt: true
+  core-js: false
   sharp: true
   unrs-resolver: true
 ignoredBuiltDependencies:

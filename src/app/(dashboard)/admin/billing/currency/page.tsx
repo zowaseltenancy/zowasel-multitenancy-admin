@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowUpDown,
   Coins,
@@ -11,40 +13,47 @@ import {
 } from "@/components/ui/card";
 
 import CurrencyGrid from "@/features/billing/components/CurrencyGrid";
-import { mockCurrencies } from "@/features/billing/data/mockCurrencies";
+import CurrencyMarkupConfig from "@/features/billing/components/CurrencyMarkupConfig";
+import { useCurrencies } from "@/features/billing/hooks/useCurrencies";
 
 export default function CurrencyPage() {
+  const {
+    currencies,
+    markupPercentage,
+    setMarkupPercentage,
+  } = useCurrencies();
+
   const africanCurrencies =
-    mockCurrencies.filter(
+    currencies.filter(
       (currency) => currency.region === "Africa"
     );
 
   const globalCurrencies =
-    mockCurrencies.filter(
+    currencies.filter(
       (currency) => currency.region === "Global"
     );
 
   const operationalCurrencies =
-    mockCurrencies.filter(
+    currencies.filter(
       (currency) =>
         currency.role === "Operational"
     );
 
   const settlementCurrencies =
-    mockCurrencies.filter(
+    currencies.filter(
       (currency) =>
         currency.role === "Settlement"
     );
 
   const defaultCurrency =
-    mockCurrencies.find(
+    currencies.find(
       (currency) => currency.isDefault
     );
 
   const stats = [
     {
       title: "Total Currencies",
-      value: mockCurrencies.length,
+      value: currencies.length,
       icon: Coins,
     },
     {
@@ -108,6 +117,13 @@ export default function CurrencyPage() {
         })}
       </section>
 
+      {/* Markup */}
+
+      <CurrencyMarkupConfig
+        markupPercentage={markupPercentage}
+        onChange={setMarkupPercentage}
+      />
+
       {/* African */}
 
       <section className="space-y-4">
@@ -124,6 +140,7 @@ export default function CurrencyPage() {
 
         <CurrencyGrid
           currencies={africanCurrencies}
+          markupPercentage={markupPercentage}
         />
       </section>
 
@@ -143,6 +160,7 @@ export default function CurrencyPage() {
 
         <CurrencyGrid
           currencies={globalCurrencies}
+          markupPercentage={markupPercentage}
         />
       </section>
     </div>

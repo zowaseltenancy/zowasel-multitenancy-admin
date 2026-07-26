@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
-import { FileText } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,24 @@ export default function OrganizationKybTab({
                     className="flex items-center justify-between py-4"
                   >
                     <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      <a
+                        href={document.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted"
+                      >
+                        <Image
+                          src={document.url}
+                          alt={
+                            KYB_DOCUMENT_LABELS[
+                              document.type
+                            ]
+                          }
+                          width={56}
+                          height={56}
+                          className="h-full w-full object-cover"
+                        />
+                      </a>
 
                       <div>
                         <p className="font-medium">
@@ -161,7 +178,7 @@ export default function OrganizationKybTab({
                         rel="noreferrer"
                         className="text-sm font-medium text-primary hover:underline"
                       >
-                        View
+                        View full size
                       </a>
                     </div>
                   </div>

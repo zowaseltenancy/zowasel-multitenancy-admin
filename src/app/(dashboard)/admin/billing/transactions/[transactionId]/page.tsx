@@ -1,18 +1,27 @@
+"use client";
+
+import { use, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRightLeft,
   RefreshCcw,
 } from "lucide-react";
+
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import TransactionInfo from "@/features/billing/components/TransactionInfo";
 import TransactionStatusBadge from "@/features/billing/components/TransactionStatusBadge";
-import { mockTransactions } from "@/features/billing/data/mockTransactions";
+import DisputeTransactionDialog from "@/features/billing/components/DisputeTransactionDialog";
+import { useTransactions } from "@/features/billing/hooks/useTransactions";
+import { ORGANIZATION_TYPE_LABELS } from "@/constants/organization";
+import { DISPUTE_NOTIFY_TARGET_LABELS } from "@/constants/transaction";
 
 interface Props {
   params: Promise<{
@@ -20,14 +29,19 @@ interface Props {
   }>;
 }
 
-export default async function TransactionDetailsPage({
+export default function TransactionDetailsPage({
   params,
 }: Props) {
-  const { transactionId } = await params;
+  const { transactionId } = use(params);
 
-  const transaction = mockTransactions.find(
-    (transaction) =>
-      transaction.id === transactionId
+  const { transactions, raiseDispute } =
+    useTransactions();
+
+  const [disputeOpen, setDisputeOpen] =
+    useState(false);
+
+  const transaction = transactions.find(
+    (item) => item.id === transactionId
   );
 
   if (!transaction) {
@@ -59,12 +73,55 @@ export default async function TransactionDetailsPage({
           </p>
         </div>
 
-        <Button variant="outline">
-          <RefreshCcw className="mr-2 h-4 w-4" />
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Refresh Status
+          </Button>
 
-          Refresh Status
-        </Button>
+          {!transaction.disputed && (
+            <Button
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/10"
+              onClick={() => setDisputeOpen(true)}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Escalate
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Dispute banner */}
+
+      {transaction.disputed && (
+        <Card className="border-destructive/20 bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+
+            <div>
+              <p className="font-medium text-destructive">
+                This transaction has been escalated
+              </p>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                {transaction.disputeReason}
+              </p>
+
+              {transaction.disputeNotifyTarget && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Notified:{" "}
+                  {
+                    DISPUTE_NOTIFY_TARGET_LABELS[
+                      transaction.disputeNotifyTarget
+                    ]
+                  }
+                </p>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Summary */}
 
@@ -95,6 +152,15 @@ export default async function TransactionDetailsPage({
         />
 
         <TransactionInfo
+          label="Entity Type"
+          value={
+            ORGANIZATION_TYPE_LABELS[
+              transaction.entityType
+            ]
+          }
+        />
+
+        <TransactionInfo
           label="Amount"
           value={`${transaction.currency} ${transaction.amount.toLocaleString()}`}
         />
@@ -114,11 +180,6 @@ export default async function TransactionDetailsPage({
           value={new Date(
             transaction.createdAt
           ).toLocaleString()}
-        />
-
-        <TransactionInfo
-          label="Reference"
-          value={transaction.reference}
         />
       </div>
 
@@ -142,6 +203,25 @@ export default async function TransactionDetailsPage({
           </div>
         </div>
       </Card>
+
+      <DisputeTransactionDialog
+        open={disputeOpen}
+        reference={transaction.reference}
+        onClose={() => setDisputeOpen(false)}
+        onConfirm={(reason, notifyTarget) => {
+          raiseDispute(
+            transaction.id,
+            reason,
+            notifyTarget
+          );
+
+          toast.success(
+            `${transaction.reference} has been escalated to the operations team.`
+          );
+
+          setDisputeOpen(false);
+        }}
+      />
     </div>
   );
 }

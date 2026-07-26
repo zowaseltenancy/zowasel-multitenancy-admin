@@ -145,6 +145,14 @@ export const navigation: NavigationItem[] = [
         href: "/admin/billing/subscriptions",
       },
       {
+        label: "Invoices",
+        href: "/admin/billing/invoices",
+      },
+      {
+        label: "Settlements",
+        href: "/admin/billing/settlements",
+      },
+      {
         label: "Settings",
         href: "/admin/billing/settings",
       },

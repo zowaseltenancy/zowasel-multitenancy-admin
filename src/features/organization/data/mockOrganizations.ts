@@ -39,13 +39,13 @@ export const mockOrganizations: Organization[] = [
     kybDocuments: [
       {
         type: "business_registration",
-        url: "https://cdn.zowasel.com/kyb/biz_1001/business_registration.pdf",
+        url: "/kyb-sample-document-1.jpg",
         status: "verified",
         uploadedAt: "2026-03-15T10:00:00Z",
       },
       {
         type: "tax_clearance",
-        url: "https://cdn.zowasel.com/kyb/biz_1001/tax_clearance.pdf",
+        url: "/kyb-sample-document-2.jpg",
         status: "verified",
         uploadedAt: "2026-03-15T10:05:00Z",
       },
@@ -78,7 +78,7 @@ export const mockOrganizations: Organization[] = [
     id: "biz_1002",
     businessId: "biz_1002",
     name: "Sahel Grains Ltd",
-    type: "business",
+    type: "agrodealer",
 
     owner: {
       name: "Ibrahim Musa",
@@ -104,13 +104,13 @@ export const mockOrganizations: Organization[] = [
     kybDocuments: [
       {
         type: "business_registration",
-        url: "https://cdn.zowasel.com/kyb/biz_1002/business_registration.pdf",
+        url: "/kyb-sample-document-1.jpg",
         status: "pending",
         uploadedAt: "2026-07-18T08:00:00Z",
       },
       {
         type: "directors_id",
-        url: "https://cdn.zowasel.com/kyb/biz_1002/directors_id.pdf",
+        url: "/kyb-sample-document-2.jpg",
         status: "pending",
         uploadedAt: "2026-07-18T08:02:00Z",
       },
@@ -133,7 +133,7 @@ export const mockOrganizations: Organization[] = [
     id: "biz_1003",
     businessId: "biz_1003",
     name: "Delta Basin Farms",
-    type: "business",
+    type: "buyer",
 
     owner: {
       name: "Peter Effiong",
@@ -151,7 +151,7 @@ export const mockOrganizations: Organization[] = [
     kybDocuments: [
       {
         type: "business_registration",
-        url: "https://cdn.zowasel.com/kyb/biz_1003/business_registration.pdf",
+        url: "/kyb-sample-document-1.jpg",
         status: "rejected",
         uploadedAt: "2026-06-01T11:00:00Z",
         rejectionReason: "Certificate expired as of 2026-01-01.",
@@ -225,7 +225,7 @@ export const mockOrganizations: Organization[] = [
     id: "biz_1005",
     businessId: "biz_1005",
     name: "Kaduna AgroTraders",
-    type: "business",
+    type: "merchant",
 
     owner: {
       name: "Yusuf Abdullahi",
@@ -267,19 +267,19 @@ export const mockOrganizations: Organization[] = [
     kybDocuments: [
       {
         type: "business_registration",
-        url: "https://cdn.zowasel.com/kyb/biz_1005/business_registration.pdf",
+        url: "/kyb-sample-document-2.jpg",
         status: "verified",
         uploadedAt: "2026-01-05T10:00:00Z",
       },
       {
         type: "tax_clearance",
-        url: "https://cdn.zowasel.com/kyb/biz_1005/tax_clearance.pdf",
+        url: "/kyb-sample-document-1.jpg",
         status: "verified",
         uploadedAt: "2026-01-05T10:10:00Z",
       },
       {
         type: "utility_bill",
-        url: "https://cdn.zowasel.com/kyb/biz_1005/utility_bill.pdf",
+        url: "/kyb-sample-document-2.jpg",
         status: "verified",
         uploadedAt: "2026-01-05T10:15:00Z",
       },
@@ -339,13 +339,13 @@ export const mockOrganizations: Organization[] = [
     kybDocuments: [
       {
         type: "business_registration",
-        url: "https://cdn.zowasel.com/kyb/biz_1006/business_registration.pdf",
+        url: "/kyb-sample-document-1.jpg",
         status: "pending",
         uploadedAt: "2026-07-21T09:00:00Z",
       },
       {
         type: "memorandum",
-        url: "https://cdn.zowasel.com/kyb/biz_1006/memorandum.pdf",
+        url: "/kyb-sample-document-2.jpg",
         status: "verified",
         uploadedAt: "2026-07-21T09:05:00Z",
       },

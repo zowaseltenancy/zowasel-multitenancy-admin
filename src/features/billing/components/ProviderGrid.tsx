@@ -9,14 +9,14 @@ interface ProviderGridProps {
 
   providers: Provider[];
 
- onActivate: (provider: Provider) => void;
+  onToggle: (provider: Provider) => void;
 }
 
 export default function ProviderGrid({
   title,
   description,
   providers,
-  onActivate,
+  onToggle,
 }: ProviderGridProps) {
   return (
     <section className="space-y-6">
@@ -35,7 +35,7 @@ export default function ProviderGrid({
           <ProviderCard
             key={provider.id}
             provider={provider}
-            onActivate={onActivate}
+            onToggle={onToggle}
           />
         ))}
       </div>

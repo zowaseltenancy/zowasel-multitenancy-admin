@@ -1,6 +1,10 @@
 import { KybDocument, KybStatus } from "@/types/kyb";
 
-export type OrganizationType = "business" | "cooperative";
+export type OrganizationType =
+  | "merchant"
+  | "agrodealer"
+  | "buyer"
+  | "cooperative";
 
 export type TeamMemberRole = "admin" | "member" | "viewer";
 

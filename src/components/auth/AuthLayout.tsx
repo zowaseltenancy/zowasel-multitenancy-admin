@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 
+import ThemeToggle from "@/components/shared/ThemeToggle";
+
 interface AuthLayoutProps {
   children: ReactNode;
 }
@@ -7,6 +9,10 @@ interface AuthLayoutProps {
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <main className="min-h-screen bg-background">
+      <div className="fixed right-6 top-6">
+        <ThemeToggle />
+      </div>
+
       <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-md">
           {children}

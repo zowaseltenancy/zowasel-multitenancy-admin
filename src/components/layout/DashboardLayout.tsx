@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import Header from "./Header";
 import PageContainer from "./PageContainer";
+import { PageHeaderProvider } from "./PageHeaderContext";
 import Sidebar from "./Sidebar";
 
 interface Props {
@@ -36,17 +37,19 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar
-        collapsed={collapsed}
-        onToggle={toggleSidebar}
-      />
+    <PageHeaderProvider>
+      <div className="flex min-h-screen bg-background">
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={toggleSidebar}
+        />
 
-      <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
-        <Header onToggle={toggleSidebar} />
+        <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
+          <Header onToggle={toggleSidebar} />
 
-        <PageContainer>{children}</PageContainer>
+          <PageContainer>{children}</PageContainer>
+        </div>
       </div>
-    </div>
+    </PageHeaderProvider>
   );
 }

@@ -4,10 +4,13 @@ import CurrencyCard from "./CurrencyCard";
 
 interface Props {
   currencies: Currency[];
+
+  markupPercentage: number;
 }
 
 export default function CurrencyGrid({
   currencies,
+  markupPercentage,
 }: Props) {
   if (currencies.length === 0) {
     return (
@@ -25,6 +28,7 @@ export default function CurrencyGrid({
         <CurrencyCard
           key={currency.id}
           currency={currency}
+          markupPercentage={markupPercentage}
         />
       ))}
     </div>

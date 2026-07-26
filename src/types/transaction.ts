@@ -1,3 +1,5 @@
+import { OrganizationType } from "@/types/organization";
+
 export type TransactionStatus =
   | "Completed"
   | "Pending"
@@ -11,6 +13,8 @@ export interface Transaction {
 
   organization: string;
 
+  entityType: OrganizationType;
+
   amount: number;
 
   currency: string;
@@ -22,4 +26,15 @@ export interface Transaction {
   paymentMethod: string;
 
   createdAt: string;
+
+  disputed: boolean;
+
+  disputeReason?: string;
+
+  disputeNotifyTarget?: DisputeNotifyTarget;
 }
+
+export type DisputeNotifyTarget =
+  | "operations_team"
+  | "finance_team"
+  | "provider_support";

@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CreditCard,
   DollarSign,
+  FileText,
   Receipt,
   Settings,
   ShieldCheck,
@@ -13,8 +14,6 @@ import {
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 export default function BillingOverviewPage() {
@@ -56,6 +55,18 @@ export default function BillingOverviewPage() {
       description: "Tenant plans & renewals.",
       href: "/admin/billing/subscriptions",
       icon: Wallet,
+    },
+    {
+      title: "Invoices",
+      description: "Billing documents & due dates.",
+      href: "/admin/billing/invoices",
+      icon: FileText,
+    },
+    {
+      title: "Settlements",
+      description: "Payouts to platform sellers.",
+      href: "/admin/billing/settlements",
+      icon: ShieldCheck,
     },
     {
       title: "Settings",
@@ -201,7 +212,7 @@ export default function BillingOverviewPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
 

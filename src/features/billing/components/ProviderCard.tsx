@@ -15,14 +15,14 @@ import ProviderStatusBadge from "./ProviderStatusBadge";
 interface ProviderCardProps {
   provider: Provider;
 
-  onActivate: (
+  onToggle: (
     provider: Provider
   ) => void;
 }
 
 export default function ProviderCard({
   provider,
-  onActivate,
+  onToggle,
 }: ProviderCardProps) {
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-lg">
@@ -81,33 +81,34 @@ export default function ProviderCard({
         </div>
       </div>
 
-      <div className="mt-8 border-t border-border pt-5">
-        {provider.isActive ? (
+      <div className="mt-8 space-y-3 border-t border-border pt-5">
+        {provider.isActive && (
           <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-center text-sm font-semibold text-primary">
             ✓ Currently Serving Platform
           </div>
-        ) : (
-          <div className="flex items-center gap-2">
-  {!provider.isActive && (
-    <Button
-      className="flex-1"
-      onClick={() => onActivate(provider)}
-    >
-      Activate
-    </Button>
-  )}
-
-  <Link
-    href={`/admin/billing/providers/${provider.slug}`}
-    className={buttonVariants({
-      variant: "outline",
-      className: provider.isActive ? "w-full" : "flex-1",
-    })}
-  >
-    Manage
-  </Link>
-</div>
         )}
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant={
+              provider.isActive ? "outline" : "default"
+            }
+            className="flex-1"
+            onClick={() => onToggle(provider)}
+          >
+            {provider.isActive ? "Deactivate" : "Activate"}
+          </Button>
+
+          <Link
+            href={`/admin/billing/providers/${provider.slug}`}
+            className={buttonVariants({
+              variant: "outline",
+              className: "flex-1",
+            })}
+          >
+            Manage
+          </Link>
+        </div>
       </div>
     </div>
   );

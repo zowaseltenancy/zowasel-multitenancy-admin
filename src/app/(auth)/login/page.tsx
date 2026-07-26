@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   AuthLayout,
@@ -12,6 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  const handleSubmit = (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    router.push("/admin");
+  };
+
   return (
     <AuthLayout>
       <AuthCard>
@@ -20,7 +33,10 @@ export default function LoginPage() {
           description="Sign in to continue to the Zowasel Admin Platform."
         />
 
-        <form className="space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
+        >
           <EmailField />
 
           <PasswordField />
