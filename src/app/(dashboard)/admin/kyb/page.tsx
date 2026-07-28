@@ -1,7 +1,5 @@
-"use client";
+'use client';
 
-import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
@@ -9,29 +7,28 @@ import {
   FileCheck,
   FileText,
   XCircle,
-} from "lucide-react";
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { KYB_DOCUMENT_LABELS } from "@/constants/kyb";
-import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
-import Pagination from "@/components/shared/Pagination";
+import Pagination from '@/components/shared/Pagination';
+import { Card, CardContent } from '@/components/ui/card';
+import { KYB_DOCUMENT_LABELS } from '@/constants/kyb';
+import { useOrganizations } from '@/features/organization/hooks/useOrganizations';
 
 export default function KybOverviewPage() {
   const { organizations } = useOrganizations();
 
   const approved = organizations.filter(
-    (organization) =>
-      organization.kybStatus === "approved"
+    (organization) => organization.kybStatus === 'approved'
   ).length;
 
   const pending = organizations.filter(
-    (organization) =>
-      organization.kybStatus === "pending"
+    (organization) => organization.kybStatus === 'pending'
   ).length;
 
   const rejected = organizations.filter(
-    (organization) =>
-      organization.kybStatus === "rejected"
+    (organization) => organization.kybStatus === 'rejected'
   ).length;
 
   const allSubmittedDocuments = useMemo(() => {
@@ -54,7 +51,10 @@ export default function KybOverviewPage() {
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const pageCount = Math.max(1, Math.ceil(allSubmittedDocuments.length / pageSize));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(allSubmittedDocuments.length / pageSize)
+  );
 
   useEffect(() => {
     setPage(1);
@@ -67,51 +67,51 @@ export default function KybOverviewPage() {
 
   const stats = [
     {
-      label: "Total Submissions",
+      label: 'Total Submissions',
       value: allSubmittedDocuments.length,
       icon: FileCheck,
-      iconClassName: "bg-primary/10 text-primary",
+      iconClassName: 'bg-primary/10 text-primary',
     },
     {
-      label: "Approved",
+      label: 'Approved',
       value: approved,
       icon: CheckCircle2,
       iconClassName:
-        "bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400",
+        'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
     },
     {
-      label: "Pending",
+      label: 'Pending',
       value: pending,
       icon: Clock3,
       iconClassName:
-        "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
+        'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400',
     },
     {
-      label: "Rejected",
+      label: 'Rejected',
       value: rejected,
       icon: XCircle,
       iconClassName:
-        "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400",
+        'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400',
     },
   ];
 
   const quickLinks = [
     {
-      title: "Pending KYB",
-      description: `${pending} submission${pending === 1 ? "" : "s"} waiting on a decision.`,
-      href: "/admin/kyb/pending",
+      title: 'Pending KYB',
+      description: `${pending} submission${pending === 1 ? '' : 's'} waiting on a decision.`,
+      href: '/admin/kyb/pending',
       icon: Clock3,
     },
     {
-      title: "Approved",
-      description: `${approved} business${approved === 1 ? "" : "es"} verified.`,
-      href: "/admin/kyb/approved",
+      title: 'Approved',
+      description: `${approved} business${approved === 1 ? '' : 'es'} verified.`,
+      href: '/admin/kyb/approved',
       icon: CheckCircle2,
     },
     {
-      title: "Rejected",
-      description: `${rejected} submission${rejected === 1 ? "" : "s"} awaiting resubmission.`,
-      href: "/admin/kyb/rejected",
+      title: 'Rejected',
+      description: `${rejected} submission${rejected === 1 ? '' : 's'} awaiting resubmission.`,
+      href: '/admin/kyb/rejected',
       icon: XCircle,
     },
   ];
@@ -119,12 +119,11 @@ export default function KybOverviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">
-          KYB Review
-        </h1>
+        <h1 className="text-3xl font-bold">KYB Review</h1>
 
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Review and decide on business verification submissions across the platform.
+          Review and decide on business verification submissions across the
+          platform.
         </p>
       </div>
 
@@ -142,13 +141,9 @@ export default function KybOverviewPage() {
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground">
-                    {stat.label}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
 
-                  <h3 className="text-2xl font-bold">
-                    {stat.value}
-                  </h3>
+                  <h3 className="text-2xl font-bold">{stat.value}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -158,9 +153,7 @@ export default function KybOverviewPage() {
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-lg font-semibold">
-            Quick Links
-          </h2>
+          <h2 className="text-lg font-semibold">Quick Links</h2>
 
           <p className="text-sm text-muted-foreground">
             Jump straight into a review queue.
@@ -172,10 +165,7 @@ export default function KybOverviewPage() {
             const Icon = link.icon;
 
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-              >
+              <Link key={link.href} href={link.href}>
                 <Card className="group h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-lg">
                   <CardContent className="flex h-full flex-col justify-between gap-5 p-5">
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
@@ -183,9 +173,7 @@ export default function KybOverviewPage() {
                     </div>
 
                     <div>
-                      <h3 className="font-semibold">
-                        {link.title}
-                      </h3>
+                      <h3 className="font-semibold">{link.title}</h3>
 
                       <p className="mt-1 text-sm text-muted-foreground">
                         {link.description}
@@ -210,7 +198,8 @@ export default function KybOverviewPage() {
           </h2>
 
           <p className="text-sm text-muted-foreground">
-            Chronological audit feed of all document uploads submitted across organizations.
+            Chronological audit feed of all document uploads submitted across
+            organizations.
           </p>
         </div>
 
@@ -229,7 +218,10 @@ export default function KybOverviewPage() {
               <tbody className="divide-y divide-border">
                 {allSubmittedDocuments.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-sm text-muted-foreground">
+                    <td
+                      colSpan={5}
+                      className="p-6 text-center text-sm text-muted-foreground"
+                    >
                       No document submissions found.
                     </td>
                   </tr>
@@ -249,19 +241,27 @@ export default function KybOverviewPage() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium">{doc.organizationName}</p>
-                        <p className="text-xs text-muted-foreground">{doc.businessId} • {doc.ownerName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.businessId} • {doc.ownerName}
+                        </p>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
-                        {new Date(doc.uploadedAt).toLocaleDateString()} {new Date(doc.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(doc.uploadedAt).toLocaleDateString()}{' '}
+                        {new Date(doc.uploadedAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </td>
                       <td className="px-6 py-4 capitalize">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
-                          doc.status === "verified"
-                            ? "border-green-200 bg-green-100 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
-                            : doc.status === "rejected"
-                            ? "border-red-200 bg-red-100 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-                            : "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
-                        }`}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                            doc.status === 'verified'
+                              ? 'border-green-200 bg-green-100 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300'
+                              : doc.status === 'rejected'
+                                ? 'border-red-200 bg-red-100 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'
+                                : 'border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                          }`}
+                        >
                           {doc.status}
                         </span>
                       </td>
@@ -280,10 +280,14 @@ export default function KybOverviewPage() {
               </tbody>
             </table>
           </div>
-          </Card>
-          <div className="p-4">
-            <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
-          </div>
+        </Card>
+        <div className="p-4">
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+          />
+        </div>
       </section>
     </div>
   );

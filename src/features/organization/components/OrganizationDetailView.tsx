@@ -1,42 +1,38 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound } from 'next/navigation';
+import { useState } from 'react';
 
-import { cn } from "@/lib/utils";
-import KybStatusBadge from "@/components/shared/KybStatusBadge";
-import { usePageHeader } from "@/components/layout/PageHeaderContext";
-import { useOrganizations } from "../hooks/useOrganizations";
+import { usePageHeader } from '@/components/layout/PageHeaderContext';
+import KybStatusBadge from '@/components/shared/KybStatusBadge';
+import { cn } from '@/lib/utils';
+import { useOrganizations } from '../hooks/useOrganizations';
 
-import OrganizationProfileTab from "./OrganizationProfileTab";
-import OrganizationKybTab from "./OrganizationKybTab";
-import OrganizationModulesTab from "./OrganizationModulesTab";
-import OrganizationTeamTab from "./OrganizationTeamTab";
-import OrganizationUsersTab from "./OrganizationUsersTab";
-import OrganizationAgentsTab from "./OrganizationAgentsTab";
-import OrganizationProjectsTab from "./OrganizationProjectsTab";
+import OrganizationAgentsTab from './OrganizationAgentsTab';
+import OrganizationKybTab from './OrganizationKybTab';
+import OrganizationModulesTab from './OrganizationModulesTab';
+import OrganizationProfileTab from './OrganizationProfileTab';
+import OrganizationProjectsTab from './OrganizationProjectsTab';
+import OrganizationTeamTab from './OrganizationTeamTab';
+import OrganizationUsersTab from './OrganizationUsersTab';
 
 interface Props {
   organizationId: string;
 }
 
 const TABS = [
-  { key: "profile", label: "Profile" },
-  { key: "kyb", label: "KYB Verification" },
-  { key: "modules", label: "Active Modules" },
-  { key: "team", label: "Team Members" },
-  { key: "users", label: "Farmers & Users" },
-  { key: "agents", label: "Field Agents" },
-  { key: "projects", label: "Agro Projects" },
+  { key: 'profile', label: 'Profile' },
+  { key: 'kyb', label: 'KYB Verification' },
+  { key: 'modules', label: 'Active Modules' },
+  { key: 'team', label: 'Team Members' },
+  { key: 'users', label: 'Farmers & Users' },
+  { key: 'agents', label: 'Field Agents' },
+  { key: 'projects', label: 'Agro Projects' },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+type TabKey = (typeof TABS)[number]['key'];
 
-export default function OrganizationDetailView({
-  organizationId,
-}: Props) {
+export default function OrganizationDetailView({ organizationId }: Props) {
   const {
     organizations,
     approveKyb,
@@ -45,29 +41,27 @@ export default function OrganizationDetailView({
     updateTeamMember,
   } = useOrganizations();
 
-  const [activeTab, setActiveTab] =
-    useState<TabKey>("profile");
+  const [activeTab, setActiveTab] = useState<TabKey>('profile');
 
-  const organization = organizations.find(
-    (item) => item.id === organizationId
-  );
+  const organization = organizations.find((item) => item.id === organizationId);
 
   if (!organization) {
     notFound();
   }
 
-  usePageHeader(
-    organization.name,
-    organization.businessId
-  );
+  usePageHeader(organization.name, organization.businessId);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-muted-foreground">{organization.businessId}</span>
+          <span className="text-sm font-semibold text-muted-foreground">
+            {organization.businessId}
+          </span>
           <span>•</span>
-          <span className="text-sm text-muted-foreground">{organization.owner.email}</span>
+          <span className="text-sm text-muted-foreground">
+            {organization.owner.email}
+          </span>
         </div>
         <KybStatusBadge status={organization.kybStatus} />
       </div>
@@ -79,10 +73,10 @@ export default function OrganizationDetailView({
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+              'rounded-full px-4 py-2 text-sm font-medium transition-colors',
               activeTab === tab.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/70"
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/70'
             )}
           >
             {tab.label}
@@ -90,13 +84,11 @@ export default function OrganizationDetailView({
         ))}
       </div>
 
-      {activeTab === "profile" && (
-        <OrganizationProfileTab
-          organization={organization}
-        />
+      {activeTab === 'profile' && (
+        <OrganizationProfileTab organization={organization} />
       )}
 
-      {activeTab === "kyb" && (
+      {activeTab === 'kyb' && (
         <OrganizationKybTab
           organization={organization}
           onApprove={approveKyb}
@@ -105,35 +97,27 @@ export default function OrganizationDetailView({
         />
       )}
 
-      {activeTab === "modules" && (
-        <OrganizationModulesTab
-          organization={organization}
-        />
+      {activeTab === 'modules' && (
+        <OrganizationModulesTab organization={organization} />
       )}
 
-      {activeTab === "team" && (
+      {activeTab === 'team' && (
         <OrganizationTeamTab
           organization={organization}
           onUpdateMember={updateTeamMember}
         />
       )}
 
-      {activeTab === "users" && (
-        <OrganizationUsersTab
-          organization={organization}
-        />
+      {activeTab === 'users' && (
+        <OrganizationUsersTab organization={organization} />
       )}
 
-      {activeTab === "agents" && (
-        <OrganizationAgentsTab
-          organization={organization}
-        />
+      {activeTab === 'agents' && (
+        <OrganizationAgentsTab organization={organization} />
       )}
 
-      {activeTab === "projects" && (
-        <OrganizationProjectsTab
-          organization={organization}
-        />
+      {activeTab === 'projects' && (
+        <OrganizationProjectsTab organization={organization} />
       )}
     </div>
   );

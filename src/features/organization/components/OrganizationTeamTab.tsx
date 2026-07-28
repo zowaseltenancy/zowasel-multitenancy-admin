@@ -1,13 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Organization,
-  TeamMemberRole,
-} from "@/types/organization";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Organization, TeamMemberRole } from '@/types/organization';
 
 interface Props {
   organization: Organization;
@@ -27,16 +24,12 @@ export default function OrganizationTeamTab({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>
-            Account Owner
-          </CardTitle>
+          <CardTitle>Account Owner</CardTitle>
         </CardHeader>
 
         <CardContent className="flex items-center justify-between">
           <div>
-            <p className="font-medium">
-              {organization.owner.name}
-            </p>
+            <p className="font-medium">{organization.owner.name}</p>
 
             <p className="text-sm text-muted-foreground">
               {organization.owner.email}
@@ -51,14 +44,13 @@ export default function OrganizationTeamTab({
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Team Members
-          </CardTitle>
+          <CardTitle>Team Members</CardTitle>
         </CardHeader>
 
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">
-            Internal account managers who help the owner run this business — not CropPilot end-users like farmers or agents.
+            Internal account managers who help the owner run this business — not
+            CropPilot end-users like farmers or agents.
           </p>
 
           {organization.teamMembers.length === 0 ? (
@@ -67,65 +59,54 @@ export default function OrganizationTeamTab({
             </p>
           ) : (
             <div className="divide-y divide-border">
-              {organization.teamMembers.map(
-                (member) => (
-                  <div
-                    key={member.id}
-                    className="flex flex-wrap items-center justify-between gap-4 py-4"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {member.name}
-                      </p>
+              {organization.teamMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex flex-wrap items-center justify-between gap-4 py-4"
+                >
+                  <div>
+                    <p className="font-medium">{member.name}</p>
 
-                      <p className="text-sm text-muted-foreground">
-                        {member.email}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {member.role === "admin"
-                          ? "Admin"
-                          : member.role === "member"
-                          ? "Member"
-                          : "Viewer"}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateMember(
-                            organization.id,
-                            member.id,
-                            {
-                              isActive:
-                                !member.isActive,
-                            }
-                          )
-                        }
-                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                          member.isActive
-                            ? "border-green-200 bg-green-100 text-green-700"
-                            : "border-slate-200 bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {member.isActive
-                          ? "Active"
-                          : "Inactive"}
-                      </button>
-
-                      <Link
-                        href={`/admin/organizations/${organization.id}/team/${member.id}`}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                      >
-                        View
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {member.email}
+                    </p>
                   </div>
-                )
-              )}
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {member.role === 'admin'
+                        ? 'Admin'
+                        : member.role === 'member'
+                          ? 'Member'
+                          : 'Viewer'}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onUpdateMember(organization.id, member.id, {
+                          isActive: !member.isActive,
+                        })
+                      }
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        member.isActive
+                          ? 'border-green-200 bg-green-100 text-green-700'
+                          : 'border-slate-200 bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {member.isActive ? 'Active' : 'Inactive'}
+                    </button>
+
+                    <Link
+                      href={`/admin/organizations/${organization.id}/team/${member.id}`}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    >
+                      View
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
