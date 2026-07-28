@@ -7,16 +7,16 @@ interface Props {
 
 const styles = {
   Active:
-    "bg-green-100 text-green-700 border-green-200",
+    "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-semibold",
 
   Trial:
-    "bg-blue-100 text-blue-700 border-blue-200",
+    "bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold",
 
   "Past Due":
-    "bg-amber-100 text-amber-700 border-amber-200",
+    "bg-red-500/10 text-red-600 border-red-500/30 font-bold animate-pulse shadow-xs",
 
   Cancelled:
-    "bg-red-100 text-red-700 border-red-200",
+    "bg-muted text-muted-foreground border-border font-medium",
 };
 
 export default function SubscriptionStatusBadge({
@@ -25,10 +25,13 @@ export default function SubscriptionStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex rounded-full border px-3 py-1 text-xs font-medium",
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs transition-colors",
         styles[status]
       )}
     >
+      {status === "Past Due" && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-red-600" />}
+      {status === "Trial" && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-amber-600" />}
+      {status === "Active" && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-600" />}
       {status}
     </span>
   );

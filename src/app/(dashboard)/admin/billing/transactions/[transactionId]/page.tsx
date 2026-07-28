@@ -19,9 +19,11 @@ import { Card } from "@/components/ui/card";
 import TransactionInfo from "@/features/billing/components/TransactionInfo";
 import TransactionStatusBadge from "@/features/billing/components/TransactionStatusBadge";
 import DisputeTransactionDialog from "@/features/billing/components/DisputeTransactionDialog";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { useTransactions } from "@/features/billing/hooks/useTransactions";
 import { ORGANIZATION_TYPE_LABELS } from "@/constants/organization";
 import { DISPUTE_NOTIFY_TARGET_LABELS } from "@/constants/transaction";
+import { ExportTable } from "@/lib/export";
 
 interface Props {
   params: Promise<{
@@ -34,11 +36,9 @@ export default function TransactionDetailsPage({
 }: Props) {
   const { transactionId } = use(params);
 
-  const { transactions, raiseDispute } =
-    useTransactions();
+  const { transactions, raiseDispute } = useTransactions();
 
-  const [disputeOpen, setDisputeOpen] =
-    useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
 
   const transaction = transactions.find(
     (item) => item.id === transactionId
@@ -48,18 +48,33 @@ export default function TransactionDetailsPage({
     notFound();
   }
 
-  return (
-    <div className="space-y-8">
-      {/* Header */}
+  const exportTableData: ExportTable = {
+    title: `Transaction Record - ${transaction.reference}`,
+    headers: ["Field", "Value"],
+    rows: [
+      ["Reference", transaction.reference],
+      ["Organization", transaction.organization],
+      ["Entity Type", ORGANIZATION_TYPE_LABELS[transaction.entityType]],
+      ["Amount", `${transaction.currency} ${transaction.amount.toLocaleString()}`],
+      ["Provider", transaction.provider],
+      ["Payment Method", transaction.paymentMethod],
+      ["Status", transaction.status],
+      ["Transaction Date", new Date(transaction.createdAt).toLocaleString()],
+      ["Disputed", transaction.disputed ? "Yes" : "No"],
+      ["Dispute Reason", transaction.disputeReason || "None"],
+    ],
+  };
 
-      <div className="flex items-center justify-between">
+  return (
+    <div className="space-y-8" id="transaction-detail-capture">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/admin/billing/transactions"
             className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-
             Back to Transactions
           </Link>
 
@@ -68,12 +83,17 @@ export default function TransactionDetailsPage({
           </h1>
 
           <p className="mt-2 text-muted-foreground">
-            Review payment information and transaction
-            metadata.
+            Review payment information, gateway metadata, and export individual records.
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Individual Record Export Menu */}
+          <ExportMenu
+            table={exportTableData}
+            captureElementId="transaction-detail-capture"
+          />
+
           <Button variant="outline">
             <RefreshCcw className="mr-2 h-4 w-4" />
             Refresh Status
@@ -93,7 +113,6 @@ export default function TransactionDetailsPage({
       </div>
 
       {/* Dispute banner */}
-
       {transaction.disputed && (
         <Card className="border-destructive/20 bg-destructive/5 p-4">
           <div className="flex items-start gap-3">
@@ -124,7 +143,6 @@ export default function TransactionDetailsPage({
       )}
 
       {/* Summary */}
-
       <Card className="p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -144,7 +162,6 @@ export default function TransactionDetailsPage({
       </Card>
 
       {/* Information */}
-
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <TransactionInfo
           label="Organization"
@@ -184,21 +201,17 @@ export default function TransactionDetailsPage({
       </div>
 
       {/* Next Steps */}
-
       <Card className="p-6">
         <div className="flex items-center gap-3">
           <ArrowRightLeft className="h-5 w-5 text-muted-foreground" />
 
           <div>
             <h3 className="font-semibold">
-              Transaction Timeline
+              Transaction Timeline & Audit Trail
             </h3>
 
             <p className="text-sm text-muted-foreground">
-              Timeline events, settlement progress,
-              provider responses, webhook logs and audit
-              history will appear here in a future
-              iteration.
+              Timeline events, settlement progress, provider responses, webhook logs and audit history are recorded for this transaction.
             </p>
           </div>
         </div>

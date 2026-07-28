@@ -11,7 +11,9 @@ import {
 
 import SubscriptionStatusBadge from "@/features/billing/components/SubscriptionStatusBadge";
 import SubscriptionInfo from "@/features/billing/components/SubscriptionInfo";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { subscriptionService } from "@/features/billing/services/subscription.service";
+import { ExportTable } from "@/lib/export";
 
 interface Props {
   params: Promise<{
@@ -24,20 +26,31 @@ export default async function SubscriptionDetailsPage({
 }: Props) {
   const { subscriptionId } = await params;
 
-  const subscription =
-    subscriptionService.getSubscriptionById(
-      subscriptionId
-    );
+  const subscription = subscriptionService.getSubscriptionById(subscriptionId);
 
   if (!subscription) {
     notFound();
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
+  const exportTableData: ExportTable = {
+    title: `Subscription Record - ${subscription.organization} (${subscription.product})`,
+    headers: ["Property", "Value"],
+    rows: [
+      ["Organization", subscription.organization],
+      ["Product", subscription.product],
+      ["Amount", `${subscription.currency} ${subscription.amount.toLocaleString()}`],
+      ["Billing Cycle", subscription.billingCycle],
+      ["Status", subscription.status],
+      ["Auto Renew", subscription.autoRenew ? "Enabled" : "Disabled"],
+      ["Started Date", new Date(subscription.startedAt).toLocaleDateString()],
+      ["Next Renewal Date", new Date(subscription.nextRenewal).toLocaleDateString()],
+    ],
+  };
 
-      <div className="flex items-start justify-between">
+  return (
+    <div className="space-y-6" id="subscription-detail-capture">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/admin/billing/subscriptions"
@@ -56,13 +69,16 @@ export default async function SubscriptionDetailsPage({
           </p>
         </div>
 
-        <SubscriptionStatusBadge
-          status={subscription.status}
-        />
+        <div className="flex items-center gap-3">
+          <ExportMenu
+            table={exportTableData}
+            captureElementId="subscription-detail-capture"
+          />
+          <SubscriptionStatusBadge status={subscription.status} />
+        </div>
       </div>
 
       {/* Information */}
-
       <Card>
         <CardHeader>
           <CardTitle>

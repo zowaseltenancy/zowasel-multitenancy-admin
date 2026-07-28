@@ -9,6 +9,7 @@ import TransactionFilters, {
 } from "./TransactionFilters";
 import ExportMenu from "@/components/shared/ExportMenu";
 import Pagination from "@/components/shared/Pagination";
+import HierarchicalRegionFilter from "@/components/shared/HierarchicalRegionFilter";
 
 import {
   CustomRange,
@@ -18,8 +19,8 @@ import {
 } from "../utils/transaction";
 import { OrganizationType } from "@/types/organization";
 import { TransactionStatus } from "@/types/transaction";
-
-const PAGE_SIZE = 6;
+import { GeographicFilterState } from "@/types/geo";
+import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
 
 export type TransactionStatusFilter =
   | TransactionStatus
@@ -73,6 +74,14 @@ export default function TransactionsListView({
     useState<TransactionSort>("newest");
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
+    scope: "global",
+    continent: "all",
+    subRegion: "all",
+    countryCode: "all",
+  });
 
   const effectiveStatus =
     statusFilter === "all" ? localStatus : statusFilter;
@@ -108,11 +117,32 @@ export default function TransactionsListView({
             .toLowerCase()
             .includes(query);
 
+        // Geographic Filter matching
+        let matchesGeo = true;
+        if (geoFilter.continent !== "all" || geoFilter.subRegion !== "all" || geoFilter.countryCode !== "all") {
+          const countryMatch = GLOBAL_COUNTRY_CURRENCIES.find(
+            (c) => c.currencyCode === transaction.currency
+          );
+
+          if (countryMatch) {
+            if (geoFilter.continent !== "all" && countryMatch.continent !== geoFilter.continent) {
+              matchesGeo = false;
+            }
+            if (geoFilter.subRegion !== "all" && countryMatch.subRegion !== geoFilter.subRegion) {
+              matchesGeo = false;
+            }
+            if (geoFilter.countryCode !== "all" && countryMatch.countryCode !== geoFilter.countryCode) {
+              matchesGeo = false;
+            }
+          }
+        }
+
         return (
           matchesStatus &&
           matchesTime &&
           matchesEntity &&
-          matchesSearch
+          matchesSearch &&
+          matchesGeo
         );
       }
     );
@@ -148,16 +178,18 @@ export default function TransactionsListView({
     entityType,
     search,
     sort,
+    geoFilter,
   ]);
 
+  const totalItems = filtered.length;
   const pageCount = Math.max(
     1,
-    Math.ceil(filtered.length / PAGE_SIZE)
+    Math.ceil(totalItems / pageSize)
   );
 
   const paginated = filtered.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
+    (page - 1) * pageSize,
+    page * pageSize
   );
 
   return (
@@ -181,6 +213,15 @@ export default function TransactionsListView({
           captureElementId="transaction-table-capture"
         />
       </div>
+
+      {/* 4-Tier Geographic Cascading Filter */}
+      <HierarchicalRegionFilter
+        value={geoFilter}
+        onChange={(newVal) => {
+          setGeoFilter(newVal);
+          setPage(1);
+        }}
+      />
 
       <div className="space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -241,6 +282,10 @@ export default function TransactionsListView({
           page={page}
           pageCount={pageCount}
           onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          pageSizeOptions={[5, 10, 15, 20]}
         />
       </div>
     </div>

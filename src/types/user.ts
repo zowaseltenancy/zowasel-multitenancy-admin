@@ -1,12 +1,10 @@
 export type PlatformUserRole =
-  | "Super Admin"
   | "Tenant Admin"
   | "Programme Manager"
   | "Field Supervisor"
   | "Field Agent"
-  | "Agronomist"
   | "Data Analyst"
-  | "Farmer (Self-service)";
+  | "Farmer (self-service)";
 
 export type UserAccountStatus = "active" | "inactive" | "pending" | "suspended";
 

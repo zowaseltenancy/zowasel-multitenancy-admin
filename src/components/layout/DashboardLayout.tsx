@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore, useCallback } from "react";
 
 import Header from "./Header";
 import PageContainer from "./PageContainer";
@@ -11,21 +11,31 @@ interface Props {
   children: React.ReactNode;
 }
 
+const STORAGE_KEY = "sidebar-collapsed";
+
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getSnapshot(): string {
+  if (typeof window === "undefined") return "false";
+  return localStorage.getItem(STORAGE_KEY) || "false";
+}
+
+function getServerSnapshot(): string {
+  return "false";
+}
+
 export default function DashboardLayout({ children }: Props) {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
+  const storedValue = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const collapsed = storedValue === "true";
 
-    const stored = localStorage.getItem("sidebar-collapsed");
-    return stored ? JSON.parse(stored) : false;
-  });
-
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     const next = !collapsed;
-    setCollapsed(next);
-    localStorage.setItem("sidebar-collapsed", JSON.stringify(next));
-  };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("storage"));
+  }, [collapsed]);
 
   return (
     <PageHeaderProvider>

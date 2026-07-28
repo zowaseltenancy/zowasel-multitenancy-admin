@@ -27,13 +27,10 @@ export default function OrganizationStatsCards({
 }: Props) {
   const stats: {
     label: string;
-
     value: number;
-
     filter: KybStatus | "all";
-
     icon: typeof Building2;
-
+    cardBg: string;
     iconClassName: string;
   }[] = [
     {
@@ -41,40 +38,38 @@ export default function OrganizationStatsCards({
       value: organizations.length,
       filter: "all",
       icon: Building2,
-      iconClassName: "bg-primary/10 text-primary",
+      cardBg: "bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20",
+      iconClassName: "bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400",
     },
     {
       label: "KYB Approved",
       value: organizations.filter(
-        (organization) =>
-          organization.kybStatus === "approved"
+        (organization) => organization.kybStatus === "approved"
       ).length,
       filter: "approved",
       icon: CheckCircle2,
-      iconClassName:
-        "bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400",
+      cardBg: "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20",
+      iconClassName: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
     },
     {
       label: "KYB Pending",
       value: organizations.filter(
-        (organization) =>
-          organization.kybStatus === "pending"
+        (organization) => organization.kybStatus === "pending"
       ).length,
       filter: "pending",
       icon: Clock3,
-      iconClassName:
-        "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
+      cardBg: "bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20",
+      iconClassName: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400",
     },
     {
       label: "KYB Rejected",
       value: organizations.filter(
-        (organization) =>
-          organization.kybStatus === "rejected"
+        (organization) => organization.kybStatus === "rejected"
       ).length,
       filter: "rejected",
       icon: XCircle,
-      iconClassName:
-        "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400",
+      cardBg: "bg-red-500/5 dark:bg-red-500/10 border-red-500/30",
+      iconClassName: "bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400",
     },
   ];
 
@@ -82,29 +77,26 @@ export default function OrganizationStatsCards({
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
-
-        const isActive =
-          stat.filter === activeFilter;
+        const isActive = stat.filter === activeFilter;
 
         return (
           <button
             key={stat.label}
             type="button"
-            onClick={() =>
-              onFilterChange(stat.filter)
-            }
-            className="text-left"
+            onClick={() => onFilterChange(stat.filter)}
+            className="text-left cursor-pointer"
           >
             <Card
               className={cn(
-                "transition-all hover:-translate-y-0.5 hover:shadow-md",
-                isActive && "ring-2 ring-primary"
+                "transition-all hover:-translate-y-0.5 hover:shadow-md border shadow-2xs",
+                stat.cardBg,
+                isActive && "ring-2 ring-primary border-primary"
               )}
             >
               <CardContent className="flex items-center gap-4 p-6">
                 <div
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-xl",
+                    "flex h-11 w-11 items-center justify-center rounded-xl border",
                     stat.iconClassName
                   )}
                 >
@@ -112,11 +104,11 @@ export default function OrganizationStatsCards({
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {stat.label}
                   </p>
 
-                  <h3 className="text-2xl font-bold">
+                  <h3 className="text-2xl font-bold mt-1">
                     {stat.value}
                   </h3>
                 </div>

@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/card";
 
 import InvoiceStatusBadge from "@/features/billing/components/InvoiceStatusBadge";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { invoiceService } from "@/features/billing/services/invoice.service";
+import { ExportTable } from "@/lib/export";
 
 interface Props {
   params: Promise<{
@@ -23,16 +25,26 @@ export default async function InvoiceDetailsPage({
 }: Props) {
   const { invoiceId } = await params;
 
-  const invoice =
-    invoiceService.getInvoiceById(invoiceId);
+  const invoice = invoiceService.getInvoiceById(invoiceId);
 
   if (!invoice) {
     notFound();
   }
 
+  const exportTableData: ExportTable = {
+    title: `Invoice Record - ${invoice.invoiceNumber}`,
+    headers: ["Item Description", "Quantity", "Unit Price", "Total Amount"],
+    rows: invoice.items.map((item) => [
+      item.name,
+      item.quantity,
+      `${invoice.currency} ${item.unitPrice.toLocaleString()}`,
+      `${invoice.currency} ${(item.quantity * item.unitPrice).toLocaleString()}`,
+    ]),
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
+    <div className="space-y-6" id="invoice-detail-capture">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/admin/billing/invoices"
@@ -51,9 +63,13 @@ export default async function InvoiceDetailsPage({
           </p>
         </div>
 
-        <InvoiceStatusBadge
-          status={invoice.status}
-        />
+        <div className="flex items-center gap-3">
+          <ExportMenu
+            table={exportTableData}
+            captureElementId="invoice-detail-capture"
+          />
+          <InvoiceStatusBadge status={invoice.status} />
+        </div>
       </div>
 
       <Card>

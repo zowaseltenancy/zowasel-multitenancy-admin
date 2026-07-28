@@ -1,20 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
+  Receipt,
+  ShieldCheck,
   CreditCard,
   DollarSign,
-  FileText,
-  Receipt,
-  Settings,
-  ShieldCheck,
   Wallet,
+  FileText,
+  TrendingUp,
 } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import BillingTabs from "@/features/billing/components/BillingTabs";
 
 export default function BillingOverviewPage() {
   const snapshot = {
@@ -31,314 +32,168 @@ export default function BillingOverviewPage() {
     renewals: "2 renewals",
   };
 
-  const quickActions = [
-    {
-      title: "Providers",
-      description: "Manage payment gateways.",
-      href: "/admin/billing/providers",
-      icon: CreditCard,
-    },
-    {
-      title: "Currency",
-      description: "Currencies & exchange rates.",
-      href: "/admin/billing/currency",
-      icon: DollarSign,
-    },
-    {
-      title: "Transactions",
-      description: "Monitor billing activity.",
-      href: "/admin/billing/transactions",
-      icon: Receipt,
-    },
-    {
-      title: "Subscriptions",
-      description: "Tenant plans & renewals.",
-      href: "/admin/billing/subscriptions",
-      icon: Wallet,
-    },
-    {
-      title: "Invoices",
-      description: "Billing documents & due dates.",
-      href: "/admin/billing/invoices",
-      icon: FileText,
-    },
-    {
-      title: "Settlements",
-      description: "Payouts to platform sellers.",
-      href: "/admin/billing/settlements",
-      icon: ShieldCheck,
-    },
-    {
-      title: "Settings",
-      description: "Billing configuration.",
-      href: "/admin/billing/settings",
-      icon: Settings,
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-
-      {/* <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      {/* Header Banner */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">
-            Billing
-          </h1>
-
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Monitor payment infrastructure,
-            subscriptions, transactions and
-            platform billing operations.
+          <h1 className="text-3xl font-bold tracking-tight">Billing & Financial Management</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Monitor payment gateways, multi-currency exchange markups, subscriptions, invoices, and payouts.
           </p>
         </div>
 
-        <Card className="min-w-[240px]">
-          <CardContent className="flex items-center gap-3 p-5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400">
+        <Card className="shrink-0 border bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
               <ShieldCheck className="h-5 w-5" />
             </div>
-
             <div>
-              <p className="text-sm text-muted-foreground">
-                Billing Health
-              </p>
-
-              <p className="font-semibold text-green-600 dark:text-green-400">
-                Healthy
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Gateway Status</p>
+              <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" /> All Systems Operational
               </p>
             </div>
           </CardContent>
         </Card>
-      </div> */}
+      </div>
 
-      {/* Snapshot */}
+      {/* Module Navigation Tabs */}
+      <BillingTabs />
 
+      {/* Operational Snapshot with Status Color Background Tints */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">
-              Operational Snapshot
-            </h2>
-
-            <p className="text-sm text-muted-foreground">
-              Current platform billing status.
-            </p>
-          </div>
-        </div>
-
+        <h2 className="text-lg font-semibold">Operational Snapshot</h2>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card>
-            <CardContent className="space-y-3 p-6">
-              <p className="text-sm text-muted-foreground">
-                Revenue
-              </p>
-
-              <h3 className="text-3xl font-bold">
-                {snapshot.revenue}
-              </h3>
-
-              <p className="text-sm font-medium text-green-600">
-                {snapshot.revenueGrowth}
-              </p>
+          {/* Revenue Card - Distinct Cyan Tint for Total Metric */}
+          <Card className="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20 shadow-2xs">
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Total Revenue</p>
+                <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 border border-cyan-500/30 dark:text-cyan-400">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold">{snapshot.revenue}</h3>
+              <p className="text-xs font-semibold text-cyan-600 dark:text-cyan-400">{snapshot.revenueGrowth} vs last month</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="space-y-3 p-6">
-              <p className="text-sm text-muted-foreground">
-                Active Provider
-              </p>
-
-              <h3 className="text-3xl font-bold">
-                {snapshot.provider}
-              </h3>
-
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-
-                <span>
-                  {snapshot.providerHealth}
-                </span>
+          {/* Active Gateway - Emerald Tint */}
+          <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Active Gateway</p>
+                <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
+                  <CreditCard className="h-4 w-4" />
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold">{snapshot.provider}</h3>
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>{snapshot.providerHealth}</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="space-y-3 p-6">
-              <p className="text-sm text-muted-foreground">
-                Transactions Today
-              </p>
-
-              <h3 className="text-3xl font-bold">
-                {snapshot.transactionsToday}
-              </h3>
-
-              <p className="text-sm font-medium text-green-600">
-                {snapshot.transactionsGrowth}
-              </p>
+          {/* Transactions Today - Blue Tint */}
+          <Card className="bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20 shadow-2xs">
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Transactions Today</p>
+                <div className="p-2 rounded-xl bg-blue-500/15 text-blue-600 border border-blue-500/30 dark:text-blue-400">
+                  <Receipt className="h-4 w-4" />
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold">{snapshot.transactionsToday}</h3>
+              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{snapshot.transactionsGrowth}</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="space-y-3 p-6">
-              <p className="text-sm text-muted-foreground">
-                Active Subscriptions
-              </p>
-
-              <h3 className="text-3xl font-bold">
-                {snapshot.subscriptions}
-              </h3>
-
-              <p className="text-sm font-medium text-primary">
-                {snapshot.renewals}
-              </p>
+          {/* Active Subscriptions - Emerald Tint */}
+          <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
+            <CardContent className="space-y-2 p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Active Subscriptions</p>
+                <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
+                  <Wallet className="h-4 w-4" />
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold">{snapshot.subscriptions}</h3>
+              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{snapshot.renewals}</p>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Quick Actions */}
-
+      {/* Operational Alerts & System Health */}
       <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Quick Actions
-          </h2>
-
-          <p className="text-sm text-muted-foreground">
-            Jump directly into a billing
-            management area.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-
-            return (
-              <Link
-                key={action.href}
-                href={action.href}
-              >
-                <Card className="group h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-lg">
-                  <CardContent className="flex h-full flex-col justify-between gap-5 p-5">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold">
-                        {action.title}
-                      </h3>
-
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {action.description}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-            {/* Attention */}
-
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Attention
-          </h2>
-
-          <p className="text-sm text-muted-foreground">
-            Items that may require operational review.
-          </p>
-        </div>
+        <h2 className="text-lg font-semibold">Billing Health & Alerts</h2>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <Card>
-            <CardContent className="flex items-center gap-3 p-5">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-
-              <div>
-                <p className="font-medium">
-                  Provider Healthy
-                </p>
-
-                <p className="text-sm text-muted-foreground">
-                  Paystack is operating normally.
-                </p>
+          <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
+            <CardContent className="flex items-center justify-between p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Provider Healthy</p>
+                  <p className="text-xs text-muted-foreground">Paystack & Interswitch operational.</p>
+                </div>
               </div>
+              <Link href="/admin/billing/providers">
+                <Button variant="ghost" size="sm" className="text-xs gap-1 cursor-pointer">Manage</Button>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="flex items-center gap-3 p-5">
-              <Receipt className="h-5 w-5 text-amber-500" />
-
-              <div>
-                <p className="font-medium">
-                  Overdue Settlement
-                </p>
-
-                <p className="text-sm text-muted-foreground">
-                  1 settlement is awaiting review.
-                </p>
+          <Card className="bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
+            <CardContent className="flex items-center justify-between p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400">
+                  <Receipt className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Pending Settlements</p>
+                  <p className="text-xs text-muted-foreground">1 settlement awaiting payout.</p>
+                </div>
               </div>
+              <Link href="/admin/billing/settlements">
+                <Button variant="ghost" size="sm" className="text-xs gap-1 cursor-pointer">View</Button>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="flex items-center gap-3 p-5">
-              <DollarSign className="h-5 w-5 text-blue-600" />
-
-              <div>
-                <p className="font-medium">
-                  Exchange Rates
-                </p>
-
-                <p className="text-sm text-muted-foreground">
-                  Last synchronized 12 minutes ago.
-                </p>
+          <Card className="bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20 shadow-2xs">
+            <CardContent className="flex items-center justify-between p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 border border-blue-500/30 dark:text-blue-400">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">FX Exchange Rates</p>
+                  <p className="text-xs text-muted-foreground">Synced 12 minutes ago.</p>
+                </div>
               </div>
+              <Link href="/admin/billing/currency">
+                <Button variant="ghost" size="sm" className="text-xs gap-1 cursor-pointer">Configure</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
       </section>
 
       {/* Recent Activity */}
-
       <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Recent Activity
-          </h2>
+        <h2 className="text-lg font-semibold">Recent Billing Activity</h2>
 
-          <p className="text-sm text-muted-foreground">
-            Latest billing events across the
-            platform.
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="flex min-h-[140px] flex-col items-center justify-center text-center p-6">
-            <Receipt className="mb-3 h-10 w-10 text-muted-foreground/40" />
-
-            <h3 className="font-medium">
-              No recent billing events
-            </h3>
-
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Payments, provider changes,
-              subscription renewals, currency
-              updates and billing configuration
-              changes will appear here.
+        <Card className="bg-card shadow-2xs">
+          <CardContent className="flex min-h-[140px] flex-col items-center justify-center text-center p-6 space-y-2">
+            <Receipt className="h-10 w-10 text-muted-foreground/40" />
+            <h3 className="font-semibold text-sm">No recent billing alerts</h3>
+            <p className="max-w-md text-xs text-muted-foreground">
+              Payments, provider changes, subscription renewals, currency updates, and billing configuration changes will appear here in real-time.
             </p>
           </CardContent>
         </Card>

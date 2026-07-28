@@ -3,14 +3,16 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CalendarClock,
   CheckCircle2,
   Clock3,
+  ShieldCheck,
   Wallet,
   XCircle,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import SettlementTable from "@/features/billing/components/SettlementTable";
 import { useSettlements } from "@/features/billing/hooks/useSettlements";
 
 export default function SettlementsOverviewPage() {
@@ -24,10 +26,6 @@ export default function SettlementsOverviewPage() {
     (settlement) => settlement.status === "Processing"
   ).length;
 
-  const scheduled = settlements.filter(
-    (settlement) => settlement.status === "Scheduled"
-  ).length;
-
   const failed = settlements.filter(
     (settlement) => settlement.status === "Failed"
   ).length;
@@ -37,96 +35,72 @@ export default function SettlementsOverviewPage() {
       title: "Total Settlements",
       value: settlements.length,
       icon: Wallet,
-      iconClassName: "bg-primary/10 text-primary",
+      cardBg: "bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20",
+      iconClassName: "bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400",
     },
     {
       title: "Completed",
       value: completed,
       icon: CheckCircle2,
-      iconClassName:
-        "bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400",
+      cardBg: "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20",
+      iconClassName: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
     },
     {
       title: "Processing",
       value: processing,
       icon: Clock3,
-      iconClassName:
-        "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
+      cardBg: "bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20",
+      iconClassName: "bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400",
     },
     {
       title: "Failed",
       value: failed,
       icon: XCircle,
-      iconClassName:
-        "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400",
+      cardBg: "bg-red-500/5 dark:bg-red-500/10 border-red-500/30",
+      iconClassName: "bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400",
     },
   ];
 
-  const quickLinks = [
-    {
-      title: "All Settlements",
-      description: "Every payout disbursed or scheduled.",
-      href: "/admin/billing/settlements/all",
-      icon: Wallet,
-    },
-    {
-      title: "Completed",
-      description: `${completed} payout${completed === 1 ? "" : "s"} disbursed.`,
-      href: "/admin/billing/settlements/completed",
-      icon: CheckCircle2,
-    },
-    {
-      title: "Processing",
-      description: `${processing} currently in flight.`,
-      href: "/admin/billing/settlements/processing",
-      icon: Clock3,
-    },
-    {
-      title: "Scheduled",
-      description: `${scheduled} queued for a future date.`,
-      href: "/admin/billing/settlements/scheduled",
-      icon: CalendarClock,
-    },
-    {
-      title: "Failed",
-      description: `${failed} that need retrying.`,
-      href: "/admin/billing/settlements/failed",
-      icon: XCircle,
-    },
-  ];
+  // 5 Most recent settlements sorted by scheduled date (newest to oldest)
+  const recentSettlements = [...settlements]
+    .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold">
-          Settlements
-        </h1>
+      {/* Header Banner */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settlements Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Payouts disbursed to merchants, agrodealers, buyers and cooperatives selling on the platform.
+          </p>
+        </div>
 
-        <p className="mt-2 text-muted-foreground">
-          Payouts disbursed to merchants, agrodealers, buyers and cooperatives selling on the platform.
-        </p>
+        {/* Primary Action Button */}
+        <Link href="/admin/billing/settlements/all">
+          <Button className="gap-2 shadow-xs cursor-pointer">
+            <ShieldCheck className="h-4 w-4" />
+            <span>View All Settlements</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
       </div>
 
+      {/* Snapshot Cards with Status Color Background Tints */}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
-            <Card key={stat.title}>
+            <Card key={stat.title} className={`border shadow-2xs transition-colors ${stat.cardBg}`}>
               <CardContent className="flex items-center justify-between p-6">
                 <div>
-                  <p className="text-sm text-muted-foreground">
-                    {stat.title}
-                  </p>
-
-                  <p className="mt-2 text-3xl font-bold">
-                    {stat.value}
-                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stat.title}</p>
+                  <p className="mt-2 text-3xl font-bold">{stat.value}</p>
                 </div>
 
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.iconClassName}`}
-                >
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl border ${stat.iconClassName}`}>
                   <Icon className="h-6 w-6" />
                 </div>
               </CardContent>
@@ -135,42 +109,20 @@ export default function SettlementsOverviewPage() {
         })}
       </section>
 
+      {/* Recent Settlements Triggered (Top 5 from most recent to oldest) */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">
-          Quick Links
-        </h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Recent Settlements Triggered</h2>
+            <p className="text-xs text-muted-foreground">The 5 most recent payouts processed or scheduled on the platform.</p>
+          </div>
 
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
-          {quickLinks.map((link) => {
-            const Icon = link.icon;
-
-            return (
-              <Link key={link.href} href={link.href}>
-                <Card className="group h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-lg">
-                  <CardContent className="flex h-full flex-col justify-between gap-4 p-5">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold">
-                        {link.title}
-                      </h3>
-
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {link.description}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+          <Link href="/admin/billing/settlements/all" className="text-xs font-medium text-primary hover:underline">
+            See full settlement history ➔
+          </Link>
         </div>
+
+        <SettlementTable settlements={recentSettlements} />
       </section>
     </div>
   );

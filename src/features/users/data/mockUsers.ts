@@ -96,7 +96,7 @@ export const mockUsers: PlatformUser[] = [
     lastName: 'Nwosu',
     email: 'ada@greenfieldsagro.com',
     phone: '+234 802 345 6702',
-    role: 'Agronomist',
+    role: 'Field Supervisor',
     status: 'active',
     organizationId: 'biz_1001',
     organizationName: 'Greenfields Agro Cooperative',

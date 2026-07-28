@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 
 export interface ExportTable {
   title: string;
@@ -132,23 +132,29 @@ export async function exportElementToImage(
   title: string,
   format: "png" | "jpeg" = "png"
 ) {
-  const canvas = await html2canvas(element, {
-    backgroundColor: "#ffffff",
-    scale: 2,
-  });
+  try {
+    const canvas = await html2canvas(element, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+    });
 
-  const mime =
-    format === "jpeg" ? "image/jpeg" : "image/png";
+    const mime = format === "jpeg" ? "image/jpeg" : "image/png";
+    const dataUrl = canvas.toDataURL(mime, 0.95);
 
-  const dataUrl = canvas.toDataURL(mime, 0.95);
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = `${slug(title)}.${format === "jpeg" ? "jpg" : "png"}`;
 
-  const link = document.createElement("a");
-  link.href = dataUrl;
-  link.download = `${slug(title)}.${format === "jpeg" ? "jpg" : "png"}`;
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error("Image export error:", err);
+    throw err;
+  }
 }
 
 function downloadBlob(

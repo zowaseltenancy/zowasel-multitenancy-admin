@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/card";
 
 import SettlementStatusBadge from "@/features/billing/components/SettlementStatusBadge";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { settlementService } from "@/features/billing/services/settlement.service";
 import { ORGANIZATION_TYPE_LABELS } from "@/constants/organization";
+import { ExportTable } from "@/lib/export";
 
 interface Props {
   params: Promise<{
@@ -24,18 +26,31 @@ export default async function SettlementDetailsPage({
 }: Props) {
   const { settlementId } = await params;
 
-  const settlement =
-    settlementService.getSettlementById(
-      settlementId
-    );
+  const settlement = settlementService.getSettlementById(settlementId);
 
   if (!settlement) {
     notFound();
   }
 
+  const exportTableData: ExportTable = {
+    title: `Settlement Record - ${settlement.settlementNumber}`,
+    headers: ["Field", "Value"],
+    rows: [
+      ["Settlement Number", settlement.settlementNumber],
+      ["Organization", settlement.organization],
+      ["Entity Type", ORGANIZATION_TYPE_LABELS[settlement.entityType]],
+      ["Amount", `${settlement.currency} ${settlement.amount.toLocaleString()}`],
+      ["Payout Method", settlement.payoutMethod],
+      ["Provider", settlement.provider],
+      ["Status", settlement.status],
+      ["Scheduled At", new Date(settlement.scheduledAt).toLocaleDateString()],
+      ["Completed At", settlement.completedAt ? new Date(settlement.completedAt).toLocaleDateString() : "Pending"],
+    ],
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
+    <div className="space-y-6" id="settlement-detail-capture">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/admin/billing/settlements"
@@ -54,9 +69,13 @@ export default async function SettlementDetailsPage({
           </p>
         </div>
 
-        <SettlementStatusBadge
-          status={settlement.status}
-        />
+        <div className="flex items-center gap-3">
+          <ExportMenu
+            table={exportTableData}
+            captureElementId="settlement-detail-capture"
+          />
+          <SettlementStatusBadge status={settlement.status} />
+        </div>
       </div>
 
       <Card>

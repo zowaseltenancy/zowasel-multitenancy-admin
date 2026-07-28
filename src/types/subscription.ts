@@ -24,6 +24,8 @@ export interface Subscription {
 
   status: SubscriptionStatus;
 
+  tier?: "Starter" | "Growth" | "Enterprise" | "Carbon" | "Government";
+
   autoRenew: boolean;
 
   startedAt: string;

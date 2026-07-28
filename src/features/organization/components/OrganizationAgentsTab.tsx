@@ -14,7 +14,7 @@ interface Props {
 
 export default function OrganizationAgentsTab({ organization }: Props) {
   const { users } = useUsers(organization.id);
-  const agents = users.filter((u) => u.role === "Field Agent" || u.role === "Agronomist" || u.role === "Field Supervisor");
+  const agents = users.filter((u) => u.role === "Field Agent" || u.role === "Field Supervisor");
 
   return (
     <Card className="bg-card">

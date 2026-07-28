@@ -70,28 +70,29 @@ export default function KybOverviewPage() {
       label: 'Total Submissions',
       value: allSubmittedDocuments.length,
       icon: FileCheck,
-      iconClassName: 'bg-primary/10 text-primary',
+      cardBg: 'bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20',
+      iconClassName: 'bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400',
     },
     {
       label: 'Approved',
       value: approved,
       icon: CheckCircle2,
-      iconClassName:
-        'bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400',
+      cardBg: 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20',
+      iconClassName: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400',
     },
     {
       label: 'Pending',
       value: pending,
       icon: Clock3,
-      iconClassName:
-        'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400',
+      cardBg: 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20',
+      iconClassName: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400',
     },
     {
       label: 'Rejected',
       value: rejected,
       icon: XCircle,
-      iconClassName:
-        'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400',
+      cardBg: 'bg-red-500/5 dark:bg-red-500/10 border-red-500/30',
+      iconClassName: 'bg-red-500/15 text-red-600 border-red-500/30 dark:text-red-400',
     },
   ];
 
@@ -127,23 +128,24 @@ export default function KybOverviewPage() {
         </p>
       </div>
 
+      {/* Snapshot Cards with Status Color Background Tints */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
-            <Card key={stat.label}>
+            <Card key={stat.label} className={`border shadow-2xs transition-colors ${stat.cardBg}`}>
               <CardContent className="flex items-center gap-4 p-6">
                 <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.iconClassName}`}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl border ${stat.iconClassName}`}
                 >
                   <Icon className="h-5 w-5" />
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
 
-                  <h3 className="text-2xl font-bold">{stat.value}</h3>
+                  <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -166,7 +168,7 @@ export default function KybOverviewPage() {
 
             return (
               <Link key={link.href} href={link.href}>
-                <Card className="group h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-lg">
+                <Card className="group h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-lg bg-card">
                   <CardContent className="flex h-full flex-col justify-between gap-5 p-5">
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
                       <Icon className="h-5 w-5" />
@@ -203,7 +205,7 @@ export default function KybOverviewPage() {
           </p>
         </div>
 
-        <Card className="overflow-hidden p-0">
+        <Card className="overflow-hidden p-0 bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">

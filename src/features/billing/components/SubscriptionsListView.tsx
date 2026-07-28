@@ -2,35 +2,33 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useInvoices } from "../hooks/useInvoices";
-import InvoiceTable from "./InvoiceTable";
+import { useSubscriptions } from "../hooks/useSubscriptions";
+import SubscriptionGrid from "./SubscriptionGrid";
 import SearchBar from "@/components/shared/SearchBar";
-import ExportMenu from "@/components/shared/ExportMenu";
 import Pagination from "@/components/shared/Pagination";
 import HierarchicalRegionFilter from "@/components/shared/HierarchicalRegionFilter";
-import { toInvoiceExportTable } from "../utils/invoice";
-import { InvoiceStatus } from "@/types/invoice";
+import { SubscriptionStatus } from "@/types/subscription";
 import { GeographicFilterState } from "@/types/geo";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
 
-export type InvoiceStatusFilter = InvoiceStatus | "all";
+export type SubscriptionStatusFilter = SubscriptionStatus | "all";
 
 interface Props {
   title: string;
   description: string;
-  statusFilter: InvoiceStatusFilter;
+  statusFilter: SubscriptionStatusFilter;
 }
 
-export default function InvoicesListView({
+export default function SubscriptionsListView({
   title,
   description,
   statusFilter,
 }: Props) {
-  const { invoices } = useInvoices();
+  const { subscriptions } = useSubscriptions();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [activeTab, setActiveTab] = useState<InvoiceStatusFilter>(statusFilter);
+  const [activeTab, setActiveTab] = useState<SubscriptionStatusFilter>(statusFilter);
 
   const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
     scope: "global",
@@ -39,23 +37,28 @@ export default function InvoicesListView({
     countryCode: "all",
   });
 
+  const activeCount = subscriptions.filter((s) => s.status === "Active").length;
+  const trialCount = subscriptions.filter((s) => s.status === "Trial").length;
+  const pastDueCount = subscriptions.filter((s) => s.status === "Past Due").length;
+  const cancelledCount = subscriptions.filter((s) => s.status === "Cancelled").length;
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return invoices.filter((invoice) => {
+    return subscriptions.filter((sub) => {
       const matchesStatus =
-        activeTab === "all" || invoice.status.toLowerCase() === activeTab.toLowerCase();
+        activeTab === "all" || sub.status.toLowerCase() === activeTab.toLowerCase();
 
       const matchesSearch =
         query.length === 0 ||
-        invoice.organization.toLowerCase().includes(query) ||
-        invoice.invoiceNumber.toLowerCase().includes(query);
+        sub.organization.toLowerCase().includes(query) ||
+        sub.product.toLowerCase().includes(query);
 
       // Geographic 4-Tier Filter matching
       let matchesGeo = true;
       if (geoFilter.continent !== "all" || geoFilter.subRegion !== "all" || geoFilter.countryCode !== "all") {
         const countryMatch = GLOBAL_COUNTRY_CURRENCIES.find(
-          (c) => c.currencyCode === invoice.currency
+          (c) => c.currencyCode === sub.currency
         );
 
         if (countryMatch) {
@@ -73,18 +76,18 @@ export default function InvoicesListView({
 
       return matchesStatus && matchesSearch && matchesGeo;
     });
-  }, [invoices, activeTab, search, geoFilter]);
+  }, [subscriptions, activeTab, search, geoFilter]);
 
   const totalItems = filtered.length;
   const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const STATUS_TABS = [
-    { key: "all", label: "All Invoices", href: "/admin/billing/invoices/all" },
-    { key: "Paid", label: "Paid", href: "/admin/billing/invoices/paid" },
-    { key: "Pending", label: "Pending", href: "/admin/billing/invoices/pending" },
-    { key: "Overdue", label: "Overdue", href: "/admin/billing/invoices/overdue" },
-    { key: "Void", label: "Void", href: "/admin/billing/invoices/void" },
+    { key: "all", label: "All Subscriptions", href: "/admin/billing/subscriptions/all", count: subscriptions.length },
+    { key: "Active", label: "Active", href: "/admin/billing/subscriptions/active", count: activeCount },
+    { key: "Trial", label: "Trial", href: "/admin/billing/subscriptions/trial", count: trialCount },
+    { key: "Past Due", label: "Past Due", href: "/admin/billing/subscriptions/past-due", count: pastDueCount },
+    { key: "Cancelled", label: "Cancelled", href: "/admin/billing/subscriptions/cancelled", count: cancelledCount },
   ] as const;
 
   return (
@@ -95,11 +98,6 @@ export default function InvoicesListView({
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         </div>
-
-        <ExportMenu
-          table={toInvoiceExportTable(filtered, title)}
-          captureElementId="invoice-table-capture"
-        />
       </div>
 
       {/* 4-Tier Geographic Cascading Filter */}
@@ -111,22 +109,18 @@ export default function InvoicesListView({
         }}
       />
 
-      {/* Tabbed Navigation Bar */}
+      {/* Tabbed Navigation Bar & Search */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
         <div className="flex flex-wrap gap-2">
           {STATUS_TABS.map((tab) => {
             const isActive = activeTab.toLowerCase() === tab.key.toLowerCase();
-            const count =
-              tab.key === "all"
-                ? invoices.length
-                : invoices.filter((i) => i.status.toLowerCase() === tab.key.toLowerCase()).length;
 
             return (
               <Link key={tab.key} href={tab.href}>
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveTab(tab.key as InvoiceStatusFilter);
+                    setActiveTab(tab.key as SubscriptionStatusFilter);
                     setPage(1);
                   }}
                   className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
@@ -137,7 +131,7 @@ export default function InvoicesListView({
                 >
                   <span>{tab.label}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-background text-muted-foreground border"}`}>
-                    {count}
+                    {tab.count}
                   </span>
                 </button>
               </Link>
@@ -151,23 +145,24 @@ export default function InvoicesListView({
             setSearch(value);
             setPage(1);
           }}
-          placeholder="Search by business or invoice number..."
+          placeholder="Search by business or product name..."
         />
       </div>
 
-      <div id="invoice-table-capture">
-        <InvoiceTable invoices={paginated} />
-      </div>
+      {/* Subscriptions Grid & Pagination */}
+      <section className="space-y-4">
+        <SubscriptionGrid subscriptions={paginated} />
 
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        onPageChange={setPage}
-        pageSize={pageSize}
-        onPageSizeChange={setPageSize}
-        totalItems={totalItems}
-        pageSizeOptions={[5, 10, 15, 20]}
-      />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+          pageSizeOptions={[5, 10, 15, 20]}
+        />
+      </section>
     </div>
   );
 }

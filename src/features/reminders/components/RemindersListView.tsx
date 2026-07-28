@@ -57,57 +57,57 @@ export default function RemindersListView() {
             Automated & manual billing notifications sent to business tenants before subscription renewals.
           </p>
         </div>
-        <Button variant="outline" className="gap-2 self-start sm:self-auto" onClick={() => setIsSettingsOpen(true)}>
+        <Button variant="outline" className="gap-2 self-start sm:self-auto cursor-pointer" onClick={() => setIsSettingsOpen(true)}>
           <Settings className="h-4 w-4" />
           Reminder Settings
         </Button>
       </div>
 
-      {/* Snapshot Cards */}
+      {/* Snapshot Cards with Status Color Background Tints */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20">
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Upcoming Expiring</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upcoming Expiring</p>
               <p className="mt-2 text-3xl font-bold">{reminders.filter((r) => r.status === "Upcoming").length}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 border border-blue-500/30 dark:text-blue-400">
               <Clock className="h-6 w-6" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20">
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Reminders Sent</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reminders Sent</p>
               <p className="mt-2 text-3xl font-bold">{reminders.filter((r) => r.status === "Sent").length}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
               <Send className="h-6 w-6" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-red-500/5 dark:bg-red-500/10 border-red-500/30">
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Overdue Subscriptions</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Overdue Subscriptions</p>
               <p className="mt-2 text-3xl font-bold">{reminders.filter((r) => r.status === "Overdue").length}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/15 text-red-600 border border-red-500/30 dark:text-red-400">
               <AlertTriangle className="h-6 w-6" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-purple-500/5 dark:bg-purple-500/10 border-purple-500/20">
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Auto-Renewal Active</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Auto-Renewal Active</p>
               <p className="mt-2 text-3xl font-bold">{reminders.filter((r) => r.status === "Auto-Renew").length}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600 border border-purple-500/30 dark:text-purple-400">
               <RefreshCw className="h-6 w-6" />
             </div>
           </CardContent>
@@ -115,7 +115,7 @@ export default function RemindersListView() {
       </div>
 
       {/* Main Reminders Table */}
-      <Card>
+      <Card className="bg-card">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -126,7 +126,7 @@ export default function RemindersListView() {
               placeholder="Search by business, product, or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-xs"
+              className="max-w-xs h-9 text-xs"
             />
           </div>
         </CardHeader>
@@ -163,7 +163,7 @@ export default function RemindersListView() {
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="gap-1.5"
+                        className="gap-1.5 cursor-pointer"
                         onClick={() => triggerPaymentReminder(item.id)}
                       >
                         <Mail className="h-3.5 w-3.5" />

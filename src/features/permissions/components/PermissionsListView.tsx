@@ -112,67 +112,71 @@ export default function PermissionsListView() {
 
   return (
     <div className="space-y-6">
-      {/* Metrics Banner */}
+      {/* Metrics Banner with Distinct Cyan Total Tint */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-card">
+        {/* Total Configured Roles - Cyan Tint */}
+        <Card className="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20 shadow-2xs">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Configured Roles
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Total Configured Roles
               </p>
               <h3 className="text-2xl font-bold mt-1">{roles.length}</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-cyan-600 dark:text-cyan-400 font-medium mt-0.5">
                 {totalSystemRoles} system, {totalCustomRoles} custom
               </p>
             </div>
-            <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+            <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-600 border border-cyan-500/30 dark:text-cyan-400">
               <Shield className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        {/* Granular Scopes - Blue Tint */}
+        <Card className="bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20 shadow-2xs">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Granular Scopes
               </p>
               <h3 className="text-2xl font-bold mt-1">{ALL_PERMISSIONS.length}</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5">
                 Across 7 system categories
               </p>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <div className="p-2.5 rounded-xl bg-blue-500/15 text-blue-600 border border-blue-500/30 dark:text-blue-400">
               <SlidersHorizontal className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        {/* Sensitive Scopes - Amber Tint */}
+        <Card className="bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Sensitive Scopes
               </p>
               <h3 className="text-2xl font-bold mt-1">{sensitiveScopesCount}</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
                 Requires elevated audit privileges
               </p>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400">
               <Lock className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        {/* Active Selection - Emerald Tint */}
+        <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Active Selection
               </p>
               <h3 className="text-lg font-semibold truncate mt-1">{selectedRole.name}</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
                 {selectedRole.permissions.length} active permissions
               </p>
             </div>
@@ -181,7 +185,7 @@ export default function PermissionsListView() {
                 variant="outline"
                 size="icon"
                 onClick={handleOpenEditModal}
-                className="h-8 w-8"
+                className="h-8 w-8 cursor-pointer"
                 title="Edit Role"
               >
                 <Edit className="h-4 w-4" />
@@ -191,7 +195,7 @@ export default function PermissionsListView() {
                   variant="outline"
                   size="icon"
                   onClick={() => setIsDeleteDialogOpen(true)}
-                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                  className="h-8 w-8 text-destructive hover:bg-destructive/10 cursor-pointer"
                   title="Delete Role"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -205,10 +209,10 @@ export default function PermissionsListView() {
       {/* Role Cards Grid */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Select Role to Inspect
           </h3>
-          <Button onClick={handleOpenCreateModal} size="sm" className="gap-2">
+          <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 cursor-pointer">
             <Plus className="h-4 w-4" />
             Create Custom Role
           </Button>

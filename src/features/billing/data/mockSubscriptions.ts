@@ -4,7 +4,8 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_001",
     organization: "FarmFresh Cooperative",
-    product: "CropPilot",
+    product: "CropPilot Enterprise",
+    tier: "Enterprise",
     amount: 250000,
     currency: "NGN",
     billingCycle: "Monthly",
@@ -16,7 +17,8 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_002",
     organization: "AgroHub Ghana",
-    product: "Marketplace",
+    product: "Marketplace Suite",
+    tier: "Growth",
     amount: 1200,
     currency: "GHS",
     billingCycle: "Quarterly",
@@ -28,7 +30,8 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_003",
     organization: "Green Harvest Ltd",
-    product: "GeoMapping",
+    product: "D-MRV Carbon Traceability",
+    tier: "Carbon",
     amount: 1800,
     currency: "USD",
     billingCycle: "Yearly",
@@ -40,7 +43,8 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_004",
     organization: "Harvest Link Africa",
-    product: "Soil Analytics",
+    product: "Soil Analytics Pro",
+    tier: "Growth",
     amount: 320000,
     currency: "NGN",
     billingCycle: "Monthly",
@@ -52,7 +56,8 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_005",
     organization: "Savannah Growers",
-    product: "Commodity Price Intelligence",
+    product: "Cooperative Registry",
+    tier: "Starter",
     amount: 90000,
     currency: "KES",
     billingCycle: "Monthly",
@@ -64,7 +69,8 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_006",
     organization: "EcoFarm Nigeria",
-    product: "Farmer360",
+    product: "Farmer360 & Advisory",
+    tier: "Starter",
     amount: 450000,
     currency: "NGN",
     billingCycle: "Yearly",
