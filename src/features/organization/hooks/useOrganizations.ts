@@ -59,6 +59,31 @@ export function useOrganizations() {
     );
   };
 
+  const markKybPending = (organizationId: string) => {
+    setOrganizations((current) =>
+      current.map((organization) => {
+        if (organization.id !== organizationId) {
+          return organization;
+        }
+
+        return {
+          ...organization,
+          kybStatus: "pending",
+          kybSubmittedAt:
+            organization.kybSubmittedAt ?? new Date().toISOString(),
+          kybApprovedAt: null,
+          kybRejectionReason: null,
+          kybDocuments: organization.kybDocuments.map(
+            (document) => ({
+              ...document,
+              status: "pending",
+            })
+          ),
+        };
+      })
+    );
+  };
+
   const updateTeamMember = (
     organizationId: string,
     memberId: string,
@@ -110,6 +135,7 @@ export function useOrganizations() {
     organizations,
     approveKyb,
     rejectKyb,
+    markKybPending,
     updateTeamMember,
     removeTeamMember,
   };

@@ -21,6 +21,7 @@ export default function KybDetailView({
     organizations,
     approveKyb,
     rejectKyb,
+    markKybPending,
   } = useOrganizations();
 
   const organization = organizations.find(
@@ -108,6 +109,7 @@ export default function KybDetailView({
         organization={organization}
         onApprove={approveKyb}
         onReject={rejectKyb}
+        onMarkPending={markKybPending}
       />
     </div>
   );

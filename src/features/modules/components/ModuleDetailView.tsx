@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Package,
@@ -52,12 +52,19 @@ export default function ModuleDetailView({ moduleId }: ModuleDetailViewProps) {
 
   const [activeTab, setActiveTab] = useState<"overview" | "submodules" | "tenants">("overview");
   const [searchTerm, setSearchTerm] = useState("");
+  const [priceInput, setPriceInput] = useState("");
   const [isAddSubOpen, setIsAddSubOpen] = useState(false);
   const [subName, setSubName] = useState("");
   const [subDescription, setSubDescription] = useState("");
   const [subRequiresKyb, setSubRequiresKyb] = useState(false);
 
   const detailData = getModuleDetail(moduleId);
+
+  useEffect(() => {
+    if (detailData) {
+      setPriceInput(detailData.module.pricePerMonth.toString());
+    }
+  }, [detailData]);
 
   usePageHeader(
     detailData?.module.name ?? "Module Detail",
@@ -305,7 +312,8 @@ export default function ModuleDetailView({ moduleId }: ModuleDetailViewProps) {
                           type="number"
                           min="0"
                           disabled={!module.isPaid}
-                          defaultValue={module.pricePerMonth}
+                          value={priceInput}
+                          onChange={(e) => setPriceInput(e.target.value)}
                           onBlur={(e) =>
                             handleSavePricing(module.isPaid, Number(e.target.value) || 0)
                           }

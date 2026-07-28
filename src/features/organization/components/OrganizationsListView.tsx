@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { KybStatus } from "@/types/kyb";
 import { useOrganizations } from "../hooks/useOrganizations";
+import Pagination from "@/components/shared/Pagination";
 
 import OrganizationSearchBar from "./OrganizationSearchBar";
 import OrganizationTable from "./OrganizationTable";
+
+const PAGE_SIZE = 5;
 
 interface Props {
   title: string;
@@ -24,9 +27,10 @@ export default function OrganizationsListView({
   const { organizations } = useOrganizations();
 
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const filtered = organizations.filter(
-    (organization) => {
+  const filtered = useMemo(() => {
+    return organizations.filter((organization) => {
       const matchesFilter =
         defaultFilter === "all" ||
         organization.kybStatus === defaultFilter;
@@ -35,19 +39,25 @@ export default function OrganizationsListView({
 
       const matchesSearch =
         query.length === 0 ||
-        organization.name
-          .toLowerCase()
-          .includes(query) ||
-        organization.owner.email
-          .toLowerCase()
-          .includes(query) ||
-        organization.owner.name
-          .toLowerCase()
-          .includes(query);
+        organization.name.toLowerCase().includes(query) ||
+        organization.owner.email.toLowerCase().includes(query) ||
+        organization.owner.name.toLowerCase().includes(query);
 
       return matchesFilter && matchesSearch;
-    }
-  );
+    });
+  }, [organizations, defaultFilter, search]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
+
+  const paginatedOrganizations = useMemo(() => {
+    const startIndex = (page - 1) * PAGE_SIZE;
+    return filtered.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filtered, page]);
 
   return (
     <div className="space-y-6">
@@ -64,12 +74,18 @@ export default function OrganizationsListView({
 
         <OrganizationSearchBar
           value={search}
-          onChange={setSearch}
+          onChange={handleSearchChange}
         />
       </div>
 
       <OrganizationTable
-        organizations={filtered}
+        organizations={paginatedOrganizations}
+      />
+
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        onPageChange={setPage}
       />
     </div>
   );

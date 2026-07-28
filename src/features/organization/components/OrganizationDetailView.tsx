@@ -41,8 +41,8 @@ export default function OrganizationDetailView({
     organizations,
     approveKyb,
     rejectKyb,
+    markKybPending,
     updateTeamMember,
-    removeTeamMember,
   } = useOrganizations();
 
   const [activeTab, setActiveTab] =
@@ -101,6 +101,7 @@ export default function OrganizationDetailView({
           organization={organization}
           onApprove={approveKyb}
           onReject={rejectKyb}
+          onMarkPending={markKybPending}
         />
       )}
 
@@ -114,7 +115,6 @@ export default function OrganizationDetailView({
         <OrganizationTeamTab
           organization={organization}
           onUpdateMember={updateTeamMember}
-          onRemoveMember={removeTeamMember}
         />
       )}
 

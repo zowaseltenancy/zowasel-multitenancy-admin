@@ -1,16 +1,20 @@
 "use client";
 
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
   Clock3,
   FileCheck,
+  FileText,
   XCircle,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { KYB_DOCUMENT_LABELS } from "@/constants/kyb";
 import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
+import Pagination from "@/components/shared/Pagination";
 
 export default function KybOverviewPage() {
   const { organizations } = useOrganizations();
@@ -30,13 +34,41 @@ export default function KybOverviewPage() {
       organization.kybStatus === "rejected"
   ).length;
 
+  const allSubmittedDocuments = useMemo(() => {
+    return organizations
+      .flatMap((org) =>
+        org.kybDocuments.map((doc) => ({
+          ...doc,
+          organizationId: org.id,
+          organizationName: org.name,
+          businessId: org.businessId,
+          ownerName: org.owner.name,
+          kybStatus: org.kybStatus,
+        }))
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+      );
+  }, [organizations]);
+
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(allSubmittedDocuments.length / pageSize));
+
+  useEffect(() => {
+    setPage(1);
+  }, [allSubmittedDocuments.length]);
+
+  const paginatedDocuments = allSubmittedDocuments.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
   const stats = [
     {
       label: "Total Submissions",
-      value: organizations.filter(
-        (organization) =>
-          organization.kybStatus !== "not_submitted"
-      ).length,
+      value: allSubmittedDocuments.length,
       icon: FileCheck,
       iconClassName: "bg-primary/10 text-primary",
     },
@@ -169,6 +201,89 @@ export default function KybOverviewPage() {
             );
           })}
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">
+            Recently Submitted Documents
+          </h2>
+
+          <p className="text-sm text-muted-foreground">
+            Chronological audit feed of all document uploads submitted across organizations.
+          </p>
+        </div>
+
+        <Card className="overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-6 py-4 font-medium">Document Type</th>
+                  <th className="px-6 py-4 font-medium">Organization</th>
+                  <th className="px-6 py-4 font-medium">Uploaded Date</th>
+                  <th className="px-6 py-4 font-medium">Doc Status</th>
+                  <th className="px-6 py-4 text-right font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {allSubmittedDocuments.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-sm text-muted-foreground">
+                      No document submissions found.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedDocuments.map((doc, idx) => (
+                    <tr
+                      key={`${doc.organizationId}-${doc.type}-${idx}`}
+                      className="transition-colors hover:bg-muted/30"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-medium">
+                            {KYB_DOCUMENT_LABELS[doc.type] ?? doc.type}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-medium">{doc.organizationName}</p>
+                        <p className="text-xs text-muted-foreground">{doc.businessId} • {doc.ownerName}</p>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {new Date(doc.uploadedAt).toLocaleDateString()} {new Date(doc.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4 capitalize">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                          doc.status === "verified"
+                            ? "border-green-200 bg-green-100 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
+                            : doc.status === "rejected"
+                            ? "border-red-200 bg-red-100 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                            : "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                        }`}>
+                          {doc.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link
+                          href={`/admin/kyb/${doc.organizationId}`}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                        >
+                          Inspect Document
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          </Card>
+          <div className="p-4">
+            <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
+          </div>
       </section>
     </div>
   );

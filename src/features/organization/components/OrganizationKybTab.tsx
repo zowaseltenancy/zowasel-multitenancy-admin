@@ -21,17 +21,19 @@ interface Props {
     organizationId: string,
     reason: string
   ) => void;
+
+  onMarkPending?: (organizationId: string) => void;
 }
 
 export default function OrganizationKybTab({
   organization,
   onApprove,
   onReject,
+  onMarkPending,
 }: Props) {
   const [rejectOpen, setRejectOpen] = useState(false);
 
-  const canDecide =
-    organization.kybStatus === "pending";
+  const isPending = organization.kybStatus === "pending";
 
   return (
     <div className="space-y-6">
@@ -68,22 +70,35 @@ export default function OrganizationKybTab({
               )}
             </div>
 
-            {canDecide && (
-              <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              {!isPending && onMarkPending && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onMarkPending(organization.id);
+                    toast.success(
+                      `${organization.name}'s KYB status moved to Pending.`
+                    );
+                  }}
+                >
+                  Mark as Pending
+                </Button>
+              )}
+
+              {(isPending || organization.kybStatus === "approved") && (
                 <Button
                   variant="outline"
                   className="border-destructive text-destructive hover:bg-destructive/10"
-                  onClick={() =>
-                    setRejectOpen(true)
-                  }
+                  onClick={() => setRejectOpen(true)}
                 >
                   Reject
                 </Button>
+              )}
 
+              {(isPending || organization.kybStatus === "rejected" || organization.kybStatus === "not_submitted") && (
                 <Button
                   onClick={() => {
                     onApprove(organization.id);
-
                     toast.success(
                       `${organization.name}'s KYB has been approved.`
                     );
@@ -91,8 +106,8 @@ export default function OrganizationKybTab({
                 >
                   Approve
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {organization.kybRejectionReason && (

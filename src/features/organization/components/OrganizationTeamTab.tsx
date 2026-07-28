@@ -1,10 +1,9 @@
 "use client";
 
-import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Organization,
   TeamMemberRole,
@@ -18,17 +17,11 @@ interface Props {
     memberId: string,
     updates: { role?: TeamMemberRole; isActive?: boolean }
   ) => void;
-
-  onRemoveMember: (
-    organizationId: string,
-    memberId: string
-  ) => void;
 }
 
 export default function OrganizationTeamTab({
   organization,
   onUpdateMember,
-  onRemoveMember,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -91,34 +84,13 @@ export default function OrganizationTeamTab({
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <select
-                        value={member.role}
-                        onChange={(event) => {
-                          onUpdateMember(
-                            organization.id,
-                            member.id,
-                            {
-                              role: event.target
-                                .value as TeamMemberRole,
-                            }
-                          );
-
-                          toast.success(
-                            `${member.name}'s role updated.`
-                          );
-                        }}
-                        className="h-9 rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary"
-                      >
-                        <option value="admin">
-                          Admin
-                        </option>
-                        <option value="member">
-                          Member
-                        </option>
-                        <option value="viewer">
-                          Viewer
-                        </option>
-                      </select>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {member.role === "admin"
+                          ? "Admin"
+                          : member.role === "member"
+                          ? "Member"
+                          : "Viewer"}
+                      </span>
 
                       <button
                         type="button"
@@ -143,22 +115,13 @@ export default function OrganizationTeamTab({
                           : "Inactive"}
                       </button>
 
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => {
-                          onRemoveMember(
-                            organization.id,
-                            member.id
-                          );
-
-                          toast.success(
-                            `${member.name} was removed from the team.`
-                          );
-                        }}
+                      <Link
+                        href={`/admin/organizations/${organization.id}/team/${member.id}`}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                        View
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
                     </div>
                   </div>
                 )
