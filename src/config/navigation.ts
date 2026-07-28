@@ -41,48 +41,12 @@ export const navigation: NavigationItem[] = [
         href: "/admin/organizations/all",
       },
       {
-        label: "Pending Approval",
+        label: "Pending KYB",
         href: "/admin/organizations/pending",
       },
       {
         label: "Cooperatives",
         href: "/admin/organizations/cooperatives",
-      },
-    ],
-  },
-
-  {
-    label: "Users",
-    href: "/admin/users",
-    icon: Users,
-    children: [
-      {
-        label: "Admins",
-        href: "/admin/users/admins",
-      },
-      {
-        label: "Farmers",
-        href: "/admin/users/farmers",
-      },
-      {
-        label: "Buyers",
-        href: "/admin/users/buyers",
-      },
-      {
-        label: "Merchants",
-        href: "/admin/users/merchants",
-      },
-    ],
-  },
-
-  {
-    label: "Roles",
-    href: "/admin/roles",
-    icon: ShieldCheck,
-    children: [
-      {
-        label: "Permissions",
-        href: "/admin/roles/permissions",
       },
     ],
   },
@@ -97,52 +61,100 @@ export const navigation: NavigationItem[] = [
         href: "/admin/modules/installed",
       },
       {
-        label: "Marketplace",
+        label: "Marketplace Trading",
         href: "/admin/modules/marketplace",
+      },
+      {
+        label: "CropPilot Core",
+        href: "/admin/modules?category=croppilot",
+      },
+      {
+        label: "Analytics",
+        href: "/admin/modules?category=analytics",
+      },
+      {
+        label: "Carbon & Sustainability",
+        href: "/admin/modules?category=carbon_sustainability",
       },
     ],
   },
 
   {
-    label: "KYB",
+    label: "KYB Review",
     href: "/admin/kyb",
     icon: FileCheck,
     children: [
       {
-        label: "Pending",
+        label: "Pending Queue",
         href: "/admin/kyb/pending",
       },
       {
-        label: "Approved",
+        label: "Approved Tenants",
         href: "/admin/kyb/approved",
       },
       {
-        label: "Rejected",
+        label: "Rejected Applications",
         href: "/admin/kyb/rejected",
       },
     ],
   },
 
   {
-    label: "Billing",
+    label: "Users & Staff",
+    href: "/admin/users",
+    icon: Users,
+    children: [
+      {
+        label: "Tenant Admins",
+        href: "/admin/users/admins",
+      },
+      {
+        label: "Farmers & Producers",
+        href: "/admin/users/farmers",
+      },
+      {
+        label: "Commodity Buyers",
+        href: "/admin/users/buyers",
+      },
+      {
+        label: "Input Merchants",
+        href: "/admin/users/merchants",
+      },
+    ],
+  },
+
+  {
+    label: "Roles & Security",
+    href: "/admin/roles",
+    icon: ShieldCheck,
+    children: [
+      {
+        label: "Permissions Matrix",
+        href: "/admin/roles/permissions",
+      },
+    ],
+  },
+
+  {
+    label: "Billing & Finance",
     href: "/admin/billing",
     icon: CreditCard,
     children: [
       {
-        label: "Providers",
+        label: "Payment Providers",
         href: "/admin/billing/providers",
       },
       {
-        label: "Currency",
+        label: "Currencies & Rates",
         href: "/admin/billing/currency",
-      },
-      {
-        label: "Transactions",
-        href: "/admin/billing/transactions",
       },
       {
         label: "Subscriptions",
         href: "/admin/billing/subscriptions",
+      },
+      {
+        label: "Transactions",
+        href: "/admin/billing/transactions",
       },
       {
         label: "Invoices",
@@ -153,7 +165,11 @@ export const navigation: NavigationItem[] = [
         href: "/admin/billing/settlements",
       },
       {
-        label: "Settings",
+        label: "Expirations & Reminders",
+        href: "/admin/billing/reminders",
+      },
+      {
+        label: "Platform Settings",
         href: "/admin/billing/settings",
       },
     ],

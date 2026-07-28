@@ -12,11 +12,12 @@ interface Props {
 
 export default function Header({ onToggle }: Props) {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-card px-6">
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6">
       <div className="flex items-center gap-4">
         <button
+          type="button"
           onClick={onToggle}
-          className="rounded-lg border border-border p-2 transition hover:bg-muted"
+          className="rounded-lg border border-border p-2 transition hover:bg-muted cursor-pointer"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -26,7 +27,6 @@ export default function Header({ onToggle }: Props) {
 
       <div className="flex items-center gap-3">
         <ThemeToggle />
-
         <UserMenu />
       </div>
     </header>

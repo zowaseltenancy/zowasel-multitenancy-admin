@@ -81,5 +81,6 @@ export function usePageHeader(
 }
 
 export function usePageHeaderValue() {
-  return usePageHeaderContext();
+  const context = useContext(PageHeaderContext);
+  return context ?? { title: null, description: null };
 }

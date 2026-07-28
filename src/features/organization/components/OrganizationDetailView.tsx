@@ -14,6 +14,9 @@ import OrganizationProfileTab from "./OrganizationProfileTab";
 import OrganizationKybTab from "./OrganizationKybTab";
 import OrganizationModulesTab from "./OrganizationModulesTab";
 import OrganizationTeamTab from "./OrganizationTeamTab";
+import OrganizationUsersTab from "./OrganizationUsersTab";
+import OrganizationAgentsTab from "./OrganizationAgentsTab";
+import OrganizationProjectsTab from "./OrganizationProjectsTab";
 
 interface Props {
   organizationId: string;
@@ -21,9 +24,12 @@ interface Props {
 
 const TABS = [
   { key: "profile", label: "Profile" },
-  { key: "kyb", label: "KYB" },
-  { key: "modules", label: "Modules" },
-  { key: "team", label: "Team" },
+  { key: "kyb", label: "KYB Verification" },
+  { key: "modules", label: "Active Modules" },
+  { key: "team", label: "Team Members" },
+  { key: "users", label: "Farmers & Users" },
+  { key: "agents", label: "Field Agents" },
+  { key: "projects", label: "Agro Projects" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -46,40 +52,24 @@ export default function OrganizationDetailView({
     (item) => item.id === organizationId
   );
 
-  usePageHeader(
-    organization?.name ?? "Organization",
-    organization?.businessId
-  );
-
   if (!organization) {
     notFound();
   }
 
+  usePageHeader(
+    organization.name,
+    organization.businessId
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/admin/organizations"
-          className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Organizations
-        </Link>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold">
-            {organization.name}
-          </h1>
-
-          <KybStatusBadge
-            status={organization.kybStatus}
-          />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-muted-foreground">{organization.businessId}</span>
+          <span>•</span>
+          <span className="text-sm text-muted-foreground">{organization.owner.email}</span>
         </div>
-
-        <p className="mt-2 text-muted-foreground">
-          {organization.businessId} ·{" "}
-          {organization.owner.email}
-        </p>
+        <KybStatusBadge status={organization.kybStatus} />
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
@@ -125,6 +115,24 @@ export default function OrganizationDetailView({
           organization={organization}
           onUpdateMember={updateTeamMember}
           onRemoveMember={removeTeamMember}
+        />
+      )}
+
+      {activeTab === "users" && (
+        <OrganizationUsersTab
+          organization={organization}
+        />
+      )}
+
+      {activeTab === "agents" && (
+        <OrganizationAgentsTab
+          organization={organization}
+        />
+      )}
+
+      {activeTab === "projects" && (
+        <OrganizationProjectsTab
+          organization={organization}
         />
       )}
     </div>
