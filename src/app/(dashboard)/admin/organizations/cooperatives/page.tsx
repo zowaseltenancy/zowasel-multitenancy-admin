@@ -1,22 +1,27 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 
-import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
-import OrganizationTable from "@/features/organization/components/OrganizationTable";
-import OrganizationSearchBar from "@/features/organization/components/OrganizationSearchBar";
-import Pagination from "@/components/shared/Pagination";
+import Pagination from '@/components/shared/Pagination';
+import OrganizationSearchBar from '@/features/organization/components/OrganizationSearchBar';
+import OrganizationStatsCards from '@/features/organization/components/OrganizationStatsCards';
+import OrganizationTable from '@/features/organization/components/OrganizationTable';
+import OrganizationTabs from '@/features/organization/components/OrganizationTabs';
+import { useOrganizations } from '@/features/organization/hooks/useOrganizations';
+import { KybStatus } from '@/types/kyb';
 
 const PAGE_SIZE = 5;
 
 export default function CooperativeOrganizationsPage() {
   const { organizations } = useOrganizations();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+
+  const [activeFilter, setActiveFilter] = useState<KybStatus | 'all'>('all');
 
   const cooperatives = useMemo(() => {
     return organizations.filter((organization) => {
-      const isCoop = organization.type === "cooperative";
+      const isCoop = organization.type === 'cooperative';
       const query = search.trim().toLowerCase();
       const matchesSearch =
         query.length === 0 ||
@@ -24,9 +29,12 @@ export default function CooperativeOrganizationsPage() {
         organization.owner.email.toLowerCase().includes(query) ||
         organization.owner.name.toLowerCase().includes(query);
 
-      return isCoop && matchesSearch;
+      const matchesFilter =
+        activeFilter === 'all' || organization.kybStatus === activeFilter;
+
+      return isCoop && matchesSearch && matchesFilter;
     });
-  }, [organizations, search]);
+  }, [organizations, search, activeFilter]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -42,32 +50,35 @@ export default function CooperativeOrganizationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">
-            Cooperatives
-          </h1>
+      <div>
+        <h1 className="text-3xl font-bold">Cooperatives</h1>
 
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Organizations registered as farmer cooperatives rather than single-owner businesses.
-          </p>
-        </div>
-
-        <OrganizationSearchBar
-          value={search}
-          onChange={handleSearchChange}
-        />
+        <p className="mt-2 max-w-2xl text-muted-foreground">
+          Organizations registered as farmer cooperatives rather than
+          single-owner businesses.
+        </p>
       </div>
 
-      <OrganizationTable
-        organizations={paginated}
+      <OrganizationStatsCards
+        organizations={organizations.filter(
+          (organization) => organization.type === 'cooperative'
+        )}
+        activeFilter={activeFilter}
+        onFilterChange={(value) => {
+          setActiveFilter(value);
+          setPage(1);
+        }}
       />
 
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        onPageChange={setPage}
+      <OrganizationTabs
+        rightElement={
+          <OrganizationSearchBar value={search} onChange={handleSearchChange} />
+        }
       />
+
+      <OrganizationTable organizations={paginated} />
+
+      <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
     </div>
   );
 }
