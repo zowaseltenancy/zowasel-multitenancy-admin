@@ -53,7 +53,7 @@ export default function HierarchicalRegionFilter({ value, onChange, className }:
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <Globe className="h-3.5 w-3.5 text-primary" /> 1. Continental Scope
+            <Globe className="h-3.5 w-3.5 text-primary" /> Continent
           </label>
           <span className="text-xs text-muted-foreground font-medium">
             {availableCountries.length} countries mapped
@@ -87,7 +87,7 @@ export default function HierarchicalRegionFilter({ value, onChange, className }:
         {/* Sub-Region Selector */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-            <Layers className="h-3.5 w-3.5 text-primary" /> 2. Sub-Region / PAPSS Network
+            <Layers className="h-3.5 w-3.5 text-primary" /> Sub-Region
           </label>
           <select
             value={value.subRegion}
@@ -105,7 +105,7 @@ export default function HierarchicalRegionFilter({ value, onChange, className }:
         {/* Country Selector */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5 text-primary" /> 3. Country & Currency
+            <MapPin className="h-3.5 w-3.5 text-primary" /> Country & Currency
           </label>
           <select
             value={value.countryCode}
@@ -136,7 +136,7 @@ export default function HierarchicalRegionFilter({ value, onChange, className }:
         </div>
         {value.subRegion === "caribbean" && (
           <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-semibold text-[10px]">
-            ⚡ PAPSS Caribbean Network Active
+            PAPSS Caribbean Network Active
           </span>
         )}
       </div>

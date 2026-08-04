@@ -24,9 +24,14 @@ export function useUsers(initialOrgId?: string) {
     );
   };
 
+  const addUser = (user: PlatformUser) => {
+    setUsers((current) => [user, ...current]);
+  };
+
   return {
     users,
     getUserById,
     toggleUserStatus,
+    addUser,
   };
 }

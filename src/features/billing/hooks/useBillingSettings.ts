@@ -11,8 +11,7 @@ const defaultSettings: BillingSettings = {
   taxRatePercentage: 7.5,
   taxRegistrationNumber: "",
   reminderRatePerHour: 50,
-  reminderDaysBeforeDue: 3,
-  defaultEscalationTarget: "operations_team",
+  reminderScheduleDays: [14, 7, 3],
   webhookUrl: "",
 };
 

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { clampMarkup, MAX_MARKUP_PERCENTAGE } from "@/constants/currency";
 
 interface RegionalMarkupItem {
   key: string;
@@ -101,17 +102,17 @@ export default function CurrencyMarkupConfig({
   ];
 
   const handleSaveGlobal = () => {
-    const val = Number(globalInput);
-    if (!Number.isNaN(val)) {
-      onGlobalMarkupChange(val);
-      toast.success(`Global fallback markup rate updated to ${val}%! Table rates updated.`);
-      setIsGlobalOpen(false);
-    }
+    const val = clampMarkup(Number(globalInput));
+    onGlobalMarkupChange(val);
+    setGlobalInput(val.toString());
+    toast.success(`Global fallback markup rate updated to ${val}%! Table rates updated.`);
+    setIsGlobalOpen(false);
   };
 
   const handleSaveRegion = (key: string, regionName: string, value: number) => {
-    onRegionalMarkupChange(key, value);
-    toast.success(`${regionName} regional markup updated to +${value}%! Table rates recalculated.`);
+    const clamped = clampMarkup(value);
+    onRegionalMarkupChange(key, clamped);
+    toast.success(`${regionName} regional markup updated to +${clamped}%! Table rates recalculated.`);
   };
 
   return (
@@ -149,7 +150,7 @@ export default function CurrencyMarkupConfig({
                 <Input
                   type="number"
                   min={0}
-                  max={20}
+                  max={MAX_MARKUP_PERCENTAGE}
                   step={0.1}
                   value={globalInput}
                   onChange={(e) => setGlobalInput(e.target.value)}
@@ -222,10 +223,10 @@ export default function CurrencyMarkupConfig({
                             <Input
                               type="number"
                               min={0}
-                              max={20}
+                              max={MAX_MARKUP_PERCENTAGE}
                               step={0.1}
                               value={val}
-                              onChange={(e) => onRegionalMarkupChange(r.key, Number(e.target.value))}
+                              onChange={(e) => onRegionalMarkupChange(r.key, clampMarkup(Number(e.target.value)))}
                               className="pr-6 h-8 text-right text-xs font-mono font-semibold"
                             />
                             <Percent className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />

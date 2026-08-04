@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { TeamMemberRole } from "@/types/organization";
+import { AssignedStaffMember, Organization, TeamMemberRole } from "@/types/organization";
 
 import { mockOrganizations } from "../data/mockOrganizations";
 
@@ -131,6 +131,72 @@ export function useOrganizations() {
     );
   };
 
+  const toggleKeyOfficerStatus = (
+    organizationId: string,
+    officerId: string
+  ) => {
+    setOrganizations((current) =>
+      current.map((organization) => {
+        if (organization.id !== organizationId) {
+          return organization;
+        }
+
+        return {
+          ...organization,
+          keyOfficers: (organization.keyOfficers ?? []).map((officer) =>
+            officer.id === officerId
+              ? { ...officer, isActive: officer.isActive === false }
+              : officer
+          ),
+        };
+      })
+    );
+  };
+
+  const addOrganization = (organization: Organization) => {
+    setOrganizations((current) => [organization, ...current]);
+  };
+
+  const assignStaff = (
+    organizationId: string,
+    slot: "primary" | "secondary",
+    staff: AssignedStaffMember | null
+  ) => {
+    setOrganizations((current) =>
+      current.map((organization) => {
+        if (organization.id !== organizationId) {
+          return organization;
+        }
+
+        return {
+          ...organization,
+          assignedStaff: {
+            ...organization.assignedStaff,
+            [slot]: staff ?? undefined,
+          },
+        };
+      })
+    );
+  };
+
+  const swapAssignedStaff = (organizationId: string) => {
+    setOrganizations((current) =>
+      current.map((organization) => {
+        if (organization.id !== organizationId) {
+          return organization;
+        }
+
+        return {
+          ...organization,
+          assignedStaff: {
+            primary: organization.assignedStaff?.secondary,
+            secondary: organization.assignedStaff?.primary,
+          },
+        };
+      })
+    );
+  };
+
   return {
     organizations,
     approveKyb,
@@ -138,5 +204,9 @@ export function useOrganizations() {
     markKybPending,
     updateTeamMember,
     removeTeamMember,
+    toggleKeyOfficerStatus,
+    addOrganization,
+    assignStaff,
+    swapAssignedStaff,
   };
 }

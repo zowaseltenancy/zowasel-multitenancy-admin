@@ -3,6 +3,8 @@ import { Building2, Calendar, Mail, Phone, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import UserRoleBadge from "./UserRoleBadge";
 import UserStatusBadge from "./UserStatusBadge";
+import BuyerTierBadge from "./BuyerTierBadge";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { PlatformUser } from "@/types/user";
 
 interface Props {
@@ -15,10 +17,12 @@ export default function UserProfileHero({ user }: Props) {
       <CardContent className="p-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-bold text-primary">
-              {user.firstName[0]}
-              {user.lastName[0]}
-            </div>
+            <UserAvatar
+              avatarUrl={user.avatarUrl}
+              firstName={user.firstName}
+              lastName={user.lastName}
+              className="h-16 w-16 text-2xl"
+            />
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold">
@@ -30,6 +34,7 @@ export default function UserProfileHero({ user }: Props) {
                 <div className="flex items-center gap-1.5">
                   <Shield className="h-4 w-4 text-primary" />
                   <UserRoleBadge role={user.role} />
+                  {user.buyerTier && <BuyerTierBadge tier={user.buyerTier} />}
                 </div>
                 <span>•</span>
                 <Link

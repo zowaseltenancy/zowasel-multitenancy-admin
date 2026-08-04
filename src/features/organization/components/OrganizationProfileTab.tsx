@@ -1,9 +1,12 @@
 import KybStatusBadge from '@/components/shared/KybStatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Organization } from '@/types/organization';
+import { AssignedStaffMember, Organization } from '@/types/organization';
+import StaffAssignmentCard from './StaffAssignmentCard';
 
 interface Props {
   organization: Organization;
+  onAssignStaff: (organizationId: string, slot: "primary" | "secondary", staff: AssignedStaffMember | null) => void;
+  onSwapStaff: (organizationId: string) => void;
 }
 
 function Info({ label, value }: { label: string; value: string }) {
@@ -16,7 +19,7 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function OrganizationProfileTab({ organization }: Props) {
+export default function OrganizationProfileTab({ organization, onAssignStaff, onSwapStaff }: Props) {
   const moduleCount = organization.subscriptions.reduce(
     (total, subscription) => total + subscription.activeModules.length,
     0
@@ -84,6 +87,12 @@ export default function OrganizationProfileTab({ organization }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      <StaffAssignmentCard
+        organization={organization}
+        onAssign={onAssignStaff}
+        onSwap={onSwapStaff}
+      />
     </div>
   );
 }

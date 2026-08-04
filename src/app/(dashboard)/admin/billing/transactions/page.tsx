@@ -15,7 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import TransactionVolumeChart from "@/features/billing/components/TransactionVolumeChart";
-import VolumeComparisonCard from "@/features/billing/components/VolumeComparisonCard";
+import VolumeCarouselCard from "@/features/billing/components/VolumeCarouselCard";
 import { useTransactions } from "@/features/billing/hooks/useTransactions";
 import { comparePeriod } from "@/features/billing/utils/transaction";
 
@@ -120,14 +120,19 @@ export default function TransactionsOverviewPage() {
         </Link>
       </div>
 
-      {/* Volume Comparisons */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Volume Overview</h2>
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          <VolumeComparisonCard label="Today" comparisonLabel="yesterday" comparison={dayComparison} />
-          <VolumeComparisonCard label="This Week" comparisonLabel="last week" comparison={weekComparison} />
-          <VolumeComparisonCard label="This Month" comparisonLabel="last month" comparison={monthComparison} />
-          <VolumeComparisonCard label="This Year" comparisonLabel="last year" comparison={yearComparison} />
+      {/* Side-by-Side Line: Volume Overview Carousel Card + Volume Trend Chart */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-4">
+          <VolumeCarouselCard
+            dayComparison={dayComparison}
+            weekComparison={weekComparison}
+            monthComparison={monthComparison}
+            yearComparison={yearComparison}
+          />
+        </div>
+
+        <div className="lg:col-span-8">
+          <TransactionVolumeChart transactions={transactions} />
         </div>
       </section>
 
@@ -154,9 +159,6 @@ export default function TransactionsOverviewPage() {
           })}
         </div>
       </section>
-
-      {/* Volume Chart */}
-      <TransactionVolumeChart transactions={transactions} />
     </div>
   );
 }

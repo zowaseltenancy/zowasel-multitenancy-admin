@@ -1,28 +1,105 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Users, UserCheck, Clock, UserX } from "lucide-react";
+import { Search, Users, UserCheck, Clock, UserX, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import UserTable from "./UserTable";
+import CreateUserDialog from "./CreateUserDialog";
 import Pagination from "@/components/shared/Pagination";
+import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
 import { useUsers } from "../hooks/useUsers";
-import { PlatformUserRole, UserAccountStatus } from "@/types/user";
+import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
+import { BuyerTier, PlatformUserCategory, PlatformUserRole, UserAccountStatus } from "@/types/user";
+import { GeographicFilterState } from "@/types/geo";
+import { CreateUserSchema } from "@/schemas/user.schema";
+import { BUYER_TIER_LABELS } from "@/constants/user";
 
-export default function UsersListView() {
-  const { users } = useUsers();
+interface Props {
+  title?: string;
+  description?: string;
+  categoryFilter?: PlatformUserCategory | "all";
+  showStatsCards?: boolean;
+}
+
+const CATEGORY_LABELS: Record<PlatformUserCategory | "all", string> = {
+  all: "Users",
+  agent: "Agents",
+  merchant: "Merchants",
+  agrodealer: "Agrodealers",
+  cooperative: "Cooperatives",
+  buyer: "Buyers",
+  staff: "Staff",
+};
+
+// Zowasel Staff Admin / Compliance Officer are excluded — staff are a
+// separate domain from platform/tenant users, not selectable here.
+const ROLE_OPTIONS: PlatformUserRole[] = [
+  "Tenant Admin",
+  "Programme Manager",
+  "Field Supervisor",
+  "Field Agent",
+  "Data Analyst",
+  "Farmer (self-service)",
+  "Input Merchant",
+  "Agrodealer",
+  "Cooperative Leader",
+  "Buyer",
+];
+
+export default function UsersListView({
+  title = "Platform Users Directory",
+  description = "Manage and audit all platform users across agents, merchants, agrodealers, cooperatives, and buyers.",
+  categoryFilter = "all",
+  showStatsCards = true,
+}: Props) {
+  const { users, addUser } = useUsers();
+  const { organizations } = useOrganizations();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<PlatformUserRole | "all">("all");
   const [statusFilter, setStatusFilter] = useState<UserAccountStatus | "all">("all");
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+  const [tierFilter, setTierFilter] = useState<BuyerTier | "all">("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [createOpen, setCreateOpen] = useState(false);
 
-  const activeCount = users.filter((u) => u.status === "active").length;
-  const pendingCount = users.filter((u) => u.status === "pending").length;
-  const suspendedCount = users.filter((u) => u.status === "suspended").length;
+  const handleCreateUser = (values: CreateUserSchema) => {
+    const organization = organizations.find((org) => org.id === values.organizationId);
+
+    addUser({
+      id: `usr_${Date.now()}`,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      phone: values.phone,
+      gender: values.gender,
+      role: values.role,
+      userCategory: values.userCategory,
+      status: "pending",
+      organizationId: values.organizationId,
+      organizationName: organization?.name ?? "Unassigned",
+      dateJoined: new Date().toISOString().slice(0, 10),
+      lastActive: new Date().toISOString(),
+      permissions: [],
+    });
+
+    toast.success(`${values.firstName} ${values.lastName} added as a ${values.role}.`);
+  };
+  const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
+    scope: "global",
+    continent: "all",
+    subRegion: "all",
+    countryCode: "all",
+  });
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      // Zowasel Staff are a separate domain — never shown among Platform Users.
+      if (user.userCategory === "staff") return false;
+
       const query = search.toLowerCase().trim();
       const matchesSearch =
         query === "" ||
@@ -33,34 +110,71 @@ export default function UsersListView() {
 
       const matchesRole = roleFilter === "all" || user.role === roleFilter;
       const matchesStatus = statusFilter === "all" || user.status === statusFilter;
+      const matchesGender = genderFilter === "all" || user.gender === genderFilter;
+      const matchesTier = tierFilter === "all" || user.buyerTier === tierFilter;
 
-      return matchesSearch && matchesRole && matchesStatus;
+      // Category matching
+      const matchesCategory =
+        categoryFilter === "all" ||
+        user.userCategory === categoryFilter ||
+        (categoryFilter === "agent" && user.role === "Field Agent") ||
+        (categoryFilter === "merchant" && user.role === "Input Merchant") ||
+        (categoryFilter === "agrodealer" && user.role === "Agrodealer") ||
+        (categoryFilter === "cooperative" && user.role === "Cooperative Leader") ||
+        (categoryFilter === "buyer" && user.role === "Buyer");
+
+      // Regional geographic filtering
+      const matchesContinent =
+        geoFilter.continent === "all" || user.continent === geoFilter.continent;
+      const matchesSubRegion =
+        geoFilter.subRegion === "all" || user.subRegion === geoFilter.subRegion;
+      const matchesCountry =
+        geoFilter.countryCode === "all" || user.countryCode === geoFilter.countryCode;
+
+      return matchesSearch && matchesRole && matchesStatus && matchesGender && matchesTier && matchesCategory && matchesContinent && matchesSubRegion && matchesCountry;
     });
-  }, [users, search, roleFilter, statusFilter]);
+  }, [users, search, roleFilter, statusFilter, genderFilter, tierFilter, categoryFilter, geoFilter]);
 
   const totalItems = filteredUsers.length;
+  const activeCount = filteredUsers.filter((u) => u.status === "active").length;
+  const pendingCount = filteredUsers.filter((u) => u.status === "pending").length;
+  const suspendedCount = filteredUsers.filter((u) => u.status === "suspended").length;
+
   const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
   const paginatedUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Platform Users & Team Members</h1>
-        <p className="mt-2 text-muted-foreground">
-          Manage system-wide tenant administrators, field agents, agronomists, and internal staff.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <p className="mt-2 text-muted-foreground">{description}</p>
+        </div>
+
+        <Button onClick={() => setCreateOpen(true)} className="gap-2 shrink-0">
+          <UserPlus className="h-4 w-4" />
+          Add User
+        </Button>
       </div>
 
+      <CreateUserDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        organizations={organizations}
+        onCreate={handleCreateUser}
+      />
+
       {/* Snapshot Cards with Status Color Background Tints */}
+      {showStatsCards && (
       <div className="grid gap-4 md:grid-cols-4">
-        {/* Total Users - Cyan Tint */}
+        {/* Total (category-scoped) - Cyan Tint */}
         <Card className="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20 shadow-2xs">
           <CardContent className="p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Total Users
+                Total {CATEGORY_LABELS[categoryFilter]}
               </p>
-              <h3 className="text-2xl font-bold mt-1">{users.length}</h3>
+              <h3 className="text-2xl font-bold mt-1">{totalItems}</h3>
             </div>
             <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-600 border border-cyan-500/30 dark:text-cyan-400">
               <Users className="h-5 w-5" />
@@ -113,6 +227,7 @@ export default function UsersListView() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 max-w-md">
@@ -129,21 +244,28 @@ export default function UsersListView() {
         </div>
 
         <div className="flex items-center gap-3">
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newFilter) => {
+              setGeoFilter(newFilter);
+              setPage(1);
+            }}
+          />
+
           <select
             value={roleFilter}
             onChange={(e) => {
               setRoleFilter(e.target.value as PlatformUserRole | "all");
               setPage(1);
             }}
-            className="h-10 rounded-xl border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary"
+            className="h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold outline-none focus-visible:border-primary cursor-pointer"
           >
             <option value="all">All Roles</option>
-            <option value="Tenant Admin">Tenant Admin</option>
-            <option value="Programme Manager">Programme Manager</option>
-            <option value="Field Supervisor">Field Supervisor</option>
-            <option value="Field Agent">Field Agent</option>
-            <option value="Agronomist">Agronomist</option>
-            <option value="Data Analyst">Data Analyst</option>
+            {ROLE_OPTIONS.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
           </select>
 
           <select
@@ -152,13 +274,44 @@ export default function UsersListView() {
               setStatusFilter(e.target.value as UserAccountStatus | "all");
               setPage(1);
             }}
-            className="h-10 rounded-xl border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary"
+            className="h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold outline-none focus-visible:border-primary cursor-pointer"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
             <option value="pending">Pending</option>
             <option value="suspended">Suspended</option>
           </select>
+
+          <select
+            value={genderFilter}
+            onChange={(e) => {
+              setGenderFilter(e.target.value as "all" | "male" | "female");
+              setPage(1);
+            }}
+            className="h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold outline-none focus-visible:border-primary cursor-pointer"
+          >
+            <option value="all">All Genders</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+
+          {categoryFilter === "buyer" && (
+            <select
+              value={tierFilter}
+              onChange={(e) => {
+                setTierFilter(e.target.value as BuyerTier | "all");
+                setPage(1);
+              }}
+              className="h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold outline-none focus-visible:border-primary cursor-pointer"
+            >
+              <option value="all">All Tiers</option>
+              {(Object.keys(BUYER_TIER_LABELS) as BuyerTier[]).map((tier) => (
+                <option key={tier} value={tier}>
+                  {BUYER_TIER_LABELS[tier]}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

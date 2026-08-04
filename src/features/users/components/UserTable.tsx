@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { Eye, Users } from "lucide-react";
+import UserAvatar from "@/components/shared/UserAvatar";
+import OnboardedByCell from "@/components/shared/OnboardedByCell";
+import GenderBadge from "@/components/shared/GenderBadge";
 import UserRoleBadge from "./UserRoleBadge";
 import UserStatusBadge from "./UserStatusBadge";
+import BuyerTierBadge from "./BuyerTierBadge";
 import { PlatformUser } from "@/types/user";
 
 interface Props {
@@ -16,8 +20,9 @@ export default function UserTable({ users }: Props) {
           <thead className="border-b bg-muted/50 text-xs font-semibold uppercase text-muted-foreground">
             <tr>
               <th className="p-4">User</th>
-              <th className="p-4">Role</th>
+              <th className="p-4">Role & Position</th>
               <th className="p-4">Organization</th>
+              <th className="p-4">Onboarding</th>
               <th className="p-4">Status</th>
               <th className="p-4 text-right">Actions</th>
             </tr>
@@ -27,20 +32,33 @@ export default function UserTable({ users }: Props) {
               <tr key={user.id} className="hover:bg-muted/30 transition-colors">
                 <td className="p-4 font-medium">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
-                      {user.firstName[0]}
-                      {user.lastName[0]}
-                    </div>
+                    <UserAvatar
+                      avatarUrl={user.avatarUrl}
+                      firstName={user.firstName}
+                      lastName={user.lastName}
+                      className="h-9 w-9"
+                    />
                     <div>
-                      <div className="font-semibold text-foreground">
-                        {user.firstName} {user.lastName}
+                      <div className="font-semibold text-foreground flex items-center gap-2">
+                        <span>{user.firstName} {user.lastName}</span>
+                        <GenderBadge gender={user.gender} />
                       </div>
                       <div className="text-xs text-muted-foreground">{user.email}</div>
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
-                  <UserRoleBadge role={user.role} />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <UserRoleBadge role={user.role} />
+                      {user.buyerTier && <BuyerTierBadge tier={user.buyerTier} />}
+                    </div>
+                    {user.position && (
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {user.position}
+                      </p>
+                    )}
+                  </div>
                 </td>
                 <td className="p-4">
                   <Link
@@ -49,6 +67,16 @@ export default function UserTable({ users }: Props) {
                   >
                     {user.organizationName}
                   </Link>
+                </td>
+                <td className="p-4">
+                  {user.role === "Field Agent" && user.agentMeta?.onboardedEntitiesCount !== undefined ? (
+                    <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{user.agentMeta.onboardedEntitiesCount} entities onboarded</span>
+                    </div>
+                  ) : (
+                    <OnboardedByCell onboardedByAgent={user.onboardedByAgent} />
+                  )}
                 </td>
                 <td className="p-4">
                   <UserStatusBadge status={user.status} />

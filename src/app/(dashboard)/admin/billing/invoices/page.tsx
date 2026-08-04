@@ -53,7 +53,7 @@ export default function InvoicesOverviewPage() {
     },
   ];
 
-  // 5 Most recent invoices sorted by issued date (newest to oldest)
+  // Top 5 recent invoices
   const recentInvoices = [...invoices]
     .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())
     .slice(0, 5);
@@ -101,7 +101,7 @@ export default function InvoicesOverviewPage() {
         })}
       </section>
 
-      {/* Recent Invoices Generated (Top 5 from most recent to oldest) */}
+      {/* Recent Invoices Generated */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>

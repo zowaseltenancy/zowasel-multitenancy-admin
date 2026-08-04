@@ -14,6 +14,7 @@ import Pagination from "@/components/shared/Pagination";
 import CountryFlag from "@/components/shared/CountryFlag";
 import CurrencyMarkupConfig from "@/features/billing/components/CurrencyMarkupConfig";
 import { useCurrencies } from "@/features/billing/hooks/useCurrencies";
+import { clampMarkup } from "@/constants/currency";
 
 export default function HierarchicalCurrencyMatrix() {
   const { markupPercentage: globalMarkup, setMarkupPercentage: setGlobalMarkup } = useCurrencies();
@@ -107,14 +108,14 @@ export default function HierarchicalCurrencyMatrix() {
   return (
     <div className="space-y-6">
       {/* Top Layout: Left Continental Scope Filter + Right Quick Markup Action Buttons */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         {/* Left Side: Continental Scope Filter */}
         <div className="lg:col-span-8">
-          <HierarchicalRegionFilter value={geoFilter} onChange={handleGeoFilterChange} />
+          <HierarchicalRegionFilter value={geoFilter} onChange={handleGeoFilterChange} className="h-full" />
         </div>
 
         {/* Right Side: Quick Action Markup Buttons Card */}
-        <div className="lg:col-span-4 p-4 rounded-2xl border border-border bg-card shadow-xs space-y-3">
+        <div className="lg:col-span-4 flex h-full flex-col p-4 rounded-2xl border border-border bg-card shadow-xs space-y-3">
           <div className="space-y-1">
             <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Exchange Rate Markup Actions
@@ -207,7 +208,11 @@ export default function HierarchicalCurrencyMatrix() {
                   </tr>
                 ) : (
                   paginatedCountries.map((c) => {
-                    const indMarkup = c.customMarkupPercentage ?? c.markupPercentage;
+                    // Falls back to the configurable Global Fallback rate for any
+                    // country that doesn't ship with its own curated base markup.
+                    const indMarkup = clampMarkup(
+                      c.customMarkupPercentage ?? c.markupPercentage ?? globalMarkup
+                    );
                     const isRegMarkupActive = applyRegionalMarkup[c.countryCode] ?? true;
                     // Reactively lookup regional markup from state
                     const regRate = isRegMarkupActive ? (regionalMarkups[c.subRegion] ?? 1.5) : 0;

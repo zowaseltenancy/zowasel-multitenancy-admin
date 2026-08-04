@@ -1,17 +1,11 @@
 'use client';
 
-import { Building2, Clock3, Layers, LayoutDashboard } from 'lucide-react';
+import { Building2, Clock3 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
 const TABS = [
-  {
-    label: 'Overview',
-    href: '/admin/organizations',
-    icon: LayoutDashboard,
-    exact: true,
-  },
   {
     label: 'All Organizations',
     href: '/admin/organizations/all',
@@ -21,11 +15,6 @@ const TABS = [
     label: 'Pending Approval',
     href: '/admin/organizations/pending',
     icon: Clock3,
-  },
-  {
-    label: 'Cooperatives',
-    href: '/admin/organizations/cooperatives',
-    icon: Layers,
   },
 ];
 
@@ -41,9 +30,7 @@ export default function OrganizationTabs({
       <div className="flex flex-wrap items-center gap-2">
         {TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = tab.exact
-            ? pathname === tab.href
-            : pathname.startsWith(tab.href);
+          const isActive = pathname.startsWith(tab.href);
 
           return (
             <Link

@@ -9,7 +9,8 @@ import TransactionFilters, {
 } from "./TransactionFilters";
 import ExportMenu from "@/components/shared/ExportMenu";
 import Pagination from "@/components/shared/Pagination";
-import HierarchicalRegionFilter from "@/components/shared/HierarchicalRegionFilter";
+import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
+import SearchBar from "@/components/shared/SearchBar";
 
 import {
   CustomRange,
@@ -29,24 +30,9 @@ export type TransactionStatusFilter =
 
 interface Props {
   title: string;
-
   description: string;
-
   statusFilter: TransactionStatusFilter;
 }
-
-const ALL_STATUS_OPTIONS: {
-  label: string;
-
-  value: TransactionStatusFilter;
-}[] = [
-  { label: "All Statuses", value: "all" },
-  { label: "Completed", value: "Completed" },
-  { label: "Pending", value: "Pending" },
-  { label: "Failed", value: "Failed" },
-  { label: "Refunded", value: "Refunded" },
-  { label: "Disputed", value: "disputed" },
-];
 
 export default function TransactionsListView({
   title,
@@ -194,85 +180,73 @@ export default function TransactionsListView({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      {/* Top Banner: Title + Search Bar + Region Scope + Export on Same Line */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             {title}
           </h1>
 
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {description}
           </p>
         </div>
 
-        <ExportMenu
-          table={toTransactionExportTable(
-            filtered,
-            title
-          )}
-          captureElementId="transaction-table-capture"
-        />
-      </div>
-
-      {/* 4-Tier Geographic Cascading Filter */}
-      <HierarchicalRegionFilter
-        value={geoFilter}
-        onChange={(newVal) => {
-          setGeoFilter(newVal);
-          setPage(1);
-        }}
-      />
-
-      <div className="space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <TransactionFilters
-            timeframe={timeframe}
-            onTimeframeChange={(value) => {
-              setTimeframe(value);
+        <div className="flex items-center gap-2">
+          <SearchBar
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
               setPage(1);
             }}
-            customRange={customRange}
-            onCustomRangeChange={(value) => {
-              setCustomRange(value);
-              setPage(1);
-            }}
-            entityType={entityType}
-            onEntityTypeChange={(value) => {
-              setEntityType(value);
-              setPage(1);
-            }}
-            search={search}
-            onSearchChange={(value) => {
-              setSearch(value);
-              setPage(1);
-            }}
-            sort={sort}
-            onSortChange={setSort}
+            placeholder="Search business or reference..."
           />
 
-          {statusFilter === "all" && (
-            <select
-              value={localStatus}
-              onChange={(event) => {
-                setLocalStatus(
-                  event.target
-                    .value as TransactionStatusFilter
-                );
-                setPage(1);
-              }}
-              className="h-10 rounded-xl border border-input bg-card px-3 text-sm outline-none focus-visible:border-primary"
-            >
-              {ALL_STATUS_OPTIONS.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          )}
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newVal) => {
+              setGeoFilter(newVal);
+              setPage(1);
+            }}
+          />
+
+          <ExportMenu
+            table={toTransactionExportTable(
+              filtered,
+              title
+            )}
+            captureElementId="transaction-table-capture"
+          />
         </div>
+      </div>
+
+      {/* Unified 1-Line Control Bar */}
+      <div className="space-y-4">
+        <TransactionFilters
+          timeframe={timeframe}
+          onTimeframeChange={(value) => {
+            setTimeframe(value);
+            setPage(1);
+          }}
+          customRange={customRange}
+          onCustomRangeChange={(value) => {
+            setCustomRange(value);
+            setPage(1);
+          }}
+          statusFilter={effectiveStatus}
+          onStatusFilterChange={(val) => {
+            setLocalStatus(val);
+            setPage(1);
+          }}
+          statusEditable={statusFilter === "all"}
+          entityType={entityType}
+          onEntityTypeChange={(value) => {
+            setEntityType(value);
+            setPage(1);
+          }}
+          sort={sort}
+          onSortChange={setSort}
+        />
 
         <div id="transaction-table-capture">
           <TransactionTable transactions={paginated} />

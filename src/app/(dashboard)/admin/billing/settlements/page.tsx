@@ -61,7 +61,7 @@ export default function SettlementsOverviewPage() {
     },
   ];
 
-  // 5 Most recent settlements sorted by scheduled date (newest to oldest)
+  // Top 5 recent settlements
   const recentSettlements = [...settlements]
     .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
     .slice(0, 5);
@@ -109,7 +109,7 @@ export default function SettlementsOverviewPage() {
         })}
       </section>
 
-      {/* Recent Settlements Triggered (Top 5 from most recent to oldest) */}
+      {/* Recent Settlements Triggered */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>

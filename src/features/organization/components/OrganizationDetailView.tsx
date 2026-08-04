@@ -18,6 +18,7 @@ import OrganizationUsersTab from './OrganizationUsersTab';
 
 interface Props {
   organizationId: string;
+  moduleId?: string;
 }
 
 const TABS = [
@@ -32,13 +33,15 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key'];
 
-export default function OrganizationDetailView({ organizationId }: Props) {
+export default function OrganizationDetailView({ organizationId, moduleId }: Props) {
   const {
     organizations,
     approveKyb,
     rejectKyb,
     markKybPending,
-    updateTeamMember,
+    toggleKeyOfficerStatus,
+    assignStaff,
+    swapAssignedStaff,
   } = useOrganizations();
 
   const [activeTab, setActiveTab] = useState<TabKey>('profile');
@@ -85,7 +88,11 @@ export default function OrganizationDetailView({ organizationId }: Props) {
       </div>
 
       {activeTab === 'profile' && (
-        <OrganizationProfileTab organization={organization} />
+        <OrganizationProfileTab
+          organization={organization}
+          onAssignStaff={assignStaff}
+          onSwapStaff={swapAssignedStaff}
+        />
       )}
 
       {activeTab === 'kyb' && (
@@ -104,7 +111,7 @@ export default function OrganizationDetailView({ organizationId }: Props) {
       {activeTab === 'team' && (
         <OrganizationTeamTab
           organization={organization}
-          onUpdateMember={updateTeamMember}
+          onToggleOfficerStatus={toggleKeyOfficerStatus}
         />
       )}
 

@@ -18,7 +18,7 @@ export const mockInvoices: Invoice[] = [
     invoiceNumber: "INV-0001",
     organization: "FarmFresh Cooperative",
     entityType: "cooperative",
-    product: "CropPilot",
+    product: "Zowasel Enterprise Platform (Full Access + API)",
     amount: 250000,
     currency: "NGN",
     status: "Paid",
@@ -26,7 +26,7 @@ export const mockInvoices: Invoice[] = [
     dueDate: daysAgo(6),
     paidAt: daysAgo(8),
     items: [
-      { name: "CropPilot — Growth Plan", quantity: 1, unitPrice: 250000 },
+      { name: "Zowasel Enterprise Platform — Monthly Plan", quantity: 1, unitPrice: 250000 },
     ],
   },
   {
@@ -34,7 +34,7 @@ export const mockInvoices: Invoice[] = [
     invoiceNumber: "INV-0002",
     organization: "AgroHub Ghana",
     entityType: "agrodealer",
-    product: "Marketplace",
+    product: "CropPilot Growth (D-MRV, Inputs & Harvest)",
     amount: 1200,
     currency: "GHS",
     status: "Pending",
@@ -42,7 +42,7 @@ export const mockInvoices: Invoice[] = [
     dueDate: daysFromNow(5),
     paidAt: null,
     items: [
-      { name: "Marketplace — Listing Fee", quantity: 1, unitPrice: 1200 },
+      { name: "CropPilot Growth — Quarterly Plan", quantity: 1, unitPrice: 1200 },
     ],
   },
   {
@@ -50,7 +50,7 @@ export const mockInvoices: Invoice[] = [
     invoiceNumber: "INV-0003",
     organization: "Green Harvest Ltd",
     entityType: "merchant",
-    product: "GeoMapping",
+    product: "Carbon & Agroforestry Traceability Suite",
     amount: 1800,
     currency: "USD",
     status: "Overdue",
@@ -58,7 +58,7 @@ export const mockInvoices: Invoice[] = [
     dueDate: daysAgo(14),
     paidAt: null,
     items: [
-      { name: "GeoMapping — Annual Plan", quantity: 1, unitPrice: 1800 },
+      { name: "Carbon & Agroforestry Traceability — Annual Plan", quantity: 1, unitPrice: 1800 },
     ],
   },
   {
@@ -66,7 +66,7 @@ export const mockInvoices: Invoice[] = [
     invoiceNumber: "INV-0004",
     organization: "Harvest Link Africa",
     entityType: "buyer",
-    product: "Soil Analytics",
+    product: "CropPilot Growth (D-MRV, Inputs & Harvest)",
     amount: 320000,
     currency: "NGN",
     status: "Overdue",
@@ -74,7 +74,7 @@ export const mockInvoices: Invoice[] = [
     dueDate: daysAgo(19),
     paidAt: null,
     items: [
-      { name: "Soil Analytics — Monthly Plan", quantity: 1, unitPrice: 320000 },
+      { name: "CropPilot Growth — Monthly Plan", quantity: 1, unitPrice: 320000 },
     ],
   },
   {
@@ -82,7 +82,7 @@ export const mockInvoices: Invoice[] = [
     invoiceNumber: "INV-0005",
     organization: "EcoFarm Nigeria",
     entityType: "merchant",
-    product: "Farmer360",
+    product: "CropPilot Starter (Registry, Mapping & Advisory)",
     amount: 450000,
     currency: "NGN",
     status: "Paid",
@@ -90,17 +90,17 @@ export const mockInvoices: Invoice[] = [
     dueDate: daysAgo(46),
     paidAt: daysAgo(48),
     items: [
-      { name: "Farmer360 — Yearly Plan", quantity: 1, unitPrice: 450000 },
+      { name: "CropPilot Starter — Yearly Plan", quantity: 1, unitPrice: 450000 },
     ],
   },
   {
     id: "inv_006",
     invoiceNumber: "INV-0006",
-    organization: "Sahel Grains Ltd",
-    entityType: "agrodealer",
+    organization: "Sahel Grains Offtakers Ltd",
+    entityType: "buyer",
     product: "Marketplace",
     amount: 45000,
-    currency: "NGN",
+    currency: "GHS",
     status: "Void",
     issuedAt: daysAgo(15),
     dueDate: daysAgo(1),

@@ -3,7 +3,9 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 import Pagination from '@/components/shared/Pagination';
+import CompactRegionScopeSelector from '@/components/shared/CompactRegionScopeSelector';
 import { KybStatus } from '@/types/kyb';
+import { GeographicFilterState } from '@/types/geo';
 import { useOrganizations } from '../hooks/useOrganizations';
 import OrganizationSearchBar from './OrganizationSearchBar';
 import OrganizationStatsCards from './OrganizationStatsCards';
@@ -35,12 +37,22 @@ export default function OrganizationsListView({
     defaultFilter
   );
 
+  const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
+    scope: "global",
+    continent: "all",
+    subRegion: "all",
+    countryCode: "all",
+  });
+
   const isExternalSearch = typeof onSearchChange === 'function';
   const effectiveSearch = isExternalSearch ? (searchValue ?? '') : search;
 
   useEffect(() => {
+    // Resets pagination when an externally-owned search value changes (the
+    // internal filter controls already reset page on their own onChange).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
-  }, [effectiveSearch, activeFilter]);
+  }, [effectiveSearch, activeFilter, geoFilter]);
 
   const filtered = useMemo(() => {
     return organizations.filter((organization) => {
@@ -55,9 +67,17 @@ export default function OrganizationsListView({
         organization.owner.email.toLowerCase().includes(query) ||
         organization.owner.name.toLowerCase().includes(query);
 
-      return matchesFilter && matchesSearch;
+      // Geographic region filtering
+      const matchesContinent =
+        geoFilter.continent === "all" || organization.continent === geoFilter.continent;
+      const matchesSubRegion =
+        geoFilter.subRegion === "all" || organization.subRegion === geoFilter.subRegion;
+      const matchesCountry =
+        geoFilter.countryCode === "all" || organization.countryCode === geoFilter.countryCode;
+
+      return matchesFilter && matchesSearch && matchesContinent && matchesSubRegion && matchesCountry;
     });
-  }, [organizations, activeFilter, effectiveSearch]);
+  }, [organizations, activeFilter, effectiveSearch, geoFilter]);
 
   const totalItems = filtered.length;
   const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -65,10 +85,19 @@ export default function OrganizationsListView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{title}</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{title}</h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground">{description}</p>
+        </div>
 
-        <p className="mt-2 max-w-2xl text-muted-foreground">{description}</p>
+        <CompactRegionScopeSelector
+          value={geoFilter}
+          onChange={(newFilter) => {
+            setGeoFilter(newFilter);
+            setPage(1);
+          }}
+        />
       </div>
 
       <OrganizationStatsCards

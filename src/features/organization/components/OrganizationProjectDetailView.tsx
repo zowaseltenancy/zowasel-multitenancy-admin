@@ -36,11 +36,11 @@ export default function OrganizationProjectDetailView({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/admin/organizations/${organization.id}`}>
+          <Link href={`/admin/organizations/${organization.id}`}>
+            <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to {organization.name}
-            </Link>
-          </Button>
+            </Button>
+          </Link>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">
               {organization.name}
@@ -142,9 +142,9 @@ export default function OrganizationProjectDetailView({
             <p className="text-xs text-muted-foreground">
               Sample farmer enrollment data for this project.
             </p>
-            <Button asChild size="sm" className="w-full">
-              <Link href="#farmers">View farmers</Link>
-            </Button>
+            <Link href="#farmers">
+              <Button size="sm" className="w-full">View farmers</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

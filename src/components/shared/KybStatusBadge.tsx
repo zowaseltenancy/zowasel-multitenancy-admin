@@ -1,22 +1,15 @@
-import { cn } from "@/lib/utils";
 import { KybStatus } from "@/types/kyb";
+import { statusBadgeClass, statusDotClass, StatusTone } from "@/lib/statusTone";
 
 interface Props {
   status: KybStatus;
 }
 
-const styles: Record<KybStatus, string> = {
-  approved:
-    "bg-green-100 text-green-700 border-green-200",
-
-  pending:
-    "bg-amber-100 text-amber-700 border-amber-200",
-
-  rejected:
-    "bg-red-100 text-red-700 border-red-200",
-
-  not_submitted:
-    "bg-slate-100 text-slate-700 border-slate-200",
+const TONES: Record<KybStatus, StatusTone> = {
+  approved: "success",
+  pending: "warning",
+  rejected: "danger",
+  not_submitted: "neutral",
 };
 
 const labels: Record<KybStatus, string> = {
@@ -29,13 +22,11 @@ const labels: Record<KybStatus, string> = {
 export default function KybStatusBadge({
   status,
 }: Props) {
+  const tone = TONES[status];
+
   return (
-    <span
-      className={cn(
-        "inline-flex rounded-full border px-3 py-1 text-xs font-medium",
-        styles[status]
-      )}
-    >
+    <span className={statusBadgeClass(tone)}>
+      <span className={statusDotClass(tone)} />
       {labels[status]}
     </span>
   );

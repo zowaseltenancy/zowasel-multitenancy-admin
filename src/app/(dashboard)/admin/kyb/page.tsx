@@ -12,27 +12,49 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import Pagination from '@/components/shared/Pagination';
+import CompactRegionScopeSelector from '@/components/shared/CompactRegionScopeSelector';
 import { Card, CardContent } from '@/components/ui/card';
 import { KYB_DOCUMENT_LABELS } from '@/constants/kyb';
 import { useOrganizations } from '@/features/organization/hooks/useOrganizations';
+import { GeographicFilterState } from '@/types/geo';
 
 export default function KybOverviewPage() {
   const { organizations } = useOrganizations();
 
-  const approved = organizations.filter(
+  const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
+    scope: 'global',
+    continent: 'all',
+    subRegion: 'all',
+    countryCode: 'all',
+  });
+
+  const filteredOrganizations = useMemo(() => {
+    return organizations.filter((org) => {
+      const matchesContinent =
+        geoFilter.continent === 'all' || org.continent === geoFilter.continent;
+      const matchesSubRegion =
+        geoFilter.subRegion === 'all' || org.subRegion === geoFilter.subRegion;
+      const matchesCountry =
+        geoFilter.countryCode === 'all' || org.countryCode === geoFilter.countryCode;
+
+      return matchesContinent && matchesSubRegion && matchesCountry;
+    });
+  }, [organizations, geoFilter]);
+
+  const approved = filteredOrganizations.filter(
     (organization) => organization.kybStatus === 'approved'
   ).length;
 
-  const pending = organizations.filter(
+  const pending = filteredOrganizations.filter(
     (organization) => organization.kybStatus === 'pending'
   ).length;
 
-  const rejected = organizations.filter(
+  const rejected = filteredOrganizations.filter(
     (organization) => organization.kybStatus === 'rejected'
   ).length;
 
   const allSubmittedDocuments = useMemo(() => {
-    return organizations
+    return filteredOrganizations
       .flatMap((org) =>
         org.kybDocuments.map((doc) => ({
           ...doc,
@@ -47,7 +69,7 @@ export default function KybOverviewPage() {
         (a, b) =>
           new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
       );
-  }, [organizations]);
+  }, [filteredOrganizations]);
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -57,6 +79,10 @@ export default function KybOverviewPage() {
   );
 
   useEffect(() => {
+    // Reset to page 1 when the underlying (filtered) document count changes
+    // rather than clamping the current page — this mirrors the pagination
+    // reset already done inline for direct filter-control changes elsewhere.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [allSubmittedDocuments.length]);
 
@@ -119,13 +145,22 @@ export default function KybOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">KYB Review</h1>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">KYB Review</h1>
 
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Review and decide on business verification submissions across the
-          platform.
-        </p>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Review and decide on business verification submissions across operating regions.
+          </p>
+        </div>
+
+        <CompactRegionScopeSelector
+          value={geoFilter}
+          onChange={(newFilter) => {
+            setGeoFilter(newFilter);
+            setPage(1);
+          }}
+        />
       </div>
 
       {/* Snapshot Cards with Status Color Background Tints */}
@@ -224,7 +259,7 @@ export default function KybOverviewPage() {
                       colSpan={5}
                       className="p-6 text-center text-sm text-muted-foreground"
                     >
-                      No document submissions found.
+                      No document submissions found matching this regional filter.
                     </td>
                   </tr>
                 ) : (

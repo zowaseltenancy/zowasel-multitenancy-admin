@@ -4,7 +4,7 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_001",
     organization: "FarmFresh Cooperative",
-    product: "CropPilot Enterprise",
+    product: "Zowasel Enterprise Platform (Full Access + API)",
     tier: "Enterprise",
     amount: 250000,
     currency: "NGN",
@@ -17,7 +17,7 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_002",
     organization: "AgroHub Ghana",
-    product: "Marketplace Suite",
+    product: "CropPilot Growth (D-MRV, Inputs & Harvest)",
     tier: "Growth",
     amount: 1200,
     currency: "GHS",
@@ -30,7 +30,7 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_003",
     organization: "Green Harvest Ltd",
-    product: "D-MRV Carbon Traceability",
+    product: "Carbon & Agroforestry Traceability Suite",
     tier: "Carbon",
     amount: 1800,
     currency: "USD",
@@ -43,7 +43,7 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_004",
     organization: "Harvest Link Africa",
-    product: "Soil Analytics Pro",
+    product: "CropPilot Growth (D-MRV, Inputs & Harvest)",
     tier: "Growth",
     amount: 320000,
     currency: "NGN",
@@ -56,7 +56,7 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_005",
     organization: "Savannah Growers",
-    product: "Cooperative Registry",
+    product: "CropPilot Starter (Registry, Mapping & Advisory)",
     tier: "Starter",
     amount: 90000,
     currency: "KES",
@@ -69,7 +69,7 @@ export const mockSubscriptions: Subscription[] = [
   {
     id: "sub_006",
     organization: "EcoFarm Nigeria",
-    product: "Farmer360 & Advisory",
+    product: "CropPilot Starter (Registry, Mapping & Advisory)",
     tier: "Starter",
     amount: 450000,
     currency: "NGN",
@@ -78,5 +78,18 @@ export const mockSubscriptions: Subscription[] = [
     autoRenew: true,
     startedAt: "2025-08-10T00:00:00Z",
     nextRenewal: "2026-08-10T00:00:00Z",
+  },
+  {
+    id: "sub_007",
+    organization: "Northline Farmers Cooperative Union",
+    product: "Zowasel Government Platform (National Database Integration)",
+    tier: "Government",
+    amount: 8500000,
+    currency: "TZS",
+    billingCycle: "Yearly",
+    status: "Active",
+    autoRenew: true,
+    startedAt: "2026-02-01T00:00:00Z",
+    nextRenewal: "2027-02-01T00:00:00Z",
   },
 ];

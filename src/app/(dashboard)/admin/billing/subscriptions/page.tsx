@@ -53,7 +53,7 @@ export default function SubscriptionsOverviewPage() {
     },
   ];
 
-  // 5 Most recent subscriptions sorted by started date (newest to oldest)
+  // Top 5 recent subscriptions
   const recentSubscriptions = [...subscriptions]
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
     .slice(0, 5);
@@ -101,7 +101,7 @@ export default function SubscriptionsOverviewPage() {
         })}
       </section>
 
-      {/* Recent Subscriptions (Top 5 from most recent to oldest) */}
+      {/* Recent Subscriptions (Top 5) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>

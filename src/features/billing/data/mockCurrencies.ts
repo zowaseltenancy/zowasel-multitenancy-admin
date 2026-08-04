@@ -58,6 +58,48 @@ export const mockCurrencies: Currency[] = [
   },
 
   {
+    id: "xof",
+    code: "XOF",
+    name: "West African CFA Franc",
+    symbol: "CFA",
+    region: "Africa",
+    role: "Operational",
+    enabled: true,
+    isDefault: false,
+    exchangeRate: 0.0016,
+    decimals: 0,
+    lastUpdated: "5 mins ago",
+  },
+
+  {
+    id: "ugx",
+    code: "UGX",
+    name: "Ugandan Shilling",
+    symbol: "USh",
+    region: "Africa",
+    role: "Operational",
+    enabled: true,
+    isDefault: false,
+    exchangeRate: 0.00027,
+    decimals: 0,
+    lastUpdated: "5 mins ago",
+  },
+
+  {
+    id: "tzs",
+    code: "TZS",
+    name: "Tanzanian Shilling",
+    symbol: "TSh",
+    region: "Africa",
+    role: "Operational",
+    enabled: true,
+    isDefault: false,
+    exchangeRate: 0.00039,
+    decimals: 0,
+    lastUpdated: "5 mins ago",
+  },
+
+  {
     id: "usd",
     code: "USD",
     name: "US Dollar",

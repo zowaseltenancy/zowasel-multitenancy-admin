@@ -6,7 +6,7 @@ import { useSubscriptions } from "../hooks/useSubscriptions";
 import SubscriptionGrid from "./SubscriptionGrid";
 import SearchBar from "@/components/shared/SearchBar";
 import Pagination from "@/components/shared/Pagination";
-import HierarchicalRegionFilter from "@/components/shared/HierarchicalRegionFilter";
+import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
 import { SubscriptionStatus } from "@/types/subscription";
 import { GeographicFilterState } from "@/types/geo";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
@@ -54,7 +54,7 @@ export default function SubscriptionsListView({
         sub.organization.toLowerCase().includes(query) ||
         sub.product.toLowerCase().includes(query);
 
-      // Geographic 4-Tier Filter matching
+      // Geographic Region Filter matching
       let matchesGeo = true;
       if (geoFilter.continent !== "all" || geoFilter.subRegion !== "all" || geoFilter.countryCode !== "all") {
         const countryMatch = GLOBAL_COUNTRY_CURRENCIES.find(
@@ -100,18 +100,9 @@ export default function SubscriptionsListView({
         </div>
       </div>
 
-      {/* 4-Tier Geographic Cascading Filter */}
-      <HierarchicalRegionFilter
-        value={geoFilter}
-        onChange={(newVal) => {
-          setGeoFilter(newVal);
-          setPage(1);
-        }}
-      />
-
-      {/* Tabbed Navigation Bar & Search */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
-        <div className="flex flex-wrap gap-2">
+      {/* Sleek 1-Line Control Bar: Status Tabs + Compact Region Scope Popover + Search */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex flex-wrap items-center gap-2">
           {STATUS_TABS.map((tab) => {
             const isActive = activeTab.toLowerCase() === tab.key.toLowerCase();
 
@@ -139,14 +130,25 @@ export default function SubscriptionsListView({
           })}
         </div>
 
-        <SearchBar
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-          placeholder="Search by business or product name..."
-        />
+        <div className="flex items-center gap-2">
+          {/* Integrated 1-Line Compact Region Scope Selector */}
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newVal) => {
+              setGeoFilter(newVal);
+              setPage(1);
+            }}
+          />
+
+          <SearchBar
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            placeholder="Search by business or product..."
+          />
+        </div>
       </div>
 
       {/* Subscriptions Grid & Pagination */}

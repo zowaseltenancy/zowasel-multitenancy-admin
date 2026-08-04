@@ -1,10 +1,15 @@
 import {
+  Bell,
   Building2,
   CreditCard,
   FileCheck,
   Home,
   LayoutGrid,
+  Megaphone,
   ShieldCheck,
+  TrendingUp,
+  UserCheck,
+  UserPlus,
   Users,
 } from "lucide-react";
 
@@ -41,12 +46,56 @@ export const navigation: NavigationItem[] = [
         href: "/admin/organizations/all",
       },
       {
-        label: "Pending KYB",
+        label: "Pending Organizations",
         href: "/admin/organizations/pending",
       },
+    ],
+  },
+
+  {
+    label: "Leads",
+    href: "/admin/leads",
+    icon: UserPlus,
+    children: [
       {
-        label: "Cooperatives",
-        href: "/admin/organizations/cooperatives",
+        label: "Lead Pipeline",
+        href: "/admin/leads/pipeline",
+      },
+    ],
+  },
+
+  {
+    label: "Finance Hub",
+    href: "/admin/finance-hub",
+    icon: TrendingUp,
+    children: [
+      {
+        label: "Analytics & Overview",
+        href: "/admin/finance-hub",
+      },
+      {
+        label: "Master Account & Statements",
+        href: "/admin/finance-hub/account",
+      },
+      {
+        label: "Platform Ledger & Outflows",
+        href: "/admin/finance-hub/transactions",
+      },
+      {
+        label: "Accounts Monitoring",
+        href: "/admin/finance-hub/accounts-monitor",
+      },
+      {
+        label: "Credit & Portfolio Risk",
+        href: "/admin/finance-hub/credit",
+      },
+      {
+        label: "CropPilot MRV & Carbon",
+        href: "/admin/finance-hub/sustainability",
+      },
+      {
+        label: "CRM 360 & Pipeline",
+        href: "/admin/finance-hub/crm",
       },
     ],
   },
@@ -55,28 +104,6 @@ export const navigation: NavigationItem[] = [
     label: "Modules",
     href: "/admin/modules",
     icon: LayoutGrid,
-    children: [
-      {
-        label: "Installed Modules",
-        href: "/admin/modules/installed",
-      },
-      {
-        label: "Marketplace Trading",
-        href: "/admin/modules/marketplace",
-      },
-      {
-        label: "CropPilot Core",
-        href: "/admin/modules?category=croppilot",
-      },
-      {
-        label: "Analytics",
-        href: "/admin/modules?category=analytics",
-      },
-      {
-        label: "Carbon & Sustainability",
-        href: "/admin/modules?category=carbon_sustainability",
-      },
-    ],
   },
 
   {
@@ -100,25 +127,85 @@ export const navigation: NavigationItem[] = [
   },
 
   {
-    label: "Users & Staff",
+    label: "Platform Users",
     href: "/admin/users",
     icon: Users,
     children: [
       {
-        label: "Tenant Admins",
-        href: "/admin/users/admins",
+        label: "Field Agents",
+        href: "/admin/users/agents",
       },
       {
-        label: "Farmers & Producers",
-        href: "/admin/users/farmers",
+        label: "Merchants",
+        href: "/admin/users/merchants",
+      },
+      {
+        label: "Agrodealers",
+        href: "/admin/users/agrodealers",
+      },
+      {
+        label: "Cooperatives",
+        href: "/admin/users/cooperatives",
       },
       {
         label: "Commodity Buyers",
         href: "/admin/users/buyers",
       },
+    ],
+  },
+
+  {
+    label: "Zowasel Staff",
+    href: "/admin/staff",
+    icon: UserCheck,
+    children: [
       {
-        label: "Input Merchants",
-        href: "/admin/users/merchants",
+        label: "Staff Directory",
+        href: "/admin/staff/directory",
+      },
+    ],
+  },
+
+  {
+    label: "Notifications",
+    href: "/admin/notifications",
+    icon: Bell,
+    children: [
+      {
+        label: "KYB Status",
+        href: "/admin/notifications/kyb",
+      },
+      {
+        label: "Module Activity",
+        href: "/admin/notifications/modules",
+      },
+      {
+        label: "Password & Security",
+        href: "/admin/notifications/security",
+      },
+      {
+        label: "Billing",
+        href: "/admin/notifications/billing",
+      },
+    ],
+  },
+
+  {
+    label: "Marketing Pro",
+    href: "/admin/marketing",
+    icon: Megaphone,
+    children: [
+      {
+        label: "Newsletters",
+        href: "/admin/marketing/newsletters",
+      },
+      {
+        label: "SMS",
+        href: "/admin/marketing/sms",
+      },
+      {
+        label: "WhatsApp",
+        href: "/admin/marketing/whatsapp",
       },
     ],
   },
@@ -129,14 +216,14 @@ export const navigation: NavigationItem[] = [
     icon: ShieldCheck,
     children: [
       {
-        label: "Permissions Matrix",
+        label: "Permissions",
         href: "/admin/roles/permissions",
       },
     ],
   },
 
   {
-    label: "Billing & Finance",
+    label: "Billing & Payments",
     href: "/admin/billing",
     icon: CreditCard,
     children: [

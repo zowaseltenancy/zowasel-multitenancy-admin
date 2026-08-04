@@ -7,7 +7,7 @@ import InvoiceTable from "./InvoiceTable";
 import SearchBar from "@/components/shared/SearchBar";
 import ExportMenu from "@/components/shared/ExportMenu";
 import Pagination from "@/components/shared/Pagination";
-import HierarchicalRegionFilter from "@/components/shared/HierarchicalRegionFilter";
+import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
 import { toInvoiceExportTable } from "../utils/invoice";
 import { InvoiceStatus } from "@/types/invoice";
 import { GeographicFilterState } from "@/types/geo";
@@ -51,7 +51,7 @@ export default function InvoicesListView({
         invoice.organization.toLowerCase().includes(query) ||
         invoice.invoiceNumber.toLowerCase().includes(query);
 
-      // Geographic 4-Tier Filter matching
+      // Geographic Region Filter matching
       let matchesGeo = true;
       if (geoFilter.continent !== "all" || geoFilter.subRegion !== "all" || geoFilter.countryCode !== "all") {
         const countryMatch = GLOBAL_COUNTRY_CURRENCIES.find(
@@ -102,18 +102,9 @@ export default function InvoicesListView({
         />
       </div>
 
-      {/* 4-Tier Geographic Cascading Filter */}
-      <HierarchicalRegionFilter
-        value={geoFilter}
-        onChange={(newVal) => {
-          setGeoFilter(newVal);
-          setPage(1);
-        }}
-      />
-
-      {/* Tabbed Navigation Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
-        <div className="flex flex-wrap gap-2">
+      {/* Sleek 1-Line Control Bar: Status Tabs + Compact Region Scope Popover + Search */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex flex-wrap items-center gap-2">
           {STATUS_TABS.map((tab) => {
             const isActive = activeTab.toLowerCase() === tab.key.toLowerCase();
             const count =
@@ -145,14 +136,24 @@ export default function InvoicesListView({
           })}
         </div>
 
-        <SearchBar
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-          placeholder="Search by business or invoice number..."
-        />
+        <div className="flex items-center gap-2">
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newVal) => {
+              setGeoFilter(newVal);
+              setPage(1);
+            }}
+          />
+
+          <SearchBar
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            placeholder="Search invoice number..."
+          />
+        </div>
       </div>
 
       <div id="invoice-table-capture">

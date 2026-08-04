@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Globe, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Globe, CheckCircle2, X } from "lucide-react";
 
 import {
   Card,
@@ -36,8 +36,8 @@ import DeveloperPortalView from "@/features/developer/components/DeveloperPortal
 import CountryFlag from "@/components/shared/CountryFlag";
 import { DISPUTE_NOTIFY_TARGET_OPTIONS } from "@/constants/transaction";
 import { BillingSettings, PaymentTerms } from "@/types/billing";
-import { DisputeNotifyTarget } from "@/types/transaction";
-import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
+import { GLOBAL_COUNTRY_CURRENCIES, SUB_REGIONS } from "@/data/geoData";
+import { SubRegion } from "@/types/geo";
 
 interface CountryTaxOverride {
   countryCode: string;
@@ -46,6 +46,18 @@ interface CountryTaxOverride {
   taxRatePercentage: number;
   taxRegistrationNumber: string;
 }
+
+interface RegionalTaxOverride {
+  subRegion: SubRegion;
+  subRegionLabel: string;
+  taxRatePercentage: number;
+}
+
+const INITIAL_REGIONAL_OVERRIDES: RegionalTaxOverride[] = [
+  { subRegion: "west_africa", subRegionLabel: "West Africa", taxRatePercentage: 7.5 },
+  { subRegion: "east_africa", subRegionLabel: "East Africa", taxRatePercentage: 16.0 },
+  { subRegion: "southern_africa", subRegionLabel: "Southern Africa", taxRatePercentage: 15.0 },
+];
 
 const INITIAL_OVERRIDES: CountryTaxOverride[] = [
   {
@@ -84,7 +96,35 @@ export default function BillingSettingsPage() {
 
   const [draft, setDraft] = useState<BillingSettings>(settings);
   const [taxOverrides, setTaxOverrides] = useState<CountryTaxOverride[]>(INITIAL_OVERRIDES);
+  const [regionalOverrides, setRegionalOverrides] = useState<RegionalTaxOverride[]>(INITIAL_REGIONAL_OVERRIDES);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  const updateRegionalRate = (subRegion: SubRegion, rate: number) => {
+    setRegionalOverrides((prev) =>
+      prev.map((entry) =>
+        entry.subRegion === subRegion ? { ...entry, taxRatePercentage: rate } : entry
+      )
+    );
+  };
+  const [newReminderDay, setNewReminderDay] = useState("");
+
+  const addReminderDay = () => {
+    const day = Number(newReminderDay);
+    if (!day || day < 1 || draft.reminderScheduleDays.includes(day)) return;
+
+    setDraft((current) => ({
+      ...current,
+      reminderScheduleDays: [...current.reminderScheduleDays, day].sort((a, b) => b - a),
+    }));
+    setNewReminderDay("");
+  };
+
+  const removeReminderDay = (day: number) => {
+    setDraft((current) => ({
+      ...current,
+      reminderScheduleDays: current.reminderScheduleDays.filter((d) => d !== day),
+    }));
+  };
 
   const [newCountryCode, setNewCountryCode] = useState("UG");
   const [newTaxLabel, setNewTaxLabel] = useState("URA TIN");
@@ -297,15 +337,63 @@ export default function BillingSettingsPage() {
 
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-              <span>Countries without active local tax overrides automatically inherit the <strong>{draft.taxRatePercentage}%</strong> global rate and Nigerian TIN <strong>({draft.taxRegistrationNumber})</strong>.</span>
+              <span>Fallback order: Country override → Regional override → this <strong>{draft.taxRatePercentage}%</strong> global default (Nigerian TIN <strong>{draft.taxRegistrationNumber}</strong>).</span>
             </p>
+          </div>
+
+          {/* Regional Tax Overrides — sits between Global and Country */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Regional Tax Overrides ({regionalOverrides.length})
+            </span>
+            <p className="text-xs text-muted-foreground">
+              Applies to any country in the region that doesn&apos;t have its own country-level override below —
+              e.g. cross-border operations like a Tanzania ↔ Malawi transaction settle at the East Africa rate.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {SUB_REGIONS.africa
+                .filter((region) => region.key !== "all")
+                .map((region) => {
+                  const override = regionalOverrides.find((o) => o.subRegion === region.key);
+
+                  return (
+                    <div key={region.key} className="p-3 rounded-xl border border-border bg-card space-y-2 shadow-2xs">
+                      <span className="text-sm font-semibold text-foreground">{region.label}</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={30}
+                          step={0.5}
+                          value={override?.taxRatePercentage ?? ""}
+                          placeholder="Not set"
+                          onChange={(event) => {
+                            const rate = Number(event.target.value);
+                            if (override) {
+                              updateRegionalRate(region.key, rate);
+                            } else {
+                              setRegionalOverrides((prev) => [
+                                ...prev,
+                                { subRegion: region.key, subRegionLabel: region.label, taxRatePercentage: rate },
+                              ]);
+                            }
+                          }}
+                          className="h-9 font-mono text-xs"
+                        />
+                        <span className="text-xs text-muted-foreground shrink-0">%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
 
           {/* Local Country Overrides Table */}
           <div className="space-y-3 pt-2 border-t border-border">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Active Country & Regional Tax Overrides ({taxOverrides.length})
+                Active Country Tax Overrides ({taxOverrides.length})
               </span>
             </div>
 
@@ -392,22 +480,48 @@ export default function BillingSettingsPage() {
 
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              First Reminder (days before due date)
+              Reminder Schedule (days before due date)
             </label>
 
-            <Input
-              type="number"
-              min={1}
-              max={30}
-              value={draft.reminderDaysBeforeDue}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  reminderDaysBeforeDue: Number(event.target.value),
-                }))
-              }
-              className="h-10"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              {draft.reminderScheduleDays.map((day) => (
+                <Badge key={day} variant="outline" className="gap-1.5 pl-2.5 pr-1.5 py-1 text-xs font-semibold">
+                  {day} {day === 1 ? "day" : "days"}
+                  <button
+                    type="button"
+                    onClick={() => removeReminderDay(day)}
+                    className="rounded-full p-0.5 hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={90}
+                placeholder="e.g. 5"
+                value={newReminderDay}
+                onChange={(event) => setNewReminderDay(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addReminderDay();
+                  }
+                }}
+                className="h-9"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={addReminderDay} className="shrink-0 gap-1.5">
+                <Plus className="h-3.5 w-3.5" />
+                Add
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A reminder email fires on each day offset listed above, e.g. 14, 7, and 3 days before the due date.
+            </p>
           </div>
         </CardContent>
 
@@ -422,47 +536,27 @@ export default function BillingSettingsPage() {
       <Card className="bg-card shadow-2xs">
         <CardHeader>
           <CardTitle>Dispute Escalation Rules</CardTitle>
-          <CardDescription>Default internal or external team notified when a transaction dispute is opened.</CardDescription>
+          <CardDescription>Every transaction dispute follows this fixed sequence — it is not a free pick.</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Default Dispute Resolution Team
-            </label>
-
-            <Select
-              value={draft.defaultEscalationTarget}
-              onValueChange={(value) =>
-                value && setDraft((current) => ({
-                  ...current,
-                  defaultEscalationTarget: value as DisputeNotifyTarget,
-                }))
-              }
-            >
-              <SelectTrigger className="max-w-sm h-10">
-                <SelectValue />
-              </SelectTrigger>
-
-              <SelectContent>
-                {DISPUTE_NOTIFY_TARGET_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            {DISPUTE_NOTIFY_TARGET_OPTIONS.map((option, index) => (
+              <div key={option.value} className="flex items-center gap-2">
+                <Badge variant="outline" className="gap-1.5 py-1.5 px-3 text-xs font-semibold">
+                  {index + 1}. {option.label}
+                </Badge>
+                {index < DISPUTE_NOTIFY_TARGET_OPTIONS.length - 1 && (
+                  <span className="text-muted-foreground">→</span>
+                )}
+              </div>
+            ))}
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Pre-selects this target team whenever someone opens an escalation dialog on a disputed transaction.
+            Escalating a transaction always starts at Stage 1 (Operations). It only advances to Finance, then
+            Provider Support, if the previous stage can&apos;t resolve it — never straight to a later stage.
           </p>
-        </CardContent>
-
-        <CardContent className="flex justify-end pt-0">
-          <Button onClick={() => save("Escalation")} size="sm" className="cursor-pointer">
-            Save Escalation Settings
-          </Button>
         </CardContent>
       </Card>
 

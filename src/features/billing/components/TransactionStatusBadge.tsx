@@ -1,34 +1,25 @@
-import { cn } from "@/lib/utils";
 import { TransactionStatus } from "@/types/transaction";
+import { statusBadgeClass, statusDotClass, StatusTone } from "@/lib/statusTone";
 
 interface Props {
   status: TransactionStatus;
 }
 
-const styles = {
-  Completed:
-    "bg-green-100 text-green-700 border-green-200",
-
-  Pending:
-    "bg-amber-100 text-amber-700 border-amber-200",
-
-  Failed:
-    "bg-red-100 text-red-700 border-red-200",
-
-  Refunded:
-    "bg-slate-100 text-slate-700 border-slate-200",
+const TONES: Record<TransactionStatus, StatusTone> = {
+  Completed: "success",
+  Pending: "warning",
+  Failed: "danger",
+  Refunded: "neutral",
 };
 
 export default function TransactionStatusBadge({
   status,
 }: Props) {
+  const tone = TONES[status];
+
   return (
-    <span
-      className={cn(
-        "inline-flex rounded-full border px-3 py-1 text-xs font-medium",
-        styles[status]
-      )}
-    >
+    <span className={statusBadgeClass(tone)}>
+      <span className={statusDotClass(tone)} />
       {status}
     </span>
   );

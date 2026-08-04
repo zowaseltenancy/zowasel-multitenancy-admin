@@ -1,25 +1,13 @@
-import { Users } from "lucide-react";
+"use client";
 
-import ComingSoonPanel from "@/components/shared/ComingSoonPanel";
+import UsersListView from "@/features/users/components/UsersListView";
 
-export default function BuyerUsersPage() {
+export default function BuyersUserPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">
-          Buyers
-        </h1>
-
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Marketplace buyer accounts.
-        </p>
-      </div>
-
-      <ComingSoonPanel
-        icon={Users}
-        title="Buyer visibility is coming soon"
-        description="Buyer accounts belong to Marketplace — this view will surface them read-only once the central user API is available."
-      />
-    </div>
+    <UsersListView
+      title="Commodity Buyers Directory"
+      description="View institutional offtakers, grain buyers, and commodity procurement leads."
+      categoryFilter="buyer"
+    />
   );
 }

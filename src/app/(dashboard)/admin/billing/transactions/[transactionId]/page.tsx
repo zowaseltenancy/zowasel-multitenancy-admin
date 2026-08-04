@@ -22,7 +22,7 @@ import DisputeTransactionDialog from "@/features/billing/components/DisputeTrans
 import ExportMenu from "@/components/shared/ExportMenu";
 import { useTransactions } from "@/features/billing/hooks/useTransactions";
 import { ORGANIZATION_TYPE_LABELS } from "@/constants/organization";
-import { DISPUTE_NOTIFY_TARGET_LABELS } from "@/constants/transaction";
+import { DISPUTE_NOTIFY_TARGET_LABELS, getNextEscalationStage } from "@/constants/transaction";
 import { ExportTable } from "@/lib/export";
 
 interface Props {
@@ -36,7 +36,7 @@ export default function TransactionDetailsPage({
 }: Props) {
   const { transactionId } = use(params);
 
-  const { transactions, raiseDispute } = useTransactions();
+  const { transactions, raiseDispute, escalateToNextStage } = useTransactions();
 
   const [disputeOpen, setDisputeOpen] = useState(false);
 
@@ -47,6 +47,10 @@ export default function TransactionDetailsPage({
   if (!transaction) {
     notFound();
   }
+
+  const nextStage = transaction.disputeNotifyTarget
+    ? getNextEscalationStage(transaction.disputeNotifyTarget)
+    : null;
 
   const exportTableData: ExportTable = {
     title: `Transaction Record - ${transaction.reference}`,
@@ -71,7 +75,7 @@ export default function TransactionDetailsPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
-            href="/admin/billing/transactions"
+            href="/admin/billing/transactions/all"
             className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -109,6 +113,22 @@ export default function TransactionDetailsPage({
               Escalate
             </Button>
           )}
+
+          {transaction.disputed && nextStage && (
+            <Button
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                escalateToNextStage(transaction.id);
+                toast.success(
+                  `${transaction.reference} escalated to ${DISPUTE_NOTIFY_TARGET_LABELS[nextStage]}.`
+                );
+              }}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Escalate Further
+            </Button>
+          )}
         </div>
       </div>
 
@@ -129,12 +149,11 @@ export default function TransactionDetailsPage({
 
               {transaction.disputeNotifyTarget && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Notified:{" "}
-                  {
-                    DISPUTE_NOTIFY_TARGET_LABELS[
-                      transaction.disputeNotifyTarget
-                    ]
-                  }
+                  Currently with:{" "}
+                  <span className="font-semibold text-foreground">
+                    {DISPUTE_NOTIFY_TARGET_LABELS[transaction.disputeNotifyTarget]}
+                  </span>
+                  {!nextStage && " (final stage)"}
                 </p>
               )}
             </div>
@@ -221,12 +240,8 @@ export default function TransactionDetailsPage({
         open={disputeOpen}
         reference={transaction.reference}
         onClose={() => setDisputeOpen(false)}
-        onConfirm={(reason, notifyTarget) => {
-          raiseDispute(
-            transaction.id,
-            reason,
-            notifyTarget
-          );
+        onConfirm={(reason) => {
+          raiseDispute(transaction.id, reason);
 
           toast.success(
             `${transaction.reference} has been escalated to the operations team.`

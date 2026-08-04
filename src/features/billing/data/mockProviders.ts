@@ -317,7 +317,7 @@ export const mockProviders: Provider[] = [
       apiKey: "xxxxxxxx",
     },
 
-    supportedCurrencies: ["ALL"],
+    supportedCurrencies: ["NGN", "GHS", "KES", "ZAR", "XOF", "UGX", "TZS", "USD", "EUR", "GBP", "CNY"],
 
     lastHealthCheck: "15 minutes ago",
 

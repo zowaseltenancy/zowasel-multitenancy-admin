@@ -47,7 +47,7 @@ export default async function InvoiceDetailsPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
-            href="/admin/billing/invoices"
+            href="/admin/billing/invoices/all"
             className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />

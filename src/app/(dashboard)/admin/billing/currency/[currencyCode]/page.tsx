@@ -12,6 +12,7 @@ import CountryFlag from "@/components/shared/CountryFlag";
 import ExportMenu from "@/components/shared/ExportMenu";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
 import { ExportTable } from "@/lib/export";
+import { clampMarkup, MAX_MARKUP_PERCENTAGE } from "@/constants/currency";
 
 interface PageProps {
   params: Promise<{ currencyCode: string }>;
@@ -38,10 +39,9 @@ export default function CountryCurrencyDetailPage({ params }: PageProps) {
   const finalRate = country.baseRateToUSD * (1 + totalMarkup / 100);
 
   const handleSaveIndividualMarkup = () => {
-    const val = Number(individualMarkup);
-    if (!Number.isNaN(val)) {
-      toast.success(`Individual markup rate for ${country.countryName} updated to ${val}%!`);
-    }
+    const val = clampMarkup(Number(individualMarkup));
+    setIndividualMarkup(val.toString());
+    toast.success(`Individual markup rate for ${country.countryName} updated to ${val}%!`);
   };
 
   const exportTableData: ExportTable = {
@@ -161,7 +161,7 @@ export default function CountryCurrencyDetailPage({ params }: PageProps) {
                 <Input
                   type="number"
                   min={0}
-                  max={30}
+                  max={MAX_MARKUP_PERCENTAGE}
                   step={0.1}
                   value={individualMarkup}
                   onChange={(e) => setIndividualMarkup(e.target.value)}
@@ -183,7 +183,7 @@ export default function CountryCurrencyDetailPage({ params }: PageProps) {
                   {useRegionalMarkup ? "Active" : "Disabled"}
                 </Badge>
               </div>
-              <div className="text-xs text-muted-foreground">Stack the {country.subRegionName} regional rate on top of this country's individual rate.</div>
+              <div className="text-xs text-muted-foreground">Stack the {country.subRegionName} regional rate on top of this country&apos;s individual rate.</div>
             </div>
 
             <Button

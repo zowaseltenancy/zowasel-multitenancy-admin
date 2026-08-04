@@ -6,7 +6,6 @@ import {
   Building2,
   CheckCircle2,
   Clock3,
-  Layers,
   XCircle,
 } from "lucide-react";
 
@@ -26,10 +25,6 @@ export default function OrganizationsOverviewPage() {
 
   const rejected = organizations.filter(
     (organization) => organization.kybStatus === "rejected"
-  ).length;
-
-  const cooperatives = organizations.filter(
-    (organization) => organization.type === "cooperative"
   ).length;
 
   const stats = [
@@ -75,12 +70,6 @@ export default function OrganizationsOverviewPage() {
       description: `${pending} organization${pending === 1 ? "" : "s"} awaiting KYB review.`,
       href: "/admin/organizations/pending",
       icon: Clock3,
-    },
-    {
-      title: "Cooperatives",
-      description: `${cooperatives} registered farmer cooperative${cooperatives === 1 ? "" : "s"}.`,
-      href: "/admin/organizations/cooperatives",
-      icon: Layers,
     },
   ];
 

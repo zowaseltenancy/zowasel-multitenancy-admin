@@ -1,8 +1,9 @@
 "use client";
 
-import { Badge, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { Role, PermissionCategoryGroup } from "@/types/permissions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 
 interface PermissionMatrixProps {
   roles: Role[];
@@ -94,7 +95,8 @@ export default function PermissionMatrix({
                                     </code>
                                     {permission.isSensitive && (
                                       <Badge
-                                        className="text-[9px] px-1 py-0 bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+                                        variant="destructive"
+                                        className="text-[9px] px-1 py-0"
                                       >
                                         Sensitive
                                       </Badge>
