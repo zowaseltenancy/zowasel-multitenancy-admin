@@ -145,16 +145,96 @@ export default function UsersListView({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          <p className="mt-2 text-muted-foreground">{description}</p>
+      {/* Top Section Grid: Left side has Title/Add User + Stat Cards; Right side has Map Selector at top right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
+            </div>
+
+            <Button onClick={() => setCreateOpen(true)} className="gap-2 shrink-0 cursor-pointer">
+              <UserPlus className="h-4 w-4" />
+              Add User
+            </Button>
+          </div>
+
+          {/* Snapshot Cards with Status Color Background Tints */}
+          {showStatsCards && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Total (category-scoped) - Cyan Tint */}
+              <Card className="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20 shadow-2xs">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Total {CATEGORY_LABELS[categoryFilter]}
+                    </p>
+                    <h3 className="text-xl font-bold mt-0.5">{totalItems}</h3>
+                  </div>
+                  <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 border border-cyan-500/30 dark:text-cyan-400">
+                    <Users className="h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Active - Emerald Tint */}
+              <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Active
+                    </p>
+                    <h3 className="text-xl font-bold mt-0.5">{activeCount}</h3>
+                  </div>
+                  <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
+                    <UserCheck className="h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pending - Amber Tint */}
+              <Card className="bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Pending
+                    </p>
+                    <h3 className="text-xl font-bold mt-0.5">{pendingCount}</h3>
+                  </div>
+                  <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400">
+                    <Clock className="h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Suspended - Red Tint */}
+              <Card className="bg-red-500/5 dark:bg-red-500/10 border-red-500/30 shadow-2xs">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Suspended
+                    </p>
+                    <h3 className="text-xl font-bold mt-0.5">{suspendedCount}</h3>
+                  </div>
+                  <div className="p-2 rounded-xl bg-red-500/15 text-red-600 border border-red-500/30 dark:text-red-400">
+                    <UserX className="h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
-        <Button onClick={() => setCreateOpen(true)} className="gap-2 shrink-0">
-          <UserPlus className="h-4 w-4" />
-          Add User
-        </Button>
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newFilter) => {
+              setGeoFilter(newFilter);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
 
       <CreateUserDialog
@@ -163,71 +243,6 @@ export default function UsersListView({
         organizations={organizations}
         onCreate={handleCreateUser}
       />
-
-      {/* Snapshot Cards with Status Color Background Tints */}
-      {showStatsCards && (
-      <div className="grid gap-4 md:grid-cols-4">
-        {/* Total (category-scoped) - Cyan Tint */}
-        <Card className="bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20 shadow-2xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Total {CATEGORY_LABELS[categoryFilter]}
-              </p>
-              <h3 className="text-2xl font-bold mt-1">{totalItems}</h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-600 border border-cyan-500/30 dark:text-cyan-400">
-              <Users className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Active - Emerald Tint */}
-        <Card className="bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Active Users
-              </p>
-              <h3 className="text-2xl font-bold mt-1">{activeCount}</h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
-              <UserCheck className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pending - Amber Tint */}
-        <Card className="bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Pending Approval
-              </p>
-              <h3 className="text-2xl font-bold mt-1">{pendingCount}</h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400">
-              <Clock className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Suspended - Red Tint */}
-        <Card className="bg-red-500/5 dark:bg-red-500/10 border-red-500/30 shadow-2xs">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Suspended Accounts
-              </p>
-              <h3 className="text-2xl font-bold mt-1">{suspendedCount}</h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-600 border border-red-500/30 dark:text-red-400">
-              <UserX className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      )}
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 max-w-md">
@@ -243,15 +258,7 @@ export default function UsersListView({
           />
         </div>
 
-        <div className="flex items-center gap-3">
-          <CompactRegionScopeSelector
-            value={geoFilter}
-            onChange={(newFilter) => {
-              setGeoFilter(newFilter);
-              setPage(1);
-            }}
-          />
-
+        <div className="flex items-center gap-3 flex-wrap">
           <select
             value={roleFilter}
             onChange={(e) => {

@@ -1,16 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
-  ArrowRight,
-  Building2,
-  CreditCard,
-  FileCheck,
-  LayoutGrid,
-  ShieldCheck,
-  Users,
   Maximize2,
   Minimize2,
   ChevronLeft,
@@ -18,7 +10,6 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
 import { useTransactions } from "@/features/billing/hooks/useTransactions";
@@ -113,14 +104,6 @@ export default function AdminDashboard() {
     [scopedOrganizations]
   );
 
-  const quickLinks = [
-    { title: "Organizations", description: "Businesses, KYB status, modules and team.", href: "/admin/organizations", icon: Building2 },
-    { title: "KYB Review", description: "Approve or reject pending submissions.", href: "/admin/kyb", icon: FileCheck },
-    { title: "Modules", description: "Manage the CropPilot module catalog.", href: "/admin/modules", icon: LayoutGrid },
-    { title: "Users", description: "Internal admin accounts and access.", href: "/admin/users", icon: Users },
-    { title: "Roles", description: "Permission scopes for admin staff.", href: "/admin/roles", icon: ShieldCheck },
-    { title: "Billing", description: "Providers, currency, transactions.", href: "/admin/billing", icon: CreditCard },
-  ];
 
   const handlePrevCard = () => {
     if (focusedCardIndex === null) return;
@@ -178,18 +161,36 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header Greeting & Scope Selector */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Welcome back 👋</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isScoped
-              ? "Here's an overview scoped to your selected region."
-              : "Here's an overview of your platform."}
-          </p>
+      {/* Top Section Grid: Greeting + Live Activity Ticker on Left, Region Scope Map Selector on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Left Column: Greeting & Live Activity Ticker matching right map card height 1:1 */}
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-3">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Welcome Back Super Admin</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isScoped
+                ? "Here's an overview scoped to your selected region."
+                : "Here's an overview of your platform."}
+            </p>
+          </div>
+
+          {/* Compact Live Activity Ticker (stretches vertically to match map card height) */}
+          <div className="w-full flex-1 min-h-[160px]">
+            <RecentActivityFeed
+              organizations={scopedOrganizations}
+              users={scopedTenantUsers}
+              leads={scopedLeads}
+              campaigns={campaigns}
+              compact={true}
+              className="h-full"
+            />
+          </div>
         </div>
 
-        <CompactRegionScopeSelector value={geoFilter} onChange={setGeoFilter} />
+        {/* Right Column: Full Region Scope Map Selector Card */}
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
+          <CompactRegionScopeSelector value={geoFilter} onChange={setGeoFilter} />
+        </div>
       </div>
 
       {/* Dynamic Dashboard Overview Section with Framer Motion Inward Origin Morphing */}
@@ -201,11 +202,6 @@ export default function AdminDashboard() {
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 Platform Overview ({focusedCardIndex === null ? "8 Executive Summaries" : "Expanded Focus View"})
               </h3>
-              {focusedCardIndex !== null && (
-                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary border border-primary/20">
-                  Inward Pop Morphing Active
-                </span>
-              )}
             </div>
 
             {focusedCardIndex !== null && (
@@ -289,7 +285,7 @@ export default function AdminDashboard() {
               return (
                 <div key={meta.id} className="overflow-hidden rounded-xl">
                   <motion.div
-                    layoutId={`dashboard-card-slot-${meta.id}`}
+                    {...(isAnyFocused ? { layoutId: `dashboard-card-slot-${meta.id}` } : {})}
                     transition={{
                       type: "spring",
                       stiffness: 350,
@@ -321,52 +317,6 @@ export default function AdminDashboard() {
         </section>
       </LayoutGroup>
 
-      {/* Recent Activity Feed */}
-      <section className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Recent Activity
-        </h3>
-
-        <RecentActivityFeed
-          organizations={scopedOrganizations}
-          users={scopedTenantUsers}
-          leads={scopedLeads}
-          campaigns={campaigns}
-        />
-      </section>
-
-      {/* Quick Links */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold">Quick Links</h2>
-          <p className="text-sm text-muted-foreground">Jump directly into a section of the admin panel.</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {quickLinks.map((link) => {
-            const Icon = link.icon;
-
-            return (
-              <Link key={link.href} href={link.href}>
-                <Card className="group h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-lg bg-card">
-                  <CardContent className="flex h-full flex-col justify-between gap-5 p-5">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{link.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{link.description}</p>
-                    </div>
-                    <div className="flex justify-end">
-                      <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

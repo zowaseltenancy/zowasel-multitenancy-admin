@@ -116,7 +116,51 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
         onConfirm={handleConfirmConvert}
       />
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* Top Section Grid: Title + Status Pills on Left, Map Selector at Top Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Leads Pipeline</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Track and convert potential tenant leads across operating regions.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {STATUS_FILTERS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(option.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                  statusFilter === option.value
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newFilter) => {
+              setGeoFilter(newFilter);
+              setPage(1);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Search Bar row */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-border pb-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -129,35 +173,6 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
             className="pl-9"
           />
         </div>
-
-        <CompactRegionScopeSelector
-          value={geoFilter}
-          onChange={(newFilter) => {
-            setGeoFilter(newFilter);
-            setPage(1);
-          }}
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        {STATUS_FILTERS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => {
-              setStatusFilter(option.value);
-              setPage(1);
-            }}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-              statusFilter === option.value
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {option.label}
-          </button>
-        ))}
       </div>
 
       {paginatedLeads.length === 0 ? (

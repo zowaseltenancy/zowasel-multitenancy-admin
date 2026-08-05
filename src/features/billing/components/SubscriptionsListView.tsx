@@ -92,46 +92,44 @@ export default function SubscriptionsListView({
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      {/* Top Section Grid: Title + Status Tabs on Left, Map Selector at Top Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {STATUS_TABS.map((tab) => {
+              const isActive = activeTab.toLowerCase() === tab.key.toLowerCase();
+
+              return (
+                <Link key={tab.key} href={tab.href}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(tab.key as SubscriptionStatusFilter);
+                      setPage(1);
+                    }}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-background text-muted-foreground border"}`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Sleek 1-Line Control Bar: Status Tabs + Compact Region Scope Popover + Search */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {STATUS_TABS.map((tab) => {
-            const isActive = activeTab.toLowerCase() === tab.key.toLowerCase();
-
-            return (
-              <Link key={tab.key} href={tab.href}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(tab.key as SubscriptionStatusFilter);
-                    setPage(1);
-                  }}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-background text-muted-foreground border"}`}>
-                    {tab.count}
-                  </span>
-                </button>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Integrated 1-Line Compact Region Scope Selector */}
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
           <CompactRegionScopeSelector
             value={geoFilter}
             onChange={(newVal) => {
@@ -139,16 +137,19 @@ export default function SubscriptionsListView({
               setPage(1);
             }}
           />
-
-          <SearchBar
-            value={search}
-            onChange={(value) => {
-              setSearch(value);
-              setPage(1);
-            }}
-            placeholder="Search by business or product..."
-          />
         </div>
+      </div>
+
+      {/* Control Bar: Search Bar */}
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <SearchBar
+          value={search}
+          onChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          placeholder="Search by business or product..."
+        />
       </div>
 
       {/* Subscriptions Grid & Pagination */}

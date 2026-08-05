@@ -13,7 +13,13 @@ pnpm start    # run production build
 pnpm lint     # eslint
 ```
 
-There is no test suite/framework configured (no jest/vitest/playwright in package.json). Don't assume one exists or invent test commands.
+There is no static test suite framework pre-configured, but **Playwright (`^1.62.0`) is installed in `devDependencies`**. 
+
+### 🧪 Playwright Runtime & E2E Verification Rule
+* **TypeScript compilation alone is NOT sufficient** to confirm feature correctness or performance.
+* Always test live runtime UI flows using Playwright.
+* If port 3000 is not serving, launch `pnpm dev` in the background and verify HTTP readiness before running tests.
+* Walk through pages to observe speed, responsiveness, hydration warnings, console errors, and re-render bottlenecks (e.g. Framer Motion layout shift calculations blocking main thread during sidebar toggles).
 
 Adding shadcn components: this project uses the `shadcn` CLI (`^4.13.0`) with style `base-nova`, base color `neutral`, RSC enabled, icon library `lucide-react`. Aliases (see `components.json`): `@/components`, `@/components/ui`, `@/lib`, `@/hooks`.
 

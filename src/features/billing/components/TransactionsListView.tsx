@@ -180,28 +180,49 @@ export default function TransactionsListView({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner: Title + Search Bar + Region Scope + Export on Same Line */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {title}
-          </h1>
+      {/* Top Section Grid: Title + ExportMenu + TransactionFilters on Left, Map Selector at Top Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            </div>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            {description}
-          </p>
-        </div>
+            <ExportMenu
+              table={toTransactionExportTable(filtered, title)}
+              captureElementId="transaction-table-capture"
+            />
+          </div>
 
-        <div className="flex items-center gap-2">
-          <SearchBar
-            value={search}
-            onChange={(val) => {
-              setSearch(val);
+          <TransactionFilters
+            timeframe={timeframe}
+            onTimeframeChange={(value) => {
+              setTimeframe(value);
               setPage(1);
             }}
-            placeholder="Search business or reference..."
+            customRange={customRange}
+            onCustomRangeChange={(value) => {
+              setCustomRange(value);
+              setPage(1);
+            }}
+            statusFilter={effectiveStatus}
+            onStatusFilterChange={(val) => {
+              setLocalStatus(val);
+              setPage(1);
+            }}
+            statusEditable={statusFilter === "all"}
+            entityType={entityType}
+            onEntityTypeChange={(value) => {
+              setEntityType(value);
+              setPage(1);
+            }}
+            sort={sort}
+            onSortChange={setSort}
           />
+        </div>
 
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
           <CompactRegionScopeSelector
             value={geoFilter}
             onChange={(newVal) => {
@@ -209,45 +230,22 @@ export default function TransactionsListView({
               setPage(1);
             }}
           />
-
-          <ExportMenu
-            table={toTransactionExportTable(
-              filtered,
-              title
-            )}
-            captureElementId="transaction-table-capture"
-          />
         </div>
       </div>
 
-      {/* Unified 1-Line Control Bar */}
-      <div className="space-y-4">
-        <TransactionFilters
-          timeframe={timeframe}
-          onTimeframeChange={(value) => {
-            setTimeframe(value);
+      {/* Search Bar row */}
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <SearchBar
+          value={search}
+          onChange={(val) => {
+            setSearch(val);
             setPage(1);
           }}
-          customRange={customRange}
-          onCustomRangeChange={(value) => {
-            setCustomRange(value);
-            setPage(1);
-          }}
-          statusFilter={effectiveStatus}
-          onStatusFilterChange={(val) => {
-            setLocalStatus(val);
-            setPage(1);
-          }}
-          statusEditable={statusFilter === "all"}
-          entityType={entityType}
-          onEntityTypeChange={(value) => {
-            setEntityType(value);
-            setPage(1);
-          }}
-          sort={sort}
-          onSortChange={setSort}
+          placeholder="Search business or reference..."
         />
+      </div>
 
+      <div className="space-y-4">
         <div id="transaction-table-capture">
           <TransactionTable transactions={paginated} />
         </div>

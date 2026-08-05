@@ -145,47 +145,50 @@ export default function KybOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">KYB Review</h1>
+      {/* Top Section Grid: Title + Stat Cards on Left, Map Selector at Top Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">KYB Review</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Review and decide on business verification submissions across operating regions.
+            </p>
+          </div>
 
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Review and decide on business verification submissions across operating regions.
-          </p>
+          {/* Snapshot Cards with Status Color Background Tints */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat) => {
+              const Icon = stat.icon;
+
+              return (
+                <Card key={stat.label} className={`border shadow-2xs transition-colors ${stat.cardBg}`}>
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${stat.iconClassName}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                      <h3 className="text-xl font-bold mt-0.5">{stat.value}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
-        <CompactRegionScopeSelector
-          value={geoFilter}
-          onChange={(newFilter) => {
-            setGeoFilter(newFilter);
-            setPage(1);
-          }}
-        />
-      </div>
-
-      {/* Snapshot Cards with Status Color Background Tints */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-
-          return (
-            <Card key={stat.label} className={`border shadow-2xs transition-colors ${stat.cardBg}`}>
-              <CardContent className="flex items-center gap-4 p-6">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-xl border ${stat.iconClassName}`}
-                >
-                  <Icon className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-
-                  <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newFilter) => {
+              setGeoFilter(newFilter);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
 
       <section className="space-y-3">

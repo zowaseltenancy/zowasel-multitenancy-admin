@@ -122,39 +122,43 @@ export default function FinanceHubPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">Finance Hub</h1>
-            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 border border-emerald-500/20">
-              Global Treasury & BI Standard
-            </span>
+      {/* Top Section Grid: Title + Currency Selector + Sub-Domain Nav Tabs on Left, Map Selector at Top Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold tracking-tight">Finance Hub</h1>
+              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 border border-emerald-500/20">
+                Global Treasury & BI Standard
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isScoped
+                ? "Comprehensive platform-level financial ops, revenue analytics, master ledger, and accounting intelligence."
+                : "Comprehensive platform-level financial ops, revenue analytics, master ledger, and accounting intelligence across all regions."}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isScoped
-              ? "Comprehensive platform-level financial ops, revenue analytics, master ledger, and accounting intelligence."
-              : "Comprehensive platform-level financial ops, revenue analytics, master ledger, and accounting intelligence across all regions."}
-          </p>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Global Currency Selector */}
+            <div className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-xs font-bold shadow-2xs">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as any)}
+                className="bg-transparent font-bold text-foreground focus:outline-none cursor-pointer"
+              >
+                {Object.entries(currencySymbols).map(([code, info]) => (
+                  <option key={code} value={code}>
+                    {info.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Global Currency Selector */}
-          <div className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-xs font-bold shadow-2xs">
-            <Globe className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as any)}
-              className="bg-transparent font-bold text-foreground focus:outline-none cursor-pointer"
-            >
-              {Object.entries(currencySymbols).map(([code, info]) => (
-                <option key={code} value={code}>
-                  {info.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
           <CompactRegionScopeSelector value={geoFilter} onChange={setGeoFilter} />
         </div>
       </div>

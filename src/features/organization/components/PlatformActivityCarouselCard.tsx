@@ -89,7 +89,7 @@ export default function PlatformActivityCarouselCard({
   // SUMMARY VIEW (Landing 8-Card Grid)
   if (!isExpanded) {
     return (
-      <Card className="h-[210px] flex flex-col justify-between border shadow-2xs bg-card overflow-hidden transition-all duration-200">
+      <Card className="h-[210px] flex flex-col justify-between border shadow-2xs bg-card overflow-hidden">
         <CardContent className="p-4 flex flex-col justify-between h-full space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

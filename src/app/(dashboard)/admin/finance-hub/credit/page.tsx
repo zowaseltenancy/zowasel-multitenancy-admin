@@ -174,21 +174,25 @@ export default function CreditPortfolioRiskPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">Credit Portfolio & Risk</h1>
-            <span className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-bold text-sky-600 border border-sky-500/20">
-              Alternative Finance Intelligence
-            </span>
+      {/* Header Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold tracking-tight">Credit Portfolio & Risk</h1>
+              <span className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-bold text-sky-600 border border-sky-500/20">
+                Alternative Finance Intelligence
+              </span>
+            </div>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Alternative Finance credit requests, portfolio exposure, DPD risk, PAR30/60/90, and ACESS credit scoring.
+            </p>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Alternative Finance credit requests, portfolio exposure, DPD risk, PAR30/60/90, and ACESS credit scoring.
-          </p>
         </div>
 
-        <CompactRegionScopeSelector value={geoFilter} onChange={setGeoFilter} />
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
+          <CompactRegionScopeSelector value={geoFilter} onChange={setGeoFilter} />
+        </div>
       </div>
 
       {/* Finance Hub Nav */}

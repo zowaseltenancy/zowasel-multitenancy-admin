@@ -1,7 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, useCallback } from "react";
-
+import React, { useState, useEffect, useCallback, memo } from "react";
 import Header from "./Header";
 import PageContainer from "./PageContainer";
 import { PageHeaderProvider } from "./PageHeaderContext";
@@ -13,41 +12,41 @@ interface Props {
 
 const STORAGE_KEY = "sidebar-collapsed";
 
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
-
-function getSnapshot(): string {
-  if (typeof window === "undefined") return "false";
-  return localStorage.getItem(STORAGE_KEY) || "false";
-}
-
-function getServerSnapshot(): string {
-  return "false";
-}
+const MemoizedPageContent = memo(function MemoizedPageContent({ children }: { children: React.ReactNode }) {
+  return <PageContainer>{children}</PageContainer>;
+});
 
 export default function DashboardLayout({ children }: Props) {
-  const storedValue = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const collapsed = storedValue === "true";
+  const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored !== null) {
+      setCollapsed(stored === "true");
+    }
+  }, []);
 
   const toggleSidebar = useCallback(() => {
-    const next = !collapsed;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event("storage"));
-  }, [collapsed]);
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   return (
     <PageHeaderProvider>
       <div className="flex h-screen w-full overflow-hidden bg-background">
-        <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
+        <Sidebar collapsed={mounted ? collapsed : false} onToggle={toggleSidebar} />
 
         <div className="flex h-screen flex-1 flex-col overflow-hidden">
           <Header onToggle={toggleSidebar} />
 
-          <PageContainer>{children}</PageContainer>
+          <MemoizedPageContent>{children}</MemoizedPageContent>
         </div>
       </div>
     </PageHeaderProvider>
   );
-}
+}

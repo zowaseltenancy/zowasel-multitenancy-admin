@@ -85,29 +85,34 @@ export default function OrganizationsListView({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">{description}</p>
+      {/* Top Section Grid: Left side has Title/Description + OrganizationStatsCards; Right side has Map Selector at top right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
+          </div>
+
+          <OrganizationStatsCards
+            organizations={organizations}
+            activeFilter={activeFilter}
+            onFilterChange={(value) => {
+              setActiveFilter(value);
+              setPage(1);
+            }}
+          />
         </div>
 
-        <CompactRegionScopeSelector
-          value={geoFilter}
-          onChange={(newFilter) => {
-            setGeoFilter(newFilter);
-            setPage(1);
-          }}
-        />
+        <div className="lg:col-span-6 xl:col-span-5 flex justify-end w-full h-full">
+          <CompactRegionScopeSelector
+            value={geoFilter}
+            onChange={(newFilter) => {
+              setGeoFilter(newFilter);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
-
-      <OrganizationStatsCards
-        organizations={organizations}
-        activeFilter={activeFilter}
-        onFilterChange={(value) => {
-          setActiveFilter(value);
-          setPage(1);
-        }}
-      />
 
       {bottomElement}
 
