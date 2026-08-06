@@ -5,6 +5,7 @@ import Header from "./Header";
 import PageContainer from "./PageContainer";
 import { PageHeaderProvider } from "./PageHeaderContext";
 import Sidebar from "./Sidebar";
+import {FloatingChatButton} from "@/components/FloatingButton.tsx";
 
 interface Props {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ export default function DashboardLayout({ children }: Props) {
           <MemoizedPageContent>{children}</MemoizedPageContent>
         </div>
       </div>
+      <FloatingChatButton/>
     </PageHeaderProvider>
   );
-}
+}

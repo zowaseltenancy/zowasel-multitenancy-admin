@@ -189,9 +189,8 @@ export const navigation: NavigationItem[] = [
       },
     ],
   },
-
   {
-    label: "Marketing Pro",
+    label: "Broadcasts",
     href: "/admin/marketing",
     icon: Megaphone,
     children: [

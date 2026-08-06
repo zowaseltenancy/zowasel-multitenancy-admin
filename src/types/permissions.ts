@@ -36,3 +36,17 @@ export interface PermissionCategoryGroup {
   description: string;
   permissions: Permission[];
 }
+
+
+export const WHATSAPP_PERMISSIONS = {
+  CHAT_READ_ALL: 'whatsapp:chat_read_all',
+  CHAT_READ_ASSIGNED: 'whatsapp:chat_read_assigned',
+  SEND_MEDIA: 'whatsapp:send_media',
+  SEND_VOICE: 'whatsapp:send_voice',
+  EXPORT_CHAT: 'whatsapp:export_chat',
+  MANAGE_TAGS: 'whatsapp:manage_tags',
+  ASSIGN_AGENT: 'whatsapp:assign_agent',
+  DELETE_CHAT: 'whatsapp:delete_chat',
+  VIEW_INTERNAL_NOTES: 'whatsapp:view_internal_notes',
+} as const;
+export type WhatsAppPermission = (typeof WHATSAPP_PERMISSIONS)[keyof typeof WHATSAPP_PERMISSIONS];
