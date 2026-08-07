@@ -54,6 +54,12 @@ export default function CommerceFinanceCarouselCard({
     return Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
   }, [completedTransactions]);
 
+  // Headline currency for the summary tile — whichever currency has the most
+  // completed volume in the current scope, real data, not a fixed constant.
+  const topCurrency = revenueByCurrency[0];
+  const completionRate =
+    transactions.length > 0 ? Math.round((completedTransactions.length / transactions.length) * 100) : 0;
+
   const nextSlide = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % TABS.length);
@@ -80,14 +86,18 @@ export default function CommerceFinanceCarouselCard({
               </div>
             </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-600 border border-indigo-500/20">
-              <Wallet className="h-3 w-3" /> 4.85% Take Rate
+              <Wallet className="h-3 w-3" /> {completionRate}% Completed
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
             <div className="p-2.5 rounded-lg border bg-indigo-500/5 border-indigo-500/20">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">Trade GMV</p>
-              <p className="text-2xl font-extrabold text-indigo-600 mt-0.5">₦1.24B</p>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                {topCurrency ? `${topCurrency[0]} Volume` : "Txn Volume"}
+              </p>
+              <p className="text-2xl font-extrabold text-indigo-600 mt-0.5">
+                {topCurrency ? topCurrency[1].toLocaleString() : 0}
+              </p>
             </div>
             <div className="p-2.5 rounded-lg border bg-muted/30">
               <p className="text-[10px] font-bold uppercase text-muted-foreground">Subscriptions</p>
@@ -96,9 +106,9 @@ export default function CommerceFinanceCarouselCard({
           </div>
 
           <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground pt-1 border-t">
-            <span>Net Fees: ₦60.1M</span>
+            <span>Completed: {completedTransactions.length}</span>
             <span>&bull;</span>
-            <span>Fulfillment: 84.2%</span>
+            <span>Currencies: {revenueByCurrency.length}</span>
           </div>
         </CardContent>
       </Card>
@@ -118,7 +128,9 @@ export default function CommerceFinanceCarouselCard({
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Commerce, Subscriptions & Revenue Flow Breakdown
               </p>
-              <h3 className="text-2xl font-extrabold text-foreground">₦1.24B Gross Marketplace Volume</h3>
+              <h3 className="text-2xl font-extrabold text-foreground">
+                {topCurrency ? `${topCurrency[0]} ${topCurrency[1].toLocaleString()}` : "No completed volume yet"}
+              </h3>
             </div>
           </div>
 
@@ -156,25 +168,56 @@ export default function CommerceFinanceCarouselCard({
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-4 p-4 border rounded-xl bg-muted/20">
-          <div className="p-4 border rounded-xl bg-card">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Active Paid Subscriptions</p>
-            <p className="text-3xl font-black text-foreground mt-2">{activeSubscriptions}</p>
-            <p className="text-xs font-bold text-muted-foreground mt-1">Tenant Module Licenses</p>
+        {activeTab.key === "subscriptions" && (
+          <div className="grid grid-cols-2 gap-4 p-4 border rounded-xl bg-muted/20">
+            <div className="p-4 border rounded-xl bg-card">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Active Paid Subscriptions</p>
+              <p className="text-3xl font-black text-foreground mt-2">{activeSubscriptions}</p>
+              <p className="text-xs font-bold text-muted-foreground mt-1">Tenant Module Licenses</p>
+            </div>
+            <div className="p-4 border rounded-xl bg-indigo-500/5 border-indigo-500/20">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Organizations in Scope</p>
+              <p className="text-3xl font-black text-indigo-600 mt-2">{organizations.length}</p>
+              <p className="text-xs font-bold text-muted-foreground mt-1">
+                {organizations.length > 0 ? ((activeSubscriptions / organizations.length) * 100).toFixed(0) : 0}% with a paid subscription
+              </p>
+            </div>
           </div>
+        )}
 
-          <div className="p-4 border rounded-xl bg-emerald-500/5 border-emerald-500/20">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Net Platform Fee Take</p>
-            <p className="text-3xl font-black text-emerald-600 mt-2">₦60.1M</p>
-            <p className="text-xs font-bold text-muted-foreground mt-1">4.85% Gross Take Rate</p>
+        {activeTab.key === "revenue" && (
+          <div className="p-4 border rounded-xl bg-muted/20 space-y-2 max-h-[180px] overflow-y-auto">
+            {revenueByCurrency.length === 0 ? (
+              <p className="text-xs font-bold text-muted-foreground text-center py-4">
+                No completed transactions in scope yet.
+              </p>
+            ) : (
+              revenueByCurrency.map(([currency, amount]) => (
+                <div key={currency} className="flex items-center justify-between p-3 border rounded-xl bg-card">
+                  <span className="text-sm font-bold text-foreground">{currency}</span>
+                  <span className="text-sm font-black text-indigo-600 font-mono">{amount.toLocaleString()}</span>
+                </div>
+              ))
+            )}
           </div>
+        )}
 
-          <div className="p-4 border rounded-xl bg-indigo-500/5 border-indigo-500/20">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Completed Transactions</p>
-            <p className="text-3xl font-black text-indigo-600 mt-2">{completedTransactions.length}</p>
-            <p className="text-xs font-bold text-muted-foreground mt-1">Processed Settlements</p>
+        {activeTab.key === "transactions" && (
+          <div className="grid grid-cols-2 gap-4 p-4 border rounded-xl bg-muted/20">
+            <div className="p-4 border rounded-xl bg-indigo-500/5 border-indigo-500/20">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Completed Transactions</p>
+              <p className="text-3xl font-black text-indigo-600 mt-2">{completedTransactions.length}</p>
+              <p className="text-xs font-bold text-muted-foreground mt-1">Processed Settlements</p>
+            </div>
+            <div className="p-4 border rounded-xl bg-card">
+              <p className="text-xs font-bold uppercase text-muted-foreground">All Transactions in Scope</p>
+              <p className="text-3xl font-black text-foreground mt-2">{transactions.length}</p>
+              <p className="text-xs font-bold text-muted-foreground mt-1">
+                {transactions.length > 0 ? ((completedTransactions.length / transactions.length) * 100).toFixed(0) : 0}% completed
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

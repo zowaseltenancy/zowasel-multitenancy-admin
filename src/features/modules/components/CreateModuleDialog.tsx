@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Package, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
-import { ModuleCategory } from "@/types/module";
+import { ModuleProduct } from "@/types/module";
 import {
   createModuleSchema,
   CreateModuleFormValues,
@@ -23,24 +23,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface CreateModuleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmitModule: (values: CreateModuleFormValues) => void;
+  // Locked to the product whose page you're on — creating a module from
+  // inside CropPilot's page can't accidentally land it under Marketplace.
+  product: ModuleProduct;
 }
+
+const PRODUCT_LABELS: Record<ModuleProduct, string> = {
+  croppilot: "CropPilot",
+  marketplace: "Marketplace",
+  acess: "ACESS",
+};
 
 export default function CreateModuleDialog({
   open,
   onOpenChange,
   onSubmitModule,
+  product,
 }: CreateModuleDialogProps) {
   const {
     register,
@@ -54,7 +57,7 @@ export default function CreateModuleDialog({
     defaultValues: {
       name: "",
       description: "",
-      category: "croppilot",
+      product,
       requiresKyb: false,
       isPaid: false,
       pricePerMonth: 0,
@@ -63,21 +66,20 @@ export default function CreateModuleDialog({
   });
 
   const isPaid = watch("isPaid");
-  const category = watch("category");
 
   useEffect(() => {
     if (open) {
       reset({
         name: "",
         description: "",
-        category: "croppilot",
+        product,
         requiresKyb: false,
         isPaid: false,
         pricePerMonth: 0,
         parentId: null,
       });
     }
-  }, [open, reset]);
+  }, [open, reset, product]);
 
   const onSubmit = (values: CreateModuleFormValues) => {
     try {
@@ -118,24 +120,15 @@ export default function CreateModuleDialog({
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Category <span className="text-destructive">*</span>
+              Product
             </label>
-            <Select
-              value={category}
-              onValueChange={(val) => setValue("category", val as ModuleCategory)}
-            >
-              <SelectTrigger className="text-xs">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="croppilot">CropPilot Core</SelectItem>
-                <SelectItem value="marketplace">Marketplace</SelectItem>
-                <SelectItem value="analytics">Analytics</SelectItem>
-                <SelectItem value="export_management">Export Management</SelectItem>
-                <SelectItem value="supply_chain">Supply Chain</SelectItem>
-                <SelectItem value="carbon_sustainability">Carbon & Sustainability</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs font-semibold text-foreground">
+              {PRODUCT_LABELS[product]}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Set by which product page you opened this from. Sub-categorization within a product is
+              deferred for now.
+            </p>
           </div>
 
           <div className="space-y-1.5">

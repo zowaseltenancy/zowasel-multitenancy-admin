@@ -21,6 +21,10 @@ export default function DashboardLayout({ children }: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Deliberate: localStorage isn't available during SSR, so the real
+    // collapsed state can only be read after mount — the `mounted` flag is
+    // what keeps the server-rendered markup hydration-safe in the meantime.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored !== null) {

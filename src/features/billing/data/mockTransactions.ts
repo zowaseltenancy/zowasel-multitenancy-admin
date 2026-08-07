@@ -133,7 +133,7 @@ export const mockTransactions: Transaction[] = [
     reference: "TXN-0010",
     organization: "Sahel Grains Offtakers Ltd",
     entityType: "buyer",
-    amount: 620000,
+    amount: 62000,
     currency: "GHS",
     provider: "Flutterwave",
     status: "Completed",

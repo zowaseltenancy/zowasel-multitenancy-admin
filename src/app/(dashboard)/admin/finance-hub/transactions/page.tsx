@@ -1,132 +1,81 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import {
-  Receipt,
   PlusCircle,
   Search,
   Filter,
-  ArrowUpRight,
-  ArrowDownRight,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Upload,
-  FileText,
-  DollarSign,
-  Layers,
   X,
   Download,
-  Image as ImageIcon,
+  ThumbsUp,
+  ThumbsDown,
+  ArrowUpCircle,
+  Receipt as ReceiptIcon,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
+import ReceiptView from "@/features/finance-hub/components/ReceiptView";
+import { useLedgerTransactions } from "@/features/finance-hub/hooks/useLedgerTransactions";
+import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
+import { useFinanceAuditLog } from "@/features/finance-hub/context/FinanceAuditLogContext";
+import { convertToUSD, currencySymbolFor, formatUSD } from "@/features/finance-hub/utils/currency";
+import { LEDGER_CATEGORY_LABELS, LEDGER_STATUS_TONE } from "@/constants/finance";
+import { statusBadgeClass } from "@/lib/statusTone";
+import { LedgerCategory, LedgerTransaction } from "@/types/finance";
+import { buildBulkSampleCsv, parseBulkLedgerCsv } from "@/features/finance-hub/utils/statementParsers";
 
-export interface TransactionRecord {
-  id: string;
-  date: string;
-  accountName: string;
-  accountId: string;
-  category: "Subscription" | "Platform Fee" | "Operational Outflow" | "Dispute Fee" | "Escrow Settlement";
-  channel: "Online" | "Offline / Manual";
-  amount: number;
-  type: "credit" | "debit";
-  method: "Paystack" | "Flutterwave" | "Bank Transfer" | "Cash" | "Cheque";
-  status: "Completed" | "Pending" | "Disputed";
-  reference: string;
-}
-
-const initialTransactions: TransactionRecord[] = [
-  {
-    id: "TXN-90812",
-    date: "2026-08-03 14:22",
-    accountName: "Grand Grains Milling Ltd",
-    accountId: "ACC-BUY-8819",
-    category: "Platform Fee",
-    channel: "Online",
-    amount: 725000,
-    type: "credit",
-    method: "Paystack",
-    status: "Completed",
-    reference: "PSTK-991204812",
-  },
-  {
-    id: "EXP-44091",
-    date: "2026-08-03 11:05",
-    accountName: "Termii Technologies",
-    accountId: "ACC-VENDOR-01",
-    category: "Operational Outflow",
-    channel: "Online",
-    amount: 450000,
-    type: "debit",
-    method: "Bank Transfer",
-    status: "Completed",
-    reference: "TRM-SMS-202608",
-  },
-  {
-    id: "TXN-90800",
-    date: "2026-08-02 16:45",
-    accountName: "Kano Agro Merchants Cooperative",
-    accountId: "ACC-COOP-1120",
-    category: "Subscription",
-    channel: "Offline / Manual",
-    amount: 1500000,
-    type: "credit",
-    method: "Cheque",
-    status: "Completed",
-    reference: "CHQ-ZENITH-008129",
-  },
-  {
-    id: "EXP-44092",
-    date: "2026-08-02 10:15",
-    accountName: "Meta WhatsApp Business API",
-    accountId: "ACC-VENDOR-02",
-    category: "Operational Outflow",
-    channel: "Online",
-    amount: 820000,
-    type: "debit",
-    method: "Flutterwave",
-    status: "Completed",
-    reference: "FLW-META-3391",
-  },
-  {
-    id: "TXN-90795",
-    date: "2026-08-01 09:30",
-    accountName: "Olam Agri Nigeria",
-    accountId: "ACC-BUY-1002",
-    category: "Dispute Fee",
-    channel: "Offline / Manual",
-    amount: 350000,
-    type: "credit",
-    method: "Bank Transfer",
-    status: "Completed",
-    reference: "OFF-REF-99210",
-  },
+const CURRENCY_OPTIONS = ["NGN", "KES", "TZS", "GHS", "USD"];
+const COUNTRY_OPTIONS = [
+  { code: "NG", name: "Nigeria" },
+  { code: "KE", name: "Kenya" },
+  { code: "TZ", name: "Tanzania" },
 ];
 
-export default function PlatformTransactionsPage() {
-  const [transactions, setTransactions] = useState<TransactionRecord[]>(initialTransactions);
+// The next level up, for the "escalate" prompt when an amount exceeds the
+// acting officer's approval ceiling — mirrors the real DOA pattern where the
+// checker role escalates a level as the amount grows.
+const NEXT_LEVEL_LABEL: Record<string, string> = {
+  country: "Regional Finance Manager",
+  sub_region: "Continental Finance Director",
+  continent: "Chief Financial Officer",
+};
+
+export default function PlatformLedgerPage() {
+  const { transactions, addOfflineTransaction, approveTransaction, rejectTransaction } = useLedgerTransactions();
+  const { actingOfficer, canApprove, approvalThresholdUSD } = useActingFinanceOfficer();
+  const { logAction } = useFinanceAuditLog();
+  const actorName = `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position})`;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [channelFilter, setChannelFilter] = useState<string>("All");
   const [showRecorderModal, setShowRecorderModal] = useState(false);
+  const [recorderTab, setRecorderTab] = useState<"single" | "bulk">("single");
+  const [receiptTransaction, setReceiptTransaction] = useState<LedgerTransaction | null>(null);
 
-  // New offline transaction form state
+  // Single-entry form state
   const [formAccountName, setFormAccountName] = useState("");
-  const [formAccountId, setFormAccountId] = useState("");
-  const [formCategory, setFormCategory] = useState<TransactionRecord["category"]>("Platform Fee");
+  const [formCategory, setFormCategory] = useState<LedgerCategory>("Platform Fee");
   const [formAmount, setFormAmount] = useState("");
+  const [formCurrency, setFormCurrency] = useState("NGN");
+  const [formCountryCode, setFormCountryCode] = useState("NG");
   const [formType, setFormType] = useState<"credit" | "debit">("credit");
-  const [formMethod, setFormMethod] = useState<TransactionRecord["method"]>("Bank Transfer");
+  const [formMethod, setFormMethod] = useState("Bank Transfer");
   const [formReference, setFormReference] = useState("");
-  const [formReceiptFileName, setFormReceiptFileName] = useState<string | null>(null);
+  const [formReceiptFile, setFormReceiptFile] = useState<File | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const filteredTransactions = transactions.filter((t) => {
     const matchesSearch =
       t.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.accountId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.id.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -136,52 +85,98 @@ export default function PlatformTransactionsPage() {
     return matchesSearch && matchesCategory && matchesChannel;
   });
 
-  const handleSimulateReceiptUpload = () => {
-    setFormReceiptFileName("Receipt_Offline_Payment_Scan.pdf");
-  };
-
   const handleRecordOfflineTransaction = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formAccountName || !formAmount) return;
 
-    const newRecord: TransactionRecord = {
-      id: `OFF-${Math.floor(10000 + Math.random() * 90000)}`,
-      date: new Date().toISOString().replace("T", " ").substring(0, 16),
+    const entry = addOfflineTransaction({
       accountName: formAccountName,
-      accountId: formAccountId || `ACC-MANUAL-${Math.floor(1000 + Math.random() * 9000)}`,
       category: formCategory,
-      channel: "Offline / Manual",
       amount: parseFloat(formAmount),
+      currencyCode: formCurrency,
+      countryCode: formCountryCode,
       type: formType,
       method: formMethod,
-      status: "Completed",
       reference: formReference || `MANUAL-${Date.now().toString().slice(-6)}`,
-    };
+      receiptFileName: formReceiptFile?.name,
+      recordedBy: actorName,
+    });
 
-    setTransactions([newRecord, ...transactions]);
+    logAction(actorName, "Recorded offline transaction", entry.id, "Awaiting approval", formCountryCode);
+    toast.success(`${entry.id} recorded — pending approval before it clears the ledger.`);
     setShowRecorderModal(false);
 
-    // Reset form
     setFormAccountName("");
-    setFormAccountId("");
     setFormAmount("");
     setFormReference("");
-    setFormReceiptFileName(null);
+    setFormReceiptFile(null);
+  };
+
+  const handleBulkFileSelected = async (file: File) => {
+    const text = await file.text();
+    const rows = parseBulkLedgerCsv(text);
+
+    if (rows.length === 0) {
+      toast.error("No valid rows found in that CSV — check the template columns.");
+      return;
+    }
+
+    rows.forEach((row) => {
+      addOfflineTransaction({
+        accountName: row.accountName,
+        category: (row.category as LedgerCategory) || "Platform Fee",
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        countryCode: row.countryCode,
+        type: row.type,
+        method: row.method,
+        reference: row.reference || `BULK-${Date.now().toString().slice(-6)}`,
+        recordedBy: actorName,
+      });
+    });
+
+    logAction(actorName, "Bulk-recorded offline transactions", `${rows.length} rows`, "All awaiting approval");
+    toast.success(`${rows.length} transactions imported — all pending approval.`);
+    setShowRecorderModal(false);
+  };
+
+  const handleDownloadBulkTemplate = () => {
+    const blob = new Blob([buildBulkSampleCsv()], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Bulk_Transaction_Template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleApprove = (t: LedgerTransaction) => {
+    approveTransaction(t.id, actorName);
+    logAction(actorName, "Approved offline transaction", t.id, undefined, t.countryCode);
+    toast.success(`${t.id} approved and posted to the ledger.`);
+  };
+
+  const handleReject = (t: LedgerTransaction) => {
+    rejectTransaction(t.id, actorName);
+    logAction(actorName, "Rejected offline transaction", t.id, undefined, t.countryCode);
+    toast.info(`${t.id} rejected.`);
   };
 
   const handleExportLedgerCSV = () => {
-    const headers = ["Txn ID", "Date", "Account Name", "Account ID", "Category", "Channel", "Method", "Reference", "Type", "Amount (NGN)", "Status"];
+    const headers = ["Txn ID", "Date", "Account Name", "Category", "Channel", "Method", "Reference", "Type", "Amount", "Currency", "Status"];
     const rows = filteredTransactions.map((t) => [
       t.id,
       t.date,
       `"${t.accountName}"`,
-      t.accountId,
       t.category,
       t.channel,
       t.method,
       t.reference,
       t.type.toUpperCase(),
       t.amount,
+      t.currencyCode,
       t.status,
     ]);
 
@@ -208,7 +203,8 @@ export default function PlatformTransactionsPage() {
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Granular audit log of all system subscriptions, platform fee collections, operational API outflows, and manual offline records.
+            The same shared ledger feed Master Account reconciles against — tenant platform fees,
+            Zowasel&rsquo;s own vendor outflows, and manual offline records, all in one place.
           </p>
         </div>
 
@@ -222,7 +218,10 @@ export default function PlatformTransactionsPage() {
           </Button>
 
           <Button
-            onClick={() => setShowRecorderModal(true)}
+            onClick={() => {
+              setRecorderTab("single");
+              setShowRecorderModal(true);
+            }}
             className="bg-primary hover:bg-primary/90 font-bold gap-2 text-xs h-9 shadow-2xs cursor-pointer"
           >
             <PlusCircle className="h-4 w-4" />
@@ -230,9 +229,6 @@ export default function PlatformTransactionsPage() {
           </Button>
         </div>
       </div>
-
-      {/* Finance Hub Nav */}
-      <FinanceHubNav />
 
       {/* Filter and Search Bar */}
       <Card className="border shadow-2xs">
@@ -260,11 +256,11 @@ export default function PlatformTransactionsPage() {
                 className="rounded-lg border bg-background px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none"
               >
                 <option value="All">All Categories</option>
-                <option value="Platform Fee">Platform Fee</option>
-                <option value="Subscription">Subscription</option>
-                <option value="Operational Outflow">Operational Outflow</option>
-                <option value="Dispute Fee">Dispute Fee</option>
-                <option value="Escrow Settlement">Escrow Settlement</option>
+                {Object.entries(LEDGER_CATEGORY_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -302,63 +298,130 @@ export default function PlatformTransactionsPage() {
               <thead className="bg-muted/50 border-y text-muted-foreground font-bold uppercase tracking-wider">
                 <tr>
                   <th className="p-3">Txn ID & Date</th>
-                  <th className="p-3">Account Name & ID</th>
+                  <th className="p-3">Account Name</th>
                   <th className="p-3">Category</th>
                   <th className="p-3">Channel</th>
                   <th className="p-3">Payment Method</th>
                   <th className="p-3">Reference Code</th>
                   <th className="p-3">Amount</th>
-                  <th className="p-3 text-right">Status</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y font-semibold">
-                {filteredTransactions.map((t) => (
-                  <tr key={t.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-mono">
-                      <p className="font-bold text-foreground">{t.id}</p>
-                      <p className="text-[11px] text-muted-foreground">{t.date}</p>
-                    </td>
-                    <td className="p-3">
-                      <p className="font-bold text-foreground">{t.accountName}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono">{t.accountId}</p>
-                    </td>
-                    <td className="p-3">
-                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-foreground border">
-                        {t.category}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                          t.channel === "Offline / Manual"
-                            ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                            : "bg-sky-500/10 text-sky-600 border border-sky-500/20"
-                        }`}
-                      >
-                        {t.channel}
-                      </span>
-                    </td>
-                    <td className="p-3 font-medium text-foreground">{t.method}</td>
-                    <td className="p-3 font-mono text-muted-foreground text-[11px]">{t.reference}</td>
-                    <td className="p-3 font-mono font-bold">
-                      <span className={t.type === "credit" ? "text-emerald-600" : "text-rose-600"}>
-                        {t.type === "credit" ? "+" : "-"}₦{t.amount.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="p-3 text-right">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-500/20">
-                        <CheckCircle2 className="h-3 w-3" /> {t.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {filteredTransactions.map((t) => {
+                  const amountUSD = convertToUSD(t.amount, t.currencyCode);
+                  const withinThreshold = canApprove(amountUSD);
+                  const isSelfSubmission = t.recordedBy === actorName;
+                  const nextLevel = NEXT_LEVEL_LABEL[actingOfficer.geographicScopeLevel ?? "country"];
+
+                  return (
+                    <tr key={t.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-mono">
+                        <p className="font-bold text-foreground">{t.id}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {new Date(t.date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </td>
+                      <td className="p-3">
+                        <p className="font-bold text-foreground">{t.accountName}</p>
+                        {t.receiptFileName && (
+                          <p className="text-[11px] text-muted-foreground">Receipt: {t.receiptFileName}</p>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-foreground border">
+                          {LEDGER_CATEGORY_LABELS[t.category]}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                            t.channel === "Offline / Manual"
+                              ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                              : "bg-sky-500/10 text-sky-600 border border-sky-500/20"
+                          }`}
+                        >
+                          {t.channel}
+                        </span>
+                      </td>
+                      <td className="p-3 font-medium text-foreground">{t.method}</td>
+                      <td className="p-3 font-mono text-muted-foreground text-[11px]">{t.reference}</td>
+                      <td className="p-3 font-mono font-bold">
+                        <span className={t.type === "credit" ? "text-emerald-600" : "text-rose-600"}>
+                          {t.type === "credit" ? "+" : "-"}
+                          {currencySymbolFor(t.currencyCode)}
+                          {t.amount.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className={statusBadgeClass(LEDGER_STATUS_TONE[t.status])}>{t.status}</span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex justify-end gap-1.5">
+                          {t.status === "Pending Approval" &&
+                            (isSelfSubmission ? (
+                              <span
+                                title="Maker-checker: whoever records an entry can't also approve it — a different officer has to."
+                                className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground border"
+                              >
+                                Awaiting a different approver
+                              </span>
+                            ) : withinThreshold ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(t)}
+                                  className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1"
+                                >
+                                  <ThumbsUp className="h-3 w-3" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleReject(t)}
+                                  className="h-7 text-[11px] font-bold text-rose-600 border-rose-200 gap-1"
+                                >
+                                  <ThumbsDown className="h-3 w-3" /> Reject
+                                </Button>
+                              </>
+                            ) : (
+                              <span
+                                title={`${formatUSD(amountUSD)} exceeds your ${
+                                  approvalThresholdUSD === null ? "uncapped" : formatUSD(approvalThresholdUSD)
+                                } approval ceiling`}
+                                className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 px-2 py-1 text-[11px] font-bold text-rose-600 border border-rose-500/20"
+                              >
+                                <ArrowUpCircle className="h-3 w-3" /> Escalate to {nextLevel}
+                              </span>
+                            ))}
+                          {t.status === "Completed" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setReceiptTransaction(t)}
+                              className="h-7 text-[11px] font-bold gap-1"
+                            >
+                              <ReceiptIcon className="h-3 w-3" /> Receipt
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
 
-      {/* Offline Transaction Recorder Modal */}
+      {receiptTransaction && (
+        <ReceiptView transaction={receiptTransaction} onClose={() => setReceiptTransaction(null)} />
+      )}
+
+      {/* Offline Transaction Recorder Modal — a transient create-form action,
+          not a financial record view, so a dialog stays appropriate here. */}
       {showRecorderModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -375,132 +438,228 @@ export default function PlatformTransactionsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleRecordOfflineTransaction} className="p-5 space-y-4 text-xs font-semibold">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-muted-foreground mb-1">Transaction Flow Type</label>
-                  <select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value as "credit" | "debit")}
-                    className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
-                  >
-                    <option value="credit">Credit (Incoming Revenue)</option>
-                    <option value="debit">Debit (Outgoing Expense)</option>
-                  </select>
+            <div className="flex border-b">
+              {(["single", "bulk"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setRecorderTab(tab)}
+                  className={`flex-1 py-2.5 text-xs font-bold transition-colors ${
+                    recorderTab === tab
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab === "single" ? "Single Entry" : "Bulk Import (CSV)"}
+                </button>
+              ))}
+            </div>
+
+            {recorderTab === "single" ? (
+              <form onSubmit={handleRecordOfflineTransaction} className="p-5 space-y-4 text-xs font-semibold">
+                <div className="p-2.5 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-600 text-[11px] font-bold flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  <span>Offline entries post as &ldquo;Pending Approval&rdquo; and need a second admin to approve before they clear the ledger.</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Transaction Flow Type</label>
+                    <select
+                      value={formType}
+                      onChange={(e) => setFormType(e.target.value as "credit" | "debit")}
+                      className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
+                    >
+                      <option value="credit">Credit (Incoming Revenue)</option>
+                      <option value="debit">Debit (Outgoing Expense)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Category</label>
+                    <select
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value as LedgerCategory)}
+                      className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
+                    >
+                      {Object.entries(LEDGER_CATEGORY_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-muted-foreground mb-1">Category</label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value as any)}
-                    className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
-                  >
-                    <option value="Platform Fee">Platform Fee</option>
-                    <option value="Subscription">Subscription</option>
-                    <option value="Operational Outflow">Operational Outflow</option>
-                    <option value="Dispute Fee">Dispute Fee</option>
-                    <option value="Escrow Settlement">Escrow Settlement</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-muted-foreground mb-1">Payer / Payee Account Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Kano Agro Farmers Cooperative"
-                  value={formAccountName}
-                  onChange={(e) => setFormAccountName(e.target.value)}
-                  className="w-full rounded-lg border bg-background p-2 text-foreground focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-muted-foreground mb-1">Account ID (Optional)</label>
+                  <label className="block text-muted-foreground mb-1">Payer / Payee Account Name *</label>
                   <input
                     type="text"
-                    placeholder="e.g. ACC-COOP-1120"
-                    value={formAccountId}
-                    onChange={(e) => setFormAccountId(e.target.value)}
+                    required
+                    placeholder="e.g. Northline Farmers Cooperative Union"
+                    value={formAccountName}
+                    onChange={(e) => setFormAccountName(e.target.value)}
                     className="w-full rounded-lg border bg-background p-2 text-foreground focus:outline-none"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-muted-foreground mb-1">Amount (NGN ₦) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 1500000"
-                    value={formAmount}
-                    onChange={(e) => setFormAmount(e.target.value)}
-                    className="w-full rounded-lg border bg-background p-2 text-foreground focus:outline-none font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-muted-foreground mb-1">Payment Method</label>
-                  <select
-                    value={formMethod}
-                    onChange={(e) => setFormMethod(e.target.value as any)}
-                    className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
-                  >
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Cash">Cash / POS</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-muted-foreground mb-1">Reference Code / Cheque No.</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. CHQ-001928"
-                    value={formReference}
-                    onChange={(e) => setFormReference(e.target.value)}
-                    className="w-full rounded-lg border bg-background p-2 text-foreground font-mono focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Receipt File Attachment */}
-              <div
-                onClick={handleSimulateReceiptUpload}
-                className="p-3 border border-dashed rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors text-center cursor-pointer"
-              >
-                {formReceiptFileName ? (
-                  <div className="flex items-center justify-center gap-2 text-emerald-600 font-bold">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Attached: {formReceiptFileName}</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Country</label>
+                    <select
+                      value={formCountryCode}
+                      onChange={(e) => setFormCountryCode(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
+                    >
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                ) : (
-                  <>
-                    <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                    <p className="text-[11px] font-bold text-foreground">Attach Payment Receipt / Cheque Copy</p>
-                    <p className="text-[10px] text-muted-foreground">Click to upload scan (PDF, PNG, JPG up to 10MB)</p>
-                  </>
-                )}
-              </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowRecorderModal(false)}
-                  className="h-8 text-xs font-bold"
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Currency</label>
+                    <select
+                      value={formCurrency}
+                      onChange={(e) => setFormCurrency(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
+                    >
+                      {CURRENCY_OPTIONS.map((code) => (
+                        <option key={code} value={code}>
+                          {code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Amount *</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="e.g. 1500000"
+                      value={formAmount}
+                      onChange={(e) => setFormAmount(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-foreground focus:outline-none font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Payment Method</label>
+                    <select
+                      value={formMethod}
+                      onChange={(e) => setFormMethod(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
+                    >
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Cash">Cash / POS</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-muted-foreground mb-1">Reference Code / Cheque No.</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. CHQ-001928"
+                      value={formReference}
+                      onChange={(e) => setFormReference(e.target.value)}
+                      className="w-full rounded-lg border bg-background p-2 text-foreground font-mono focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Receipt File Attachment */}
+                <input
+                  ref={receiptInputRef}
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setFormReceiptFile(file);
+                    e.target.value = "";
+                  }}
+                />
+                <div
+                  onClick={() => receiptInputRef.current?.click()}
+                  className="p-3 border border-dashed rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors text-center cursor-pointer"
                 >
-                  Cancel
-                </Button>
-                <Button type="submit" className="h-8 text-xs bg-primary font-bold">
-                  Save to Platform Ledger
-                </Button>
+                  {formReceiptFile ? (
+                    <div className="flex items-center justify-center gap-2 text-emerald-600 font-bold">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>
+                        Attached: {formReceiptFile.name} ({(formReceiptFile.size / 1024).toFixed(0)} KB)
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-[11px] font-bold text-foreground">Attach Payment Receipt / Cheque Copy</p>
+                      <p className="text-[10px] text-muted-foreground">Click to upload scan (PDF, PNG, JPG up to 10MB)</p>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRecorderModal(false)}
+                    className="h-8 text-xs font-bold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="h-8 text-xs bg-primary font-bold">
+                    Submit for Approval
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="p-5 space-y-4 text-xs font-semibold">
+                <div className="p-2.5 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-600 text-[11px] font-bold flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  <span>Every row lands as its own &ldquo;Pending Approval&rdquo; entry — same maker-checker rule as single entry.</span>
+                </div>
+
+                <p className="text-muted-foreground">
+                  For batches of cheques or cash receipts from field agents — download the template,
+                  fill in one row per transaction, and upload.{" "}
+                  <button type="button" onClick={handleDownloadBulkTemplate} className="font-bold text-primary underline">
+                    Download CSV template
+                  </button>
+                </p>
+
+                <input
+                  ref={bulkInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleBulkFileSelected(file);
+                    e.target.value = "";
+                  }}
+                />
+                <div
+                  onClick={() => bulkInputRef.current?.click()}
+                  className="p-6 border border-dashed rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors text-center cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <FileSpreadsheet className="h-8 w-8 text-muted-foreground" />
+                  <p className="font-bold text-foreground">Upload Bulk Transaction CSV</p>
+                  <p className="text-[11px] text-muted-foreground">AccountName, Category, Amount, Currency, CountryCode, Type, Method, Reference</p>
+                </div>
+
+                <div className="flex items-center justify-end pt-2 border-t">
+                  <Button type="button" variant="outline" onClick={() => setShowRecorderModal(false)} className="h-8 text-xs font-bold">
+                    Close
+                  </Button>
+                </div>
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}

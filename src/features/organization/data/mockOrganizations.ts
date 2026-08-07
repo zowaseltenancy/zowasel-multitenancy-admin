@@ -83,7 +83,8 @@ export const mockOrganizations: Organization[] = [
       {
         app: 'croppilot',
         plan: 'Growth',
-        activeModules: ['farmer_database', 'soil_carbon_sequestration'],
+        planId: 'plan_croppilot_growth',
+        activeModules: ['farmer_database', 'carbon_sustainability', 'soil_carbon', 'agroforestry'],
         billingState: 'paid',
         renewsAt: '2026-08-01',
       },
@@ -160,6 +161,7 @@ export const mockOrganizations: Organization[] = [
       {
         app: 'croppilot',
         plan: 'Free',
+        planId: 'plan_croppilot_free',
         activeModules: ['farmer_database'],
         billingState: 'free',
         renewsAt: null,
@@ -218,7 +220,16 @@ export const mockOrganizations: Organization[] = [
       },
     ],
 
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'marketplace',
+        plan: 'Free',
+        planId: 'plan_marketplace_free',
+        activeModules: [],
+        billingState: 'free',
+        renewsAt: null,
+      },
+    ],
 
     createdAt: '2026-01-15T09:00:00Z',
   },
@@ -274,13 +285,32 @@ export const mockOrganizations: Organization[] = [
     kybRejectionReason: null,
     kybDocuments: [],
 
+    // Reconciled against Billing's real subscription (sub_007) — this org
+    // was still showing a stale marketplace/Free entry despite genuinely
+    // holding an active Government-tier subscription over there. One org,
+    // one truth.
     subscriptions: [
       {
-        app: 'marketplace',
-        plan: 'Free',
-        activeModules: [],
-        billingState: 'free',
-        renewsAt: null,
+        app: 'platform',
+        plan: 'Government',
+        planId: 'plan_platform_government',
+        activeModules: [
+          'farmer_database',
+          'extended_profile',
+          'family_data',
+          'location_mapping',
+          'plot_registry',
+          'compliance_monitoring',
+          'clmrs',
+          'worker_welfare',
+          'pesticide_tracking',
+          'carbon_sustainability',
+          'soil_carbon',
+          'agroforestry',
+          'export_traceability',
+        ],
+        billingState: 'paid',
+        renewsAt: '2027-02-01',
       },
     ],
 
@@ -331,7 +361,22 @@ export const mockOrganizations: Organization[] = [
       },
     ],
 
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Starter',
+        planId: 'plan_croppilot_starter',
+        activeModules: [
+        'farmer_database',
+        'extended_profile',
+        'family_data',
+        'location_mapping',
+        'plot_registry',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-12-01',
+      },
+    ],
 
     createdAt: '2025-12-01T09:00:00Z',
   },
@@ -375,7 +420,18 @@ export const mockOrganizations: Organization[] = [
     kybRejectionReason: null,
     kybDocuments: [],
 
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Free',
+        planId: 'plan_croppilot_free',
+        activeModules: [
+        'farmer_database',
+        ],
+        billingState: 'free',
+        renewsAt: null,
+      },
+    ],
 
     createdAt: '2026-06-10T09:00:00Z',
   },
@@ -397,7 +453,32 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: '2026-04-08T09:00:00Z',
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'platform',
+        plan: 'Enterprise',
+        planId: 'plan_platform_enterprise',
+        activeModules: [
+        'farmer_database',
+        'extended_profile',
+        'family_data',
+        'location_mapping',
+        'plot_registry',
+        'compliance_monitoring',
+        'clmrs',
+        'worker_welfare',
+        'pesticide_tracking',
+        'carbon_sustainability',
+        'soil_carbon',
+        'agroforestry',
+        'export_traceability',
+        'marketplace_listings',
+        'market_analytics',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-08-15',
+      },
+    ],
     createdAt: '2026-03-20T09:00:00Z',
   },
   {
@@ -416,7 +497,25 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: '2026-03-22T09:00:00Z',
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Growth',
+        planId: 'plan_croppilot_growth',
+        activeModules: [
+        'farmer_database',
+        'extended_profile',
+        'family_data',
+        'location_mapping',
+        'plot_registry',
+        'carbon_sustainability',
+        'soil_carbon',
+        'agroforestry',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-09-01',
+      },
+    ],
     createdAt: '2026-03-01T09:00:00Z',
   },
   {
@@ -435,7 +534,21 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: '2026-02-18T09:00:00Z',
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Carbon',
+        planId: 'plan_croppilot_carbon',
+        activeModules: [
+        'carbon_sustainability',
+        'soil_carbon',
+        'agroforestry',
+        'export_traceability',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-08-01',
+      },
+    ],
     createdAt: '2026-01-25T09:00:00Z',
   },
   {
@@ -454,7 +567,22 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: null,
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Starter',
+        planId: 'plan_croppilot_starter',
+        activeModules: [
+        'farmer_database',
+        'extended_profile',
+        'family_data',
+        'location_mapping',
+        'plot_registry',
+        ],
+        billingState: 'expired',
+        renewsAt: '2026-06-20',
+      },
+    ],
     createdAt: '2026-06-28T09:00:00Z',
   },
   {
@@ -476,7 +604,25 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: '2026-02-09T09:00:00Z',
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Growth',
+        planId: 'plan_croppilot_growth',
+        activeModules: [
+        'farmer_database',
+        'extended_profile',
+        'family_data',
+        'location_mapping',
+        'plot_registry',
+        'carbon_sustainability',
+        'soil_carbon',
+        'agroforestry',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-07-05',
+      },
+    ],
     createdAt: '2026-01-15T09:00:00Z',
   },
   {
@@ -495,7 +641,19 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: '2026-03-14T09:00:00Z',
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'marketplace',
+        plan: 'Growth',
+        planId: 'plan_marketplace_growth',
+        activeModules: [
+        'marketplace_listings',
+        'market_analytics',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-12-20',
+      },
+    ],
     createdAt: '2026-02-20T09:00:00Z',
   },
   {
@@ -514,7 +672,22 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: '2026-01-28T09:00:00Z',
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'croppilot',
+        plan: 'Starter',
+        planId: 'plan_croppilot_starter',
+        activeModules: [
+        'farmer_database',
+        'extended_profile',
+        'family_data',
+        'location_mapping',
+        'plot_registry',
+        ],
+        billingState: 'paid',
+        renewsAt: '2026-08-10',
+      },
+    ],
     createdAt: '2026-01-05T09:00:00Z',
   },
   {
@@ -533,7 +706,16 @@ export const mockOrganizations: Organization[] = [
     kybApprovedAt: null,
     kybRejectionReason: null,
     kybDocuments: [],
-    subscriptions: [],
+    subscriptions: [
+      {
+        app: 'marketplace',
+        plan: 'Free',
+        planId: 'plan_marketplace_free',
+        activeModules: [],
+        billingState: 'free',
+        renewsAt: null,
+      },
+    ],
     createdAt: '2026-06-30T09:00:00Z',
   },
 ];

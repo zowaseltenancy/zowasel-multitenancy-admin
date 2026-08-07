@@ -87,6 +87,13 @@ export default function AdminDashboard() {
   const scopedOrganizations = useMemo(() => organizations.filter(matchesGeo), [organizations, geoFilter]);
   const tenantUsers = useMemo(() => users.filter((user) => user.userCategory !== "staff"), [users]);
   const scopedTenantUsers = useMemo(() => tenantUsers.filter(matchesGeo), [tenantUsers, geoFilter]);
+  const staffUsers = useMemo(() => users.filter((user) => user.userCategory === "staff"), [users]);
+  // Staff carry real country/sub-region/continent jurisdiction too (we operate
+  // in Nigeria, Ghana, Kenya, Tanzania), so the region filter applies to them
+  // exactly like every other entity — a continent-level staffer (countryCode
+  // "all") still matches a continent or "all regions" filter, just not a
+  // specific country filter they aren't scoped to.
+  const scopedStaffUsers = useMemo(() => staffUsers.filter(matchesGeo), [staffUsers, geoFilter]);
   const scopedLeads = useMemo(() => leads.filter(matchesGeo), [leads, geoFilter]);
 
   const scopedTransactions = useMemo(() => {
@@ -123,9 +130,9 @@ export default function AdminDashboard() {
       case 1:
         return <KybPipelineCarouselCard organizations={scopedOrganizations} isExpanded={isExpanded} />;
       case 2:
-        return <TenantsCarouselCard users={users} isExpanded={isExpanded} />;
+        return <TenantsCarouselCard users={scopedTenantUsers} isExpanded={isExpanded} />;
       case 3:
-        return <StaffCarouselCard users={users} isExpanded={isExpanded} />;
+        return <StaffCarouselCard users={scopedStaffUsers} isExpanded={isExpanded} />;
       case 4:
         return (
           <PlatformActivityCarouselCard

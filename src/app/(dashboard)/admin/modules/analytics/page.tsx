@@ -10,7 +10,7 @@ export default function ModulesAnalyticsHubPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/admin/finance-hub");
+    router.replace("/admin/analysis");
   }, [router]);
 
   return (
@@ -19,14 +19,15 @@ export default function ModulesAnalyticsHubPage() {
         <TrendingUp className="h-6 w-6" />
       </div>
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold">Finance Hub & BI Moved</h2>
+        <h2 className="text-2xl font-bold">Moved to Analysis</h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          The Analytics & Intelligence Hub has been promoted to a top-level primary navigation section called <strong className="text-foreground">Finance Hub</strong>.
+          BI & CRM analytics have moved out from under Modules into their own top-level section called{" "}
+          <strong className="text-foreground">Analysis</strong>.
         </p>
       </div>
-      <Link href="/admin/finance-hub">
+      <Link href="/admin/analysis">
         <Button className="gap-2 font-bold cursor-pointer">
-          <span>Go to Finance Hub</span>
+          <span>Go to Analysis</span>
           <ArrowRight className="h-4 w-4" />
         </Button>
       </Link>

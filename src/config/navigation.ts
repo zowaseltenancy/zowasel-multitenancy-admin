@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bell,
   Building2,
   CreditCard,
@@ -70,8 +71,8 @@ export const navigation: NavigationItem[] = [
     icon: TrendingUp,
     children: [
       {
-        label: "Analytics & Overview",
-        href: "/admin/finance-hub",
+        label: "Analytics",
+        href: "/admin/finance-hub/analytics",
       },
       {
         label: "Master Account & Statements",
@@ -86,16 +87,24 @@ export const navigation: NavigationItem[] = [
         href: "/admin/finance-hub/accounts-monitor",
       },
       {
-        label: "Credit & Portfolio Risk",
-        href: "/admin/finance-hub/credit",
+        label: "Activity Log",
+        href: "/admin/finance-hub/activity",
+      },
+    ],
+  },
+
+  {
+    label: "Analysis",
+    href: "/admin/analysis",
+    icon: BarChart3,
+    children: [
+      {
+        label: "CRM 360 & Pipeline",
+        href: "/admin/analysis/crm",
       },
       {
         label: "CropPilot MRV & Carbon",
-        href: "/admin/finance-hub/sustainability",
-      },
-      {
-        label: "CRM 360 & Pipeline",
-        href: "/admin/finance-hub/crm",
+        href: "/admin/analysis/sustainability",
       },
     ],
   },
@@ -104,6 +113,26 @@ export const navigation: NavigationItem[] = [
     label: "Modules",
     href: "/admin/modules",
     icon: LayoutGrid,
+    children: [
+      {
+        label: "CropPilot",
+        href: "/admin/modules/products/croppilot",
+      },
+      {
+        label: "Marketplace",
+        href: "/admin/modules/products/marketplace",
+      },
+      {
+        label: "ACESS",
+        href: "/admin/modules/products/acess",
+      },
+    ],
+  },
+
+  {
+    label: "ACESS",
+    href: "/admin/acess",
+    icon: CreditCard,
   },
 
   {

@@ -1,4 +1,5 @@
-import { CheckCircle2, XCircle } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LeadStatusBadge from "./LeadStatusBadge";
 import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
@@ -8,9 +9,10 @@ interface Props {
   leads: Lead[];
   onConvert: (lead: Lead) => void;
   onMarkLost: (lead: Lead) => void;
+  onRemove: (lead: Lead) => void;
 }
 
-export default function LeadTable({ leads, onConvert, onMarkLost }: Props) {
+export default function LeadTable({ leads, onConvert, onMarkLost, onRemove }: Props) {
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -29,7 +31,12 @@ export default function LeadTable({ leads, onConvert, onMarkLost }: Props) {
             {leads.map((lead) => (
               <tr key={lead.id} className="hover:bg-muted/30 transition-colors">
                 <td className="p-4 font-medium">
-                  <div className="font-semibold text-foreground">{lead.businessName}</div>
+                  <Link
+                    href={`/admin/leads/${lead.id}`}
+                    className="font-semibold text-foreground hover:text-primary hover:underline"
+                  >
+                    {lead.businessName}
+                  </Link>
                   <div className="text-xs text-muted-foreground">{lead.countryName ?? "—"}</div>
                 </td>
                 <td className="p-4">
@@ -50,6 +57,13 @@ export default function LeadTable({ leads, onConvert, onMarkLost }: Props) {
                 </td>
                 <td className="p-4">
                   <div className="flex justify-end gap-2">
+                    <Link
+                      href={`/admin/leads/${lead.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      View
+                    </Link>
                     {(lead.status === "incomplete" || lead.status === "ready_to_convert") && (
                       <>
                         <Button
@@ -72,6 +86,15 @@ export default function LeadTable({ leads, onConvert, onMarkLost }: Props) {
                         </Button>
                       </>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1.5 text-destructive hover:text-destructive"
+                      onClick={() => onRemove(lead)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Remove
+                    </Button>
                   </div>
                 </td>
               </tr>

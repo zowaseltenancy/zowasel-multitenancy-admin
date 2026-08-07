@@ -3,23 +3,14 @@
 import { useState } from "react";
 import {
   CreditCard,
-  TrendingUp,
-  Sprout,
-  Users,
   AlertTriangle,
   CheckCircle2,
   Clock,
   ShieldAlert,
-  ArrowUpRight,
-  DollarSign,
-  PieChart as PieChartIcon,
   Search,
   Filter,
   Check,
   X,
-  FileText,
-  Building2,
-  Calendar,
   Activity,
 } from "lucide-react";
 import {
@@ -31,12 +22,12 @@ import {
   Tooltip,
   CartesianGrid,
   Cell,
+  TooltipValueType,
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
-import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
 import { GeographicFilterState } from "@/types/geo";
 
 interface LoanRecord {
@@ -129,7 +120,7 @@ const parChartData = [
   { status: "NPL (90+)", amount: 13, color: "#be123c" },
 ];
 
-export default function CreditPortfolioRiskPage() {
+export default function AcessCreditPortfolioPage() {
   const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
     scope: "global",
     continent: "all",
@@ -179,13 +170,14 @@ export default function CreditPortfolioRiskPage() {
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold tracking-tight">Credit Portfolio & Risk</h1>
+              <h1 className="text-3xl font-bold tracking-tight">ACESS</h1>
               <span className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-bold text-sky-600 border border-sky-500/20">
-                Alternative Finance Intelligence
+                Alternative Credit Evaluation Scoring System
               </span>
             </div>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Alternative Finance credit requests, portfolio exposure, DPD risk, PAR30/60/90, and ACESS credit scoring.
+              Credit requests, portfolio exposure, DPD risk, PAR30/60/90, and ACESS credit scoring — Zowasel&rsquo;s
+              own platform, alongside CropPilot and Marketplace.
             </p>
           </div>
         </div>
@@ -194,9 +186,6 @@ export default function CreditPortfolioRiskPage() {
           <CompactRegionScopeSelector value={geoFilter} onChange={setGeoFilter} />
         </div>
       </div>
-
-      {/* Finance Hub Nav */}
-      <FinanceHubNav />
 
       {/* Metric Cards Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -284,7 +273,7 @@ export default function CreditPortfolioRiskPage() {
                 <XAxis dataKey="status" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(val: any) => [`₦${val}M`, "Exposure"]}
+                  formatter={(value: TooltipValueType | undefined) => [`₦${Number(value)}M`, "Exposure"]}
                   contentStyle={{ backgroundColor: "#1e293b", borderRadius: "8px", border: "none", color: "#fff", fontSize: "12px" }}
                 />
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]}>

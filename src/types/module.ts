@@ -1,3 +1,7 @@
+// Legacy filter tags — kept on existing records for now (not deleted), but
+// no longer the primary grouping. "if there's need for categorization under
+// each product, that would be done in due time" — Busayo, Aug 7. `product`
+// below is the real grouping going forward.
 export type ModuleCategory =
   | "croppilot"
   | "marketplace"
@@ -6,11 +10,17 @@ export type ModuleCategory =
   | "supply_chain"
   | "carbon_sustainability";
 
+// The 3 real Zowasel platforms modules get consolidated under, per the
+// RVE-064 restructure (Aug 7). ACESS has zero modules today — its card
+// exists as a real nav destination, not a fabricated catalog.
+export type ModuleProduct = "croppilot" | "marketplace" | "acess";
+
 export interface Module {
   id: string;
   name: string;
   description: string;
   category: ModuleCategory;
+  product: ModuleProduct;
   featureKey: string;
   parentId: string | null; // null => Core Module, string => Sub-module under Core Module
   enabled: boolean;        // Global toggle flag across all tenant businesses
@@ -26,6 +36,23 @@ export interface Module {
   createdBy?: string;
   updatedBy?: string;
   updatedAt?: string;
+}
+
+// A named bundle of core/sub-modules at a fixed monthly price — the catalog
+// that "Growth"/"Enterprise"/etc. tier labels always should have pointed to.
+// "platform" scope exists for the two real bundles (Enterprise, Government)
+// that genuinely span every product rather than sitting under just one —
+// found by cross-checking real Billing subscription data, not invented.
+export interface ModulePlan {
+  id: string;
+  product: ModuleProduct | "platform";
+  name: string;
+  description: string;
+  pricePerMonth: number;
+  includedModuleIds: string[];
+  isActive: boolean;
+  createdBy?: string;
+  updatedAt: string;
 }
 
 export interface TenantModuleUsage {

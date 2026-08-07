@@ -1,95 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   Users,
-  TrendingUp,
-  CreditCard,
-  Sprout,
   UserCheck,
-  Building2,
-  CheckCircle2,
-  PhoneCall,
-  Activity,
   ShieldCheck,
   Clock,
+  Activity,
   Search,
-  Filter,
   UserPlus,
   X,
-  Check,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
-import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
+import AnalysisNav from "@/features/analysis/components/AnalysisNav";
+import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
+import { useUsers } from "@/features/users/hooks/useUsers";
+import { Organization, AssignedStaffMember } from "@/types/organization";
 import { GeographicFilterState } from "@/types/geo";
 
-interface AccountAssignment {
-  id: string;
-  orgName: string;
-  orgType: "Merchant" | "Agrodealer" | "Commodity Buyer" | "Cooperative";
-  primaryOfficer: string;
-  secondaryOfficer: string;
-  regionScope: string;
-  healthScore: number;
-  lastContact: string;
+// A deterministic, explainable health score computed from real signals —
+// not a fabricated number — so it agrees with whatever the org's actual KYB
+// status and staff coverage say elsewhere in the app.
+function computeHealthScore(org: Organization): number {
+  const kybPoints = org.kybStatus === "approved" ? 40 : org.kybStatus === "pending" ? 20 : 0;
+  const hasPaidSubscription = org.subscriptions.some((s) => s.billingState === "paid");
+  const subscriptionPoints = hasPaidSubscription ? 30 : 10;
+  const assignedCount = [org.assignedStaff?.primary, org.assignedStaff?.secondary].filter(Boolean).length;
+  const coveragePoints = assignedCount === 2 ? 30 : assignedCount === 1 ? 15 : 0;
+  return Math.min(100, kybPoints + subscriptionPoints + coveragePoints);
 }
 
-const mockAssignments: AccountAssignment[] = [
-  {
-    id: "CRM-101",
-    orgName: "Greenfield Agro & Commodity Merchants",
-    orgType: "Merchant",
-    primaryOfficer: "Busayo (Operations)",
-    secondaryOfficer: "Bisi Adeniyi (Sales)",
-    regionScope: "West Africa / Nigeria",
-    healthScore: 96,
-    lastContact: "Yesterday",
-  },
-  {
-    id: "CRM-102",
-    orgName: "Gwarzo Farm Inputs & Seeds Hub",
-    orgType: "Agrodealer",
-    primaryOfficer: "Bisi Adeniyi (Sales)",
-    secondaryOfficer: "Busayo (Operations)",
-    regionScope: "West Africa / Nigeria",
-    healthScore: 92,
-    lastContact: "2 days ago",
-  },
-  {
-    id: "CRM-103",
-    orgName: "Kilimanjaro Produce Buyers Ltd",
-    orgType: "Commodity Buyer",
-    primaryOfficer: "Oreoluwa Okoro (Field Ops)",
-    secondaryOfficer: "Ibrahim Sani (Regional)",
-    regionScope: "East Africa / Tanzania",
-    healthScore: 94,
-    lastContact: "3 hours ago",
-  },
-  {
-    id: "CRM-104",
-    orgName: "Sokoto Grains Cooperative Association",
-    orgType: "Cooperative",
-    primaryOfficer: "Ibrahim Sani (Regional)",
-    secondaryOfficer: "Oreoluwa Okoro (Field Ops)",
-    regionScope: "West Africa / Nigeria",
-    healthScore: 88,
-    lastContact: "5 days ago",
-  },
-];
+export default function Crm360PipelinePage() {
+  const { organizations, assignStaff } = useOrganizations();
+  const { users } = useUsers();
 
-const zowaselStaffList = [
-  "Busayo (Operations)",
-  "Bisi Adeniyi (Sales)",
-  "Oreoluwa Okoro (Field Ops)",
-  "Ibrahim Sani (Regional Manager)",
-  "Austin (Technical Lead)",
-  "Ezuka (Account Director)",
-];
-
-export default function CRM360PipelinePage() {
   const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
     scope: "global",
     continent: "all",
@@ -97,43 +45,83 @@ export default function CRM360PipelinePage() {
     countryCode: "all",
   });
 
-  const [assignments, setAssignments] = useState<AccountAssignment[]>(mockAssignments);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAssignment, setSelectedAssignment] = useState<AccountAssignment | null>(null);
+  const [reassignTarget, setReassignTarget] = useState<Organization | null>(null);
+  const [newPrimaryId, setNewPrimaryId] = useState("");
+  const [newSecondaryId, setNewSecondaryId] = useState("");
 
-  const [newPrimary, setNewPrimary] = useState("");
-  const [newSecondary, setNewSecondary] = useState("");
-
-  const filteredAssignments = assignments.filter(
-    (a) =>
-      a.orgName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.primaryOfficer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.secondaryOfficer.toLowerCase().includes(searchQuery.toLowerCase())
+  const eligibleStaff = useMemo<AssignedStaffMember[]>(
+    () =>
+      users
+        .filter((u) => u.userCategory === "staff" && (u.department === "Sales" || u.department === "Regional Operations"))
+        .map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` })),
+    [users]
   );
 
-  const handleOpenReassignModal = (item: AccountAssignment) => {
-    setSelectedAssignment(item);
-    setNewPrimary(item.primaryOfficer);
-    setNewSecondary(item.secondaryOfficer);
+  const scopedOrganizations = useMemo(() => {
+    return organizations.filter((org) => {
+      const matchesContinent = geoFilter.continent === "all" || org.continent === geoFilter.continent;
+      const matchesSubRegion = geoFilter.subRegion === "all" || org.subRegion === geoFilter.subRegion;
+      const matchesCountry = geoFilter.countryCode === "all" || org.countryCode === geoFilter.countryCode;
+      return matchesContinent && matchesSubRegion && matchesCountry;
+    });
+  }, [organizations, geoFilter]);
+
+  const filteredOrganizations = scopedOrganizations.filter(
+    (org) =>
+      org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      org.assignedStaff?.primary?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      org.assignedStaff?.secondary?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const fieldAgents = users.filter((u) => u.userCategory === "agent");
+  const activeFieldAgents = fieldAgents.filter((u) => u.status === "active");
+  const fieldAgentRetentionPct = fieldAgents.length > 0 ? Math.round((activeFieldAgents.length / fieldAgents.length) * 100) : 0;
+
+  const approvedOrgs = scopedOrganizations.filter((o) => o.kybStatus === "approved" && o.kybSubmittedAt && o.kybApprovedAt);
+  const avgKybTurnaroundDays =
+    approvedOrgs.length > 0
+      ? Math.round(
+          approvedOrgs.reduce((total, org) => {
+            const submitted = new Date(org.kybSubmittedAt as string).getTime();
+            const approved = new Date(org.kybApprovedAt as string).getTime();
+            return total + (approved - submitted) / (1000 * 60 * 60 * 24);
+          }, 0) / approvedOrgs.length
+        )
+      : 0;
+
+  const fullyCoveredOrgs = scopedOrganizations.filter(
+    (o) => o.assignedStaff?.primary && o.assignedStaff?.secondary
+  ).length;
+  const accountCoveragePct =
+    scopedOrganizations.length > 0 ? Math.round((fullyCoveredOrgs / scopedOrganizations.length) * 100) : 0;
+
+  const avgHealthScore =
+    scopedOrganizations.length > 0
+      ? Math.round(scopedOrganizations.reduce((total, org) => total + computeHealthScore(org), 0) / scopedOrganizations.length)
+      : 0;
+
+  const handleOpenReassign = (org: Organization) => {
+    setReassignTarget(org);
+    setNewPrimaryId(org.assignedStaff?.primary?.id ?? "");
+    setNewSecondaryId(org.assignedStaff?.secondary?.id ?? "");
   };
 
   const handleSaveReassignment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAssignment) return;
+    if (!reassignTarget) return;
 
-    setAssignments((prev) =>
-      prev.map((a) =>
-        a.id === selectedAssignment.id
-          ? { ...a, primaryOfficer: newPrimary, secondaryOfficer: newSecondary }
-          : a
-      )
-    );
-    setSelectedAssignment(null);
+    const primary = eligibleStaff.find((s) => s.id === newPrimaryId) ?? null;
+    const secondary = eligibleStaff.find((s) => s.id === newSecondaryId) ?? null;
+
+    assignStaff(reassignTarget.id, "primary", primary);
+    assignStaff(reassignTarget.id, "secondary", secondary);
+    toast.success(`Officer mapping updated for ${reassignTarget.name}.`);
+    setReassignTarget(null);
   };
 
   return (
     <div className="space-y-8">
-      {/* Header Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
           <div>
@@ -144,7 +132,8 @@ export default function CRM360PipelinePage() {
               </span>
             </div>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Account officer staff assignments, customer 360 health scores, and field agent activity monitoring.
+              Account officer staff assignments, customer 360 health scores, and field agent activity monitoring —
+              the same assignment data as each organization&rsquo;s Profile tab, in one directory.
             </p>
           </div>
         </div>
@@ -154,10 +143,8 @@ export default function CRM360PipelinePage() {
         </div>
       </div>
 
-      {/* Finance Hub Nav */}
-      <FinanceHubNav />
+      <AnalysisNav />
 
-      {/* CRM 360 Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border bg-purple-500/5 dark:bg-purple-500/10 border-purple-500/20 shadow-2xs">
           <CardContent className="p-5">
@@ -167,10 +154,10 @@ export default function CRM360PipelinePage() {
               </p>
               <UserCheck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">96.8%</p>
+            <p className="mt-2 text-3xl font-extrabold text-foreground">{fieldAgentRetentionPct}%</p>
             <div className="mt-1 flex items-center justify-between text-xs">
-              <span className="text-purple-600 font-bold">42 Active Agents</span>
-              <span className="text-muted-foreground font-semibold">Monthly Active</span>
+              <span className="text-purple-600 font-bold">{activeFieldAgents.length} Active Agents</span>
+              <span className="text-muted-foreground font-semibold">of {fieldAgents.length} Total</span>
             </div>
           </CardContent>
         </Card>
@@ -183,10 +170,9 @@ export default function CRM360PipelinePage() {
               </p>
               <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">3.2 Days</p>
+            <p className="mt-2 text-3xl font-extrabold text-foreground">{avgKybTurnaroundDays} Days</p>
             <div className="mt-1 flex items-center justify-between text-xs">
-              <span className="text-blue-600 font-bold">Target 5 Days</span>
-              <span className="text-muted-foreground font-semibold">95% Approved SLA</span>
+              <span className="text-blue-600 font-bold">Avg across {approvedOrgs.length} approved</span>
             </div>
           </CardContent>
         </Card>
@@ -199,9 +185,9 @@ export default function CRM360PipelinePage() {
               </p>
               <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">100% Covered</p>
+            <p className="mt-2 text-3xl font-extrabold text-foreground">{accountCoveragePct}%</p>
             <div className="mt-1 flex items-center justify-between text-xs">
-              <span className="text-emerald-600 font-bold">14 Orgs Assigned</span>
+              <span className="text-emerald-600 font-bold">{fullyCoveredOrgs} of {scopedOrganizations.length} Orgs</span>
               <span className="text-muted-foreground font-semibold">Primary & Secondary</span>
             </div>
           </CardContent>
@@ -215,16 +201,14 @@ export default function CRM360PipelinePage() {
               </p>
               <Activity className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">92 / 100</p>
+            <p className="mt-2 text-3xl font-extrabold text-foreground">{avgHealthScore} / 100</p>
             <div className="mt-1 flex items-center justify-between text-xs">
-              <span className="text-amber-600 font-bold">High Engagement</span>
-              <span className="text-muted-foreground font-semibold">0 At Risk</span>
+              <span className="text-muted-foreground font-semibold">KYB + subscription + coverage</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search Bar */}
       <Card className="border shadow-2xs">
         <CardContent className="p-4">
           <div className="relative w-full md:w-96">
@@ -240,19 +224,14 @@ export default function CRM360PipelinePage() {
         </CardContent>
       </Card>
 
-      {/* Account Staff Assignments Table */}
       <Card className="border shadow-2xs">
         <CardHeader className="py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-bold">CRM Account Officer Staff Assignment Directory</CardTitle>
-              <CardDescription className="text-xs">
-                Zowasel staff accountability mapping: Primary & Secondary staff members assigned per tenant organization.
-              </CardDescription>
-            </div>
-            <span className="text-xs font-mono font-bold bg-muted px-2.5 py-1 rounded-md">
-              SLA Standard: 100% Account Assignment
-            </span>
+          <div>
+            <CardTitle className="text-base font-bold">CRM Account Officer Staff Assignment Directory</CardTitle>
+            <CardDescription className="text-xs">
+              Reads and writes the same assignment data as each organization&rsquo;s Profile tab — reassigning here
+              updates there too.
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -270,26 +249,32 @@ export default function CRM360PipelinePage() {
                 </tr>
               </thead>
               <tbody className="divide-y font-semibold">
-                {filteredAssignments.map((a) => (
-                  <tr key={a.id} className="hover:bg-muted/30 transition-colors">
+                {filteredOrganizations.map((org) => (
+                  <tr key={org.id} className="hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-bold text-foreground">
-                      <p>{a.orgName}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">ID: {a.id}</p>
+                      <p>{org.name}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">ID: {org.businessId}</p>
                     </td>
                     <td className="p-3">
-                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold border">
-                        {a.orgType}
+                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold border capitalize">
+                        {org.type}
                       </span>
                     </td>
-                    <td className="p-3 font-bold text-primary">{a.primaryOfficer}</td>
-                    <td className="p-3 text-muted-foreground font-medium">{a.secondaryOfficer}</td>
-                    <td className="p-3 text-muted-foreground">{a.regionScope}</td>
-                    <td className="p-3 font-bold text-emerald-600 font-mono">{a.healthScore} / 100</td>
+                    <td className="p-3 font-bold text-primary">
+                      {org.assignedStaff?.primary?.name ?? <span className="text-muted-foreground font-normal">Unassigned</span>}
+                    </td>
+                    <td className="p-3 text-muted-foreground font-medium">
+                      {org.assignedStaff?.secondary?.name ?? "Unassigned"}
+                    </td>
+                    <td className="p-3 text-muted-foreground">
+                      {[org.subRegion, org.continent].filter(Boolean).join(" / ") || "—"}
+                    </td>
+                    <td className="p-3 font-bold text-emerald-600 font-mono">{computeHealthScore(org)} / 100</td>
                     <td className="p-3 text-right">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleOpenReassignModal(a)}
+                        onClick={() => handleOpenReassign(org)}
                         className="h-7 text-[11px] font-bold text-primary border-primary/30"
                       >
                         Reassign Officer
@@ -303,8 +288,7 @@ export default function CRM360PipelinePage() {
         </CardContent>
       </Card>
 
-      {/* Staff Reassignment Modal */}
-      {selectedAssignment && (
+      {reassignTarget && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-5 border-b bg-muted/30">
@@ -313,7 +297,7 @@ export default function CRM360PipelinePage() {
                 <h2 className="text-base font-bold text-foreground">Reassign Zowasel Staff Officers</h2>
               </div>
               <button
-                onClick={() => setSelectedAssignment(null)}
+                onClick={() => setReassignTarget(null)}
                 className="text-muted-foreground hover:text-foreground p-1 rounded-md"
               >
                 <X className="h-5 w-5" />
@@ -322,35 +306,39 @@ export default function CRM360PipelinePage() {
 
             <form onSubmit={handleSaveReassignment} className="p-5 space-y-4 text-xs font-semibold">
               <div className="p-3 border rounded-lg bg-muted/30">
-                <p className="font-bold text-foreground">{selectedAssignment.orgName}</p>
-                <p className="text-[11px] text-muted-foreground">Current Region: {selectedAssignment.regionScope}</p>
+                <p className="font-bold text-foreground">{reassignTarget.name}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Current Region: {[reassignTarget.subRegion, reassignTarget.continent].filter(Boolean).join(" / ") || "—"}
+                </p>
               </div>
 
               <div>
-                <label className="block text-muted-foreground mb-1">Primary Account Officer *</label>
+                <label className="block text-muted-foreground mb-1">Primary Account Officer</label>
                 <select
-                  value={newPrimary}
-                  onChange={(e) => setNewPrimary(e.target.value)}
+                  value={newPrimaryId}
+                  onChange={(e) => setNewPrimaryId(e.target.value)}
                   className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
                 >
-                  {zowaselStaffList.map((staff) => (
-                    <option key={staff} value={staff}>
-                      {staff}
+                  <option value="">Unassigned</option>
+                  {eligibleStaff.map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-muted-foreground mb-1">Secondary Account Officer *</label>
+                <label className="block text-muted-foreground mb-1">Secondary Account Officer</label>
                 <select
-                  value={newSecondary}
-                  onChange={(e) => setNewSecondary(e.target.value)}
+                  value={newSecondaryId}
+                  onChange={(e) => setNewSecondaryId(e.target.value)}
                   className="w-full rounded-lg border bg-background p-2 font-bold text-foreground focus:outline-none"
                 >
-                  {zowaselStaffList.map((staff) => (
-                    <option key={staff} value={staff}>
-                      {staff}
+                  <option value="">Unassigned</option>
+                  {eligibleStaff.map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name}
                     </option>
                   ))}
                 </select>
@@ -360,7 +348,7 @@ export default function CRM360PipelinePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setSelectedAssignment(null)}
+                  onClick={() => setReassignTarget(null)}
                   className="h-8 text-xs font-bold"
                 >
                   Cancel

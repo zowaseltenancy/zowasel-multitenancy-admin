@@ -2,23 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  Building2,
-  CreditCard,
-  Receipt,
-  Sprout,
-  Users,
-  ShieldCheck,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { BarChart3, History, LayoutDashboard, Receipt, ShieldCheck, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Finance Hub is exactly what RVE-065 asked for — Zowasel's own account,
+// analytics, ledger, and accounts monitoring. Credit moved to ACESS and
+// CropPilot MRV/CRM 360 moved to Analysis — neither belongs here, per the
+// Aug 3 sprint tasks and Busayo's Aug 6 call. Overview and Analytics are
+// split per Busayo's Aug 6 restructure: Overview is the glanceable roll-up,
+// Analytics carries the interactive drill-down charts.
 const navItems = [
   {
     href: "/admin/finance-hub",
-    label: "Analytics & Overview",
+    label: "Overview",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/finance-hub/analytics",
+    label: "Analytics",
     icon: BarChart3,
   },
   {
@@ -37,19 +38,9 @@ const navItems = [
     icon: ShieldCheck,
   },
   {
-    href: "/admin/finance-hub/credit",
-    label: "Credit & Portfolio Risk",
-    icon: CreditCard,
-  },
-  {
-    href: "/admin/finance-hub/sustainability",
-    label: "CropPilot MRV & Carbon",
-    icon: Sprout,
-  },
-  {
-    href: "/admin/finance-hub/crm",
-    label: "CRM 360 & Pipeline",
-    icon: Users,
+    href: "/admin/finance-hub/activity",
+    label: "Activity Log",
+    icon: History,
   },
 ];
 

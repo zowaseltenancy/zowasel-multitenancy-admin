@@ -13,6 +13,7 @@ export const createLeadSchema = z.object({
     "inbound_website",
     "partner_organization",
   ]),
+  countryCode: z.string().min(1, "Country is required"),
   notes: z.string().optional(),
 });
 

@@ -42,6 +42,9 @@ export type OrganizationBillingState = "free" | "paid" | "expired";
 export interface OrganizationSubscription {
   app: string;
   plan: string;
+  // Real reference into the Modules Plan catalog — `plan` stays as the
+  // display label, but must always name a real ModulePlan.id underneath.
+  planId?: string;
   activeModules: string[];
   billingState: OrganizationBillingState;
   renewsAt: string | null;

@@ -9,10 +9,12 @@ export const moduleCategoryEnum = z.enum([
   "carbon_sustainability",
 ]);
 
+export const moduleProductEnum = z.enum(["croppilot", "marketplace", "acess"]);
+
 export const createModuleSchema = z.object({
   name: z.string().min(2, "Module name must be at least 2 characters").max(60, "Module name cannot exceed 60 characters"),
   description: z.string().min(5, "Description must be at least 5 characters").max(300, "Description cannot exceed 300 characters"),
-  category: moduleCategoryEnum,
+  product: moduleProductEnum,
   requiresKyb: z.boolean(),
   isPaid: z.boolean(),
   pricePerMonth: z.number().min(0, "Price cannot be negative"),
@@ -31,6 +33,15 @@ export const createSubModuleSchema = z.object({
   parentId: z.string().min(1, "Parent module ID is required"),
 });
 
+export const createPlanSchema = z.object({
+  product: z.enum(["croppilot", "marketplace", "acess", "platform"]),
+  name: z.string().min(2, "Plan name must be at least 2 characters").max(40, "Plan name cannot exceed 40 characters"),
+  description: z.string().min(5, "Description must be at least 5 characters").max(300, "Description cannot exceed 300 characters"),
+  pricePerMonth: z.number().min(0, "Price cannot be negative"),
+  includedModuleIds: z.array(z.string()),
+});
+
 export type CreateModuleFormValues = z.infer<typeof createModuleSchema>;
 export type UpdateModulePricingFormValues = z.infer<typeof updateModulePricingSchema>;
 export type CreateSubModuleFormValues = z.infer<typeof createSubModuleSchema>;
+export type CreatePlanFormValues = z.infer<typeof createPlanSchema>;

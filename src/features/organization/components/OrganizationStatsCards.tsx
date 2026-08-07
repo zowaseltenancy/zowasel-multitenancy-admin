@@ -34,7 +34,7 @@ export default function OrganizationStatsCards({
     iconClassName: string;
   }[] = [
     {
-      label: "Total Organizations",
+      label: "Total",
       value: organizations.length,
       filter: "all",
       icon: Building2,
@@ -42,7 +42,7 @@ export default function OrganizationStatsCards({
       iconClassName: "bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400",
     },
     {
-      label: "KYB Approved",
+      label: "Approved",
       value: organizations.filter(
         (organization) => organization.kybStatus === "approved"
       ).length,
@@ -52,7 +52,7 @@ export default function OrganizationStatsCards({
       iconClassName: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
     },
     {
-      label: "KYB Pending",
+      label: "Pending",
       value: organizations.filter(
         (organization) => organization.kybStatus === "pending"
       ).length,
@@ -62,7 +62,7 @@ export default function OrganizationStatsCards({
       iconClassName: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400",
     },
     {
-      label: "KYB Rejected",
+      label: "Rejected",
       value: organizations.filter(
         (organization) => organization.kybStatus === "rejected"
       ).length,

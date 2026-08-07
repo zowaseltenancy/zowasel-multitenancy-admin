@@ -2,23 +2,14 @@
 
 import { useState } from "react";
 import {
-  Sprout,
-  TrendingUp,
-  CreditCard,
   Users,
   CheckCircle2,
-  Globe,
   Leaf,
   CloudSun,
-  ShieldCheck,
   Award,
   Search,
-  Filter,
   Download,
   X,
-  FileText,
-  Activity,
-  Check,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -28,12 +19,13 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  TooltipValueType,
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
-import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
+import AnalysisNav from "@/features/analysis/components/AnalysisNav";
 import { GeographicFilterState } from "@/types/geo";
 
 interface SustainabilityProgram {
@@ -105,7 +97,7 @@ export default function CropPilotMRVSustainabilityPage() {
     countryCode: "all",
   });
 
-  const [programs, setPrograms] = useState<SustainabilityProgram[]>(mockPrograms);
+  const [programs] = useState<SustainabilityProgram[]>(mockPrograms);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProgram, setSelectedProgram] = useState<SustainabilityProgram | null>(null);
 
@@ -118,7 +110,6 @@ export default function CropPilotMRVSustainabilityPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
           <div>
@@ -139,10 +130,8 @@ export default function CropPilotMRVSustainabilityPage() {
         </div>
       </div>
 
-      {/* Finance Hub Nav */}
-      <FinanceHubNav />
+      <AnalysisNav />
 
-      {/* Metric Cards Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
           <CardContent className="p-5">
@@ -155,7 +144,7 @@ export default function CropPilotMRVSustainabilityPage() {
             <p className="mt-2 text-3xl font-extrabold text-foreground">42,850 tCO₂e</p>
             <div className="mt-1 flex items-center justify-between text-xs">
               <span className="text-emerald-600 font-bold">+14.2% vs target</span>
-              <span className="text-muted-foreground font-semibold">12 Active Programs</span>
+              <span className="text-muted-foreground font-semibold">{programs.length} Active Programs</span>
             </div>
           </CardContent>
         </Card>
@@ -168,10 +157,13 @@ export default function CropPilotMRVSustainabilityPage() {
               </p>
               <Users className="h-4 w-4 text-teal-600 dark:text-teal-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">84,800</p>
+            <p className="mt-2 text-3xl font-extrabold text-foreground">
+              {programs.reduce((total, p) => total + p.farmers, 0).toLocaleString()}
+            </p>
             <div className="mt-1 flex items-center justify-between text-xs">
-              <span className="text-teal-600 font-bold">142k Hectares</span>
-              <span className="text-muted-foreground font-semibold">6 Countries</span>
+              <span className="text-teal-600 font-bold">
+                {programs.reduce((total, p) => total + p.hectares, 0).toLocaleString()} Hectares
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -203,13 +195,11 @@ export default function CropPilotMRVSustainabilityPage() {
             <p className="mt-2 text-3xl font-extrabold text-foreground">100% Certified</p>
             <div className="mt-1 flex items-center justify-between text-xs">
               <span className="text-purple-600 font-bold">ISO & Verra Compliant</span>
-              <span className="text-muted-foreground font-semibold">Verified</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Interactive Recharts Carbon Reduction Visual */}
       <Card className="border shadow-2xs">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -234,7 +224,7 @@ export default function CropPilotMRVSustainabilityPage() {
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(val: any) => [`${val} tCO₂e`, "Carbon Offset"]}
+                  formatter={(value: TooltipValueType | undefined) => [`${Number(value)} tCO₂e`, "Carbon Offset"]}
                   contentStyle={{ backgroundColor: "#1e293b", borderRadius: "8px", border: "none", color: "#fff", fontSize: "12px" }}
                 />
                 <Area type="monotone" dataKey="co2" name="Carbon Sequestration" stroke="#10b981" fillOpacity={1} fill="url(#co2Grad)" strokeWidth={2} />
@@ -244,7 +234,6 @@ export default function CropPilotMRVSustainabilityPage() {
         </CardContent>
       </Card>
 
-      {/* Search Bar */}
       <Card className="border shadow-2xs">
         <CardContent className="p-4">
           <div className="relative w-full md:w-96">
@@ -260,7 +249,6 @@ export default function CropPilotMRVSustainabilityPage() {
         </CardContent>
       </Card>
 
-      {/* Program Impact Table */}
       <Card className="border shadow-2xs">
         <CardHeader className="py-4">
           <div className="flex items-center justify-between">
@@ -330,7 +318,6 @@ export default function CropPilotMRVSustainabilityPage() {
         </CardContent>
       </Card>
 
-      {/* Carbon Certificate Modal */}
       {selectedProgram && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">

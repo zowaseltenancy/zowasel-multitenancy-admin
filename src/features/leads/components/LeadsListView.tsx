@@ -4,14 +4,17 @@ import { useMemo, useState } from "react";
 import { Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import LeadTable from "./LeadTable";
 import ConvertLeadDialog from "./ConvertLeadDialog";
+import AddLeadDialog from "./AddLeadDialog";
+import RemoveLeadDialog from "./RemoveLeadDialog";
 import Pagination from "@/components/shared/Pagination";
 import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
 import { useLeads } from "../hooks/useLeads";
-import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
+import { useLeadConversion } from "../hooks/useLeadConversion";
 import { LEAD_STATUS_LABELS } from "@/constants/lead";
 import { Lead, LeadStatus } from "@/types/lead";
 import { GeographicFilterState } from "@/types/geo";
@@ -29,13 +32,15 @@ interface Props {
 }
 
 export default function LeadsListView({ initialStatus = "all" }: Props) {
-  const { leads, markLost, convertLead } = useLeads();
-  const { addOrganization } = useOrganizations();
+  const { leads, addLead, markLost, removeLead } = useLeads();
+  const { convert } = useLeadConversion();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">(initialStatus);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<Lead | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
     scope: "global",
     continent: "all",
@@ -71,41 +76,20 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
 
   const handleConfirmConvert = () => {
     if (!convertTarget) return;
-
-    const organizationId = `biz_${Date.now()}`;
-
-    addOrganization({
-      id: organizationId,
-      businessId: organizationId,
-      name: convertTarget.businessName,
-      type: convertTarget.intendedType,
-      owner: {
-        name: convertTarget.contactName,
-        email: convertTarget.email,
-        phone: convertTarget.phone,
-      },
-      teamMembers: [],
-      kybStatus: "not_submitted",
-      kybSubmittedAt: null,
-      kybApprovedAt: null,
-      kybRejectionReason: null,
-      kybDocuments: [],
-      subscriptions: [],
-      countryCode: convertTarget.countryCode,
-      countryName: convertTarget.countryName,
-      subRegion: convertTarget.subRegion,
-      continent: convertTarget.continent,
-      createdAt: new Date().toISOString().slice(0, 10),
-    });
-
-    convertLead(convertTarget.id, organizationId);
-    toast.success(`${convertTarget.businessName} converted — now a full organization pending KYB.`);
+    convert(convertTarget);
     setConvertTarget(null);
   };
 
   const handleMarkLost = (lead: Lead) => {
     markLost(lead.id);
     toast.info(`${lead.businessName} marked as lost.`);
+  };
+
+  const handleConfirmRemove = () => {
+    if (!removeTarget) return;
+    removeLead(removeTarget.id);
+    toast.success(`${removeTarget.businessName} removed from the pipeline.`);
+    setRemoveTarget(null);
   };
 
   return (
@@ -115,15 +99,34 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
         onClose={() => setConvertTarget(null)}
         onConfirm={handleConfirmConvert}
       />
+      <RemoveLeadDialog
+        lead={removeTarget}
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={handleConfirmRemove}
+      />
+      <AddLeadDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onCreate={(lead) => {
+          addLead(lead);
+          toast.success(`${lead.businessName} added to the pipeline.`);
+        }}
+      />
 
       {/* Top Section Grid: Title + Status Pills on Left, Map Selector at Top Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-between h-full space-y-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Leads Pipeline</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Track and convert potential tenant leads across operating regions.
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Leads Pipeline</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Track and convert potential tenant leads across operating regions.
+              </p>
+            </div>
+            <Button className="gap-1.5 shrink-0" onClick={() => setAddOpen(true)}>
+              <UserPlus className="h-4 w-4" />
+              Add Lead
+            </Button>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -183,7 +186,12 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
           </CardContent>
         </Card>
       ) : (
-        <LeadTable leads={paginatedLeads} onConvert={setConvertTarget} onMarkLost={handleMarkLost} />
+        <LeadTable
+          leads={paginatedLeads}
+          onConvert={setConvertTarget}
+          onMarkLost={handleMarkLost}
+          onRemove={setRemoveTarget}
+        />
       )}
 
       <Pagination

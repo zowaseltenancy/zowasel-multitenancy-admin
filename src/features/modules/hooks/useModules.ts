@@ -1,17 +1,23 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Module, ModuleCategory, ModuleDetailData } from "@/types/module";
+import { Module, ModuleDetailData, ModuleProduct } from "@/types/module";
 import { MOCK_MODULES, MOCK_TENANTS_USING } from "../data/mockModules";
 
-export function useModules() {
+// `product` param scopes every module returned by this hook to one of the
+// 3 real platforms — the RVE-064 restructure (Aug 7). Omit it to get the
+// unscoped full catalog (used by the Modules landing page's totals).
+export function useModules(product?: ModuleProduct) {
   const [modules, setModules] = useState<Module[]>(MOCK_MODULES);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  const productModules = useMemo(() => {
+    return product ? modules.filter((m) => m.product === product) : modules;
+  }, [modules, product]);
 
   const coreModules = useMemo(() => {
-    return modules.filter((m) => m.parentId === null);
-  }, [modules]);
+    return productModules.filter((m) => m.parentId === null);
+  }, [productModules]);
 
   const filteredCoreModules = useMemo(() => {
     return coreModules.filter((mod) => {
@@ -20,12 +26,9 @@ export function useModules() {
         mod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         mod.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesCategory =
-        selectedCategory === "all" || mod.category === selectedCategory;
-
-      return matchesSearch && matchesCategory;
+      return matchesSearch;
     });
-  }, [coreModules, searchQuery, selectedCategory]);
+  }, [coreModules, searchQuery]);
 
   const getSubModulesForCore = (coreId: string) => {
     return modules.filter((m) => m.parentId === coreId);
@@ -68,7 +71,7 @@ export function useModules() {
   const createCoreModule = (data: {
     name: string;
     description: string;
-    category: ModuleCategory;
+    product: ModuleProduct;
     requiresKyb: boolean;
     isPaid: boolean;
     pricePerMonth: number;
@@ -77,7 +80,11 @@ export function useModules() {
       id: `module_${Date.now()}`,
       name: data.name,
       description: data.description,
-      category: data.category,
+      // Legacy field, kept for type compat — sub-categorization under a
+      // product is deliberately deferred ("due time"), so this just
+      // mirrors the product for now rather than asking for a second pick.
+      category: data.product === "marketplace" ? "marketplace" : "croppilot",
+      product: data.product,
       featureKey: data.name.toLowerCase().replace(/\s+/g, "_"),
       parentId: null,
       enabled: true,
@@ -109,6 +116,7 @@ export function useModules() {
       name: data.name,
       description: data.description,
       category: parent.category,
+      product: parent.product,
       featureKey: data.name.toLowerCase().replace(/\s+/g, "_"),
       parentId: data.parentId,
       enabled: parent.enabled,
@@ -176,12 +184,11 @@ export function useModules() {
 
   return {
     modules,
+    productModules,
     coreModules,
     filteredCoreModules,
     searchQuery,
     setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
     getSubModulesForCore,
     getFamilyTenantCount,
     getModuleDetail,

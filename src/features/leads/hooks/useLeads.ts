@@ -29,5 +29,9 @@ export function useLeads() {
     );
   };
 
-  return { leads, addLead, markLost, convertLead };
+  const removeLead = (leadId: string) => {
+    setLeads((current) => current.filter((lead) => lead.id !== leadId));
+  };
+
+  return { leads, addLead, markLost, convertLead, removeLead };
 }

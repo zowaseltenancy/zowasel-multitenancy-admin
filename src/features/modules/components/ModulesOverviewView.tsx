@@ -9,22 +9,28 @@ import ModuleStatsCards from "./ModuleStatsCards";
 import ModuleCard from "./ModuleCard";
 import CreateModuleDialog from "./CreateModuleDialog";
 import { CreateModuleFormValues } from "@/schemas/module.schema";
+import { ModuleProduct } from "@/types/module";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function ModulesOverviewView() {
+interface Props {
+  product: ModuleProduct;
+}
+
+// Scoped to one product now — the category filter pills are gone; picking
+// a product on the landing page IS the filter. Sub-categorization within a
+// product is deferred ("due time"), per Busayo's Aug 7 direction.
+export default function ModulesOverviewView({ product }: Props) {
   const {
     coreModules,
     filteredCoreModules,
     searchQuery,
     setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
     getFamilyTenantCount,
     createCoreModule,
-  } = useModules();
+  } = useModules(product);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -40,16 +46,6 @@ export default function ModulesOverviewView() {
     createCoreModule(values);
   };
 
-  const categories = [
-    { id: "all", label: "All Modules" },
-    { id: "croppilot", label: "CropPilot Core" },
-    { id: "marketplace", label: "Marketplace" },
-    { id: "analytics", label: "Analytics" },
-    { id: "export_management", label: "Export Management" },
-    { id: "supply_chain", label: "Supply Chain" },
-    { id: "carbon_sustainability", label: "Carbon & Sustainability" },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Top Stats Cards */}
@@ -60,9 +56,9 @@ export default function ModulesOverviewView() {
         totalTenantUsage={totalTenantUsage}
       />
 
-      {/* Header Actions & Filter Controls */}
+      {/* Header Actions */}
       <Card className="bg-card">
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-1 items-center gap-3 w-full md:w-auto">
               <div className="relative flex-1 md:max-w-xs">
@@ -96,31 +92,6 @@ export default function ModulesOverviewView() {
               </Button>
             </div>
           </div>
-
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t">
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              const count =
-                cat.id === "all"
-                  ? totalCore
-                  : coreModules.filter((m) => m.category === cat.id).length;
-
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isSelected
-                      ? "bg-primary text-primary-foreground font-semibold"
-                      : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {cat.label} ({count})
-                </button>
-              );
-            })}
-          </div>
         </CardContent>
       </Card>
 
@@ -131,7 +102,9 @@ export default function ModulesOverviewView() {
             <LayoutGrid className="h-10 w-10 mx-auto text-muted-foreground/60" />
             <h3 className="text-base font-semibold text-foreground">No modules found</h3>
             <p className="text-xs max-w-sm mx-auto">
-              No platform modules match your active filter or search query. Try adjusting your filters or creating a new core module.
+              {totalCore === 0
+                ? "This product has no core modules yet — create the first one."
+                : "No modules match your search query."}
             </p>
           </CardContent>
         </Card>
@@ -152,6 +125,7 @@ export default function ModulesOverviewView() {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onSubmitModule={handleCreateModule}
+        product={product}
       />
     </div>
   );

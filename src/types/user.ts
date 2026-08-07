@@ -13,7 +13,11 @@ export type PlatformUserRole =
   | "Buyer"
   | "Continental Director"
   | "Regional Manager"
-  | "Country Director";
+  | "Country Director"
+  | "Chief Financial Officer"
+  | "Continental Finance Director"
+  | "Regional Finance Manager"
+  | "Country Finance Officer";
 
 export type PlatformUserCategory =
   | "agent"
@@ -36,12 +40,13 @@ export type StaffDepartment =
   | "Compliance"
   | "Regional Operations";
 
-// Geographic oversight scope for Regional Operations staff — the level at
-// which they operate (a Continental Director oversees an entire continent,
-// a Regional Manager one sub-region, a Country Director one country). The
-// actual continent/subRegion/countryCode fields on PlatformUser carry the
-// specific jurisdiction; this just says which of those fields is authoritative.
-export type GeographicScopeLevel = "continent" | "sub_region" | "country";
+// Geographic oversight scope for Regional Operations and Finance staff — the
+// level at which they operate (a Continental Director oversees an entire
+// continent, a Regional Manager one sub-region, a Country Director one
+// country; "global" sits above continent for roles like the CFO). The actual
+// continent/subRegion/countryCode fields on PlatformUser carry the specific
+// jurisdiction; this just says which of those fields is authoritative.
+export type GeographicScopeLevel = "global" | "continent" | "sub_region" | "country";
 
 export type UserAccountStatus = "active" | "inactive" | "pending" | "suspended";
 
@@ -78,6 +83,28 @@ export interface KeyOfficer {
   isActive?: boolean;
 }
 
+export type MaritalStatus = "single" | "married" | "divorced" | "widowed";
+
+// Personal Details tab on the Entity Overview redesign — separate from the
+// core identity fields (name/email/phone/country) shown on the overview card
+// itself.
+export interface PersonalDetails {
+  dateOfBirth?: string;
+  maritalStatus?: MaritalStatus;
+  stateOfOrigin?: string;
+  nationality?: string;
+  residentialAddress?: string;
+}
+
+// Next of Kin tab on the Entity Overview redesign.
+export interface NextOfKin {
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+  address?: string;
+}
+
 export interface PlatformUser {
   id: string;
   firstName: string;
@@ -108,4 +135,8 @@ export interface PlatformUser {
   countryName?: string;
   subRegion?: string;
   continent?: string;
+  bvn?: string;
+  nationalId?: string;
+  personalDetails?: PersonalDetails;
+  nextOfKin?: NextOfKin;
 }

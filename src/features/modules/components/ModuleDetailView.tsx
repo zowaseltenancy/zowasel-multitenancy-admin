@@ -63,7 +63,11 @@ export default function ModuleDetailView({ moduleId }: ModuleDetailViewProps) {
   const detailData = getModuleDetail(moduleId);
 
   useEffect(() => {
+    // Syncs the editable price field from the record whenever pricing is
+    // saved elsewhere (e.g. the paid/free checkbox) — a legitimate
+    // prop-to-local-state sync, same justified exception as DashboardLayout.
     if (detailData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPriceInput(detailData.module.pricePerMonth.toString());
     }
   }, [detailData]);

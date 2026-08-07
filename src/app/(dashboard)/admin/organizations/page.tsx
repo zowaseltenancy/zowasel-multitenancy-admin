@@ -29,28 +29,28 @@ export default function OrganizationsOverviewPage() {
 
   const stats = [
     {
-      label: "Total Organizations",
+      label: "Total Org.",
       value: organizations.length,
       icon: Building2,
       cardBg: "bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20",
       iconClassName: "bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400",
     },
     {
-      label: "KYB Approved",
+      label: "Approved",
       value: approved,
       icon: CheckCircle2,
       cardBg: "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20",
       iconClassName: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
     },
     {
-      label: "KYB Pending",
+      label: "Pending",
       value: pending,
       icon: Clock3,
       cardBg: "bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20",
       iconClassName: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400",
     },
     {
-      label: "KYB Rejected",
+      label: "Rejected",
       value: rejected,
       icon: XCircle,
       cardBg: "bg-red-500/5 dark:bg-red-500/10 border-red-500/30",

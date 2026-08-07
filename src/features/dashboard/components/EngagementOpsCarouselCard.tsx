@@ -5,8 +5,14 @@ import { Layers, ChevronLeft, ChevronRight, Target, Megaphone, CheckCircle2 } fr
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import StatusSegmentedBar from "@/components/shared/StatusSegmentedBar";
+import CategoryChipRow from "@/components/shared/CategoryChipRow";
+import { LEAD_STATUS_LABELS } from "@/constants/lead";
+import { MARKETING_CHANNEL_COLORS, MARKETING_CHANNEL_LABELS } from "@/constants/marketing";
 import { Lead } from "@/types/lead";
-import { MarketingCampaign } from "@/types/marketing";
+import { MarketingCampaign, MarketingChannel } from "@/types/marketing";
+
+const MARKETING_CHANNELS: MarketingChannel[] = ["newsletter", "sms", "whatsapp"];
 
 interface Props {
   activeModulesCount: number;
@@ -42,6 +48,25 @@ export default function EngagementOpsCarouselCard({
 
   const sentCampaignsCount = campaigns.filter((c) => c.status === "sent").length;
   const readyLeadsCount = leads.filter((l) => l.status === "ready_to_convert").length;
+
+  const leadSegments = (["incomplete", "ready_to_convert", "converted", "lost"] as const).map((status) => ({
+    label: LEAD_STATUS_LABELS[status],
+    count: leads.filter((l) => l.status === status).length,
+    tone:
+      status === "incomplete"
+        ? ("warning" as const)
+        : status === "ready_to_convert"
+        ? ("info" as const)
+        : status === "converted"
+        ? ("success" as const)
+        : ("danger" as const),
+  }));
+
+  const campaignChannelChips = MARKETING_CHANNELS.map((channel) => ({
+    label: MARKETING_CHANNEL_LABELS[channel],
+    count: campaigns.filter((c) => c.channel === channel && c.status === "sent").length,
+    colorClass: MARKETING_CHANNEL_COLORS[channel],
+  }));
 
   const nextSlide = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -147,25 +172,33 @@ export default function EngagementOpsCarouselCard({
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-4 p-4 border rounded-xl bg-muted/20">
-          <div className="p-4 border rounded-xl bg-card">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Subscribed Modules</p>
-            <p className="text-3xl font-black text-rose-600 mt-2">{activeModulesCount}</p>
-            <p className="text-xs font-bold text-muted-foreground mt-1">Tenant Subscriptions</p>
+        {activeTab.key === "modules" && (
+          <div className="p-4 border rounded-xl bg-muted/20">
+            <div className="p-4 border rounded-xl bg-card max-w-xs">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Subscribed Module Instances</p>
+              <p className="text-3xl font-black text-rose-600 mt-2">{activeModulesCount}</p>
+              <p className="text-xs font-bold text-muted-foreground mt-1">Across all organizations in scope</p>
+            </div>
           </div>
+        )}
 
-          <div className="p-4 border rounded-xl bg-sky-500/5 border-sky-500/20">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Leads Pipeline</p>
-            <p className="text-3xl font-black text-sky-600 mt-2">{leads.length}</p>
-            <p className="text-xs font-bold text-muted-foreground mt-1">{readyLeadsCount} Ready to Convert</p>
+        {activeTab.key === "leads" && (
+          <div className="p-4 border rounded-xl bg-muted/20">
+            <p className="text-xs font-bold uppercase text-muted-foreground mb-3">
+              {leads.length} Leads in Pipeline
+            </p>
+            <StatusSegmentedBar segments={leadSegments} />
           </div>
+        )}
 
-          <div className="p-4 border rounded-xl bg-purple-500/5 border-purple-500/20">
-            <p className="text-xs font-bold uppercase text-muted-foreground">Broadcast Campaigns</p>
-            <p className="text-3xl font-black text-purple-600 mt-2">{sentCampaignsCount}</p>
-            <p className="text-xs font-bold text-muted-foreground mt-1">Delivered Messages</p>
+        {activeTab.key === "campaigns" && (
+          <div className="p-4 border rounded-xl bg-muted/20">
+            <p className="text-xs font-bold uppercase text-muted-foreground mb-3">
+              {sentCampaignsCount} Campaigns Sent, by Channel
+            </p>
+            <CategoryChipRow items={campaignChannelChips} />
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
