@@ -4,7 +4,7 @@ import { createContext, useContext, useMemo, useState, ReactNode } from "react";
 import { useUsers } from "@/features/users/hooks/useUsers";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
 import { APPROVAL_THRESHOLD_USD, TRANSFER_CAPABLE_LEVELS } from "@/constants/finance";
-import { PlatformUser } from "@/types/user";
+import { PlatformUser, GeographicScopeLevel } from "@/types/user";
 
 interface FinanceOfficerContextValue {
   officers: PlatformUser[];
@@ -12,6 +12,8 @@ interface FinanceOfficerContextValue {
   setActingOfficerId: (id: string) => void;
   isCountryInScope: (countryCode: string | undefined) => boolean;
   approvalThresholdUSD: number | null;
+  thresholds: Record<GeographicScopeLevel, number | null>;
+  updateThreshold: (level: GeographicScopeLevel, val: number | null) => void;
   canApprove: (amountUSD: number) => boolean;
   canTransfer: boolean;
   scopeLabel: string;
@@ -37,9 +39,14 @@ export function FinanceOfficerProvider({ children }: { children: ReactNode }) {
 
   // Default to the CFO (broadest view) so the hub isn't empty on first load.
   const [actingOfficerId, setActingOfficerId] = useState("usr_fin_cfo");
+  const [customThresholds, setCustomThresholds] = useState<Record<GeographicScopeLevel, number | null>>({ ...APPROVAL_THRESHOLD_USD });
 
   const actingOfficer =
     officers.find((o) => o.id === actingOfficerId) ?? officers[0];
+
+  const updateThreshold = (level: GeographicScopeLevel, val: number | null) => {
+    setCustomThresholds((prev) => ({ ...prev, [level]: val }));
+  };
 
   const value = useMemo<FinanceOfficerContextValue | null>(() => {
     if (!actingOfficer) return null;
@@ -56,7 +63,7 @@ export function FinanceOfficerProvider({ children }: { children: ReactNode }) {
       return countryCode === actingOfficer.countryCode;
     };
 
-    const approvalThresholdUSD = APPROVAL_THRESHOLD_USD[level];
+    const approvalThresholdUSD = customThresholds[level];
     const canApprove = (amountUSD: number) =>
       approvalThresholdUSD === null || amountUSD <= approvalThresholdUSD;
 
@@ -75,11 +82,13 @@ export function FinanceOfficerProvider({ children }: { children: ReactNode }) {
       setActingOfficerId,
       isCountryInScope,
       approvalThresholdUSD,
+      thresholds: customThresholds,
+      updateThreshold,
       canApprove,
       canTransfer: TRANSFER_CAPABLE_LEVELS.includes(level),
       scopeLabel,
     };
-  }, [actingOfficer, officers]);
+  }, [actingOfficer, officers, customThresholds]);
 
   if (!value) return null;
 

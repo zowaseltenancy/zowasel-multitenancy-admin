@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutGrid, Sprout, Store, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Exact-match active state on purpose — FinanceHubNav's `pathname.startsWith`
-// broke because "/finance-hub/account" is a literal string-prefix of
-// "/finance-hub/accounts-monitor". Not repeating that here.
+// Exact-match active state on purpose to prevent sub-route prefix collision.
 const navItems = [
   { href: "/admin/modules", label: "Overview", icon: LayoutGrid },
   { href: "/admin/modules/products/croppilot", label: "CropPilot", icon: Sprout },

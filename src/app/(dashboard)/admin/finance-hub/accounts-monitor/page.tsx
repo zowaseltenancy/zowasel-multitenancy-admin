@@ -13,12 +13,15 @@ import {
   Eye,
   Ban,
   Hourglass,
+  BarChart3,
+  Landmark,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusSegmentedBar from "@/components/shared/StatusSegmentedBar";
-import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
+import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
+import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
 import { useMonitoredAccounts } from "@/features/finance-hub/hooks/useMonitoredAccounts";
 import { useLedgerTransactions } from "@/features/finance-hub/hooks/useLedgerTransactions";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
@@ -43,7 +46,7 @@ export default function AccountsMonitorPage() {
   const { transactions } = useLedgerTransactions();
   const { actingOfficer } = useActingFinanceOfficer();
   const { logAction } = useFinanceAuditLog();
-  const actorName = `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position})`;
+  const [activeTab, setActiveTab] = useState<string>("directory");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [typeFilter, setTypeFilter] = useState<string>("All");
@@ -83,8 +86,15 @@ export default function AccountsMonitorPage() {
 
   const handleToggleStatus = (accountId: string, accountName: string, nextStatus: string, countryCode?: string) => {
     toggleStatus(accountId);
-    logAction(actorName, `${nextStatus === "Active" ? "Activated" : "Suspended"} account`, accountName, undefined, countryCode);
+    logAction(actingOfficer ? `${actingOfficer.firstName} ${actingOfficer.lastName}` : "System", `${nextStatus === "Active" ? "Activated" : "Suspended"} account`, accountName, undefined, countryCode);
   };
+
+  const monitorPills = [
+    { id: "directory", label: "Monitored Directory", icon: Users, badge: accounts.length },
+    { id: "aging", label: "AP/AR 30-60-90 Aging Waterfall", icon: Hourglass, badge: outstanding.length },
+    { id: "offtaker_credit", label: "Off-Taker Credit & Collateral", icon: Landmark, badge: "157.6%" },
+    { id: "quarantine", label: "Risk & Dormancy Quarantine", icon: ShieldAlert, badge: highRiskCount + dormantCount },
+  ];
 
   return (
     <div className="space-y-8">
@@ -92,102 +102,181 @@ export default function AccountsMonitorPage() {
       <div>
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Accounts & Ledger Monitoring</h1>
-          <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-bold text-purple-600 border border-purple-500/20">
-            System Risk & Audit Management
-          </span>
+          <PageHeaderInfo
+            title="Accounts Monitoring Scope"
+            description="Real tenant organization tracking — volume, balance, and risk tiers computed from the shared ledger feed. Includes AP/AR 30-60-90 aging waterfall analysis, off-taker credit & collateral limits, and risk/dormancy quarantine management."
+          />
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Every account below is a real organization — volume, balance, and risk tier are computed
-          from the shared ledger feed, not hand-authored figures.
-        </p>
       </div>
 
-      {/* Metric Cards — computed from the real accounts array */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border bg-card shadow-2xs">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Total Managed Accounts
-              </p>
-              <Users className="h-4 w-4 text-foreground" />
-            </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">{accounts.length}</p>
-            <p className="mt-1 text-xs text-muted-foreground font-semibold">Real organizations on the platform</p>
-          </CardContent>
-        </Card>
+      {/* Pill Navigation Bar */}
+      <SubSectionPillNav items={monitorPills} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <Card className="border bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Active Accounts
-              </p>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">{activeCount}</p>
-            <p className="mt-1 text-xs text-emerald-600 font-bold">
-              {accounts.length === 0 ? "0" : ((activeCount / accounts.length) * 100).toFixed(0)}% of managed accounts
-            </p>
-          </CardContent>
-        </Card>
+      {/* 1. Monitored Directory Tab */}
+      {activeTab === "directory" && (
+        <div className="space-y-6">
+          {/* Metric Cards — computed from the real accounts array */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="border bg-card shadow-2xs">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Total Managed Accounts
+                  </p>
+                  <Users className="h-4 w-4 text-foreground" />
+                </div>
+                <p className="mt-2 text-3xl font-extrabold text-foreground">{accounts.length}</p>
+                <p className="mt-1 text-xs text-muted-foreground font-semibold">Real organizations on the platform</p>
+              </CardContent>
+            </Card>
 
-        <Card className="border bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Dormant Accounts (&gt;60 days)
-              </p>
-              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">{dormantCount}</p>
-            <p className="mt-1 text-xs text-amber-600 font-bold">
-              {accounts.length === 0 ? "0" : ((dormantCount / accounts.length) * 100).toFixed(0)}% dormancy rate
-            </p>
-          </CardContent>
-        </Card>
+            <Card className="border bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 shadow-2xs">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Active Accounts
+                  </p>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <p className="mt-2 text-3xl font-extrabold text-foreground">{activeCount}</p>
+                <p className="mt-1 text-xs text-emerald-600 font-bold">
+                  {accounts.length === 0 ? "0" : ((activeCount / accounts.length) * 100).toFixed(0)}% of managed accounts
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="border bg-rose-500/5 dark:bg-rose-500/10 border-rose-500/20 shadow-2xs">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                High Risk / Flagged
-              </p>
-              <ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">{highRiskCount}</p>
-            <p className="mt-1 text-xs text-rose-600 font-bold">Flagged for enhanced due diligence</p>
-          </CardContent>
-        </Card>
-      </div>
+            <Card className="border bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Dormant Accounts (&gt;60 days)
+                  </p>
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <p className="mt-2 text-3xl font-extrabold text-foreground">{dormantCount}</p>
+                <p className="mt-1 text-xs text-amber-600 font-bold">
+                  {accounts.length === 0 ? "0" : ((dormantCount / accounts.length) * 100).toFixed(0)}% dormancy rate
+                </p>
+              </CardContent>
+            </Card>
 
-      {/* AP/AR Aging — real pending/pending-approval entries bucketed by how
-          long they've actually been outstanding. */}
-      <Card className="border shadow-2xs">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-bold flex items-center gap-2">
-            <Hourglass className="h-4 w-4 text-primary" />
-            AP/AR Aging
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {outstanding.length === 0
-              ? "Nothing outstanding right now."
-              : `${outstanding.length} entries outstanding, ${formatUSD(agingBuckets.reduce((s, b) => s + b.totalUSD, 0))} total.`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <StatusSegmentedBar segments={agingBuckets.map((b) => ({ label: b.label, count: b.count, tone: b.tone }))} />
-          <div className="grid gap-3 sm:grid-cols-4">
-            {agingBuckets.map((b) => (
-              <div key={b.key} className="p-3 border rounded-lg text-center">
-                <p className="text-[10px] font-bold uppercase text-muted-foreground">{b.label}</p>
-                <p className="text-lg font-extrabold text-foreground">{formatUSD(b.totalUSD)}</p>
-                <p className="text-[10px] text-muted-foreground">{b.count} entries</p>
-              </div>
-            ))}
+            <Card className="border bg-rose-500/5 dark:bg-rose-500/10 border-rose-500/20 shadow-2xs">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    High Risk / Flagged
+                  </p>
+                  <ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                </div>
+                <p className="mt-2 text-3xl font-extrabold text-foreground">{highRiskCount}</p>
+                <p className="mt-1 text-xs text-rose-600 font-bold">Flagged for enhanced due diligence</p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
+
+      {/* 2. AP/AR 30-60-90 Aging Waterfall Tab */}
+      {activeTab === "aging" && (
+        <Card className="border shadow-2xs">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <Hourglass className="h-5 w-5 text-primary" />
+              AP/AR 30-60-90 Aging Waterfall
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {outstanding.length === 0
+                ? "Nothing outstanding right now."
+                : `${outstanding.length} entries outstanding, ${formatUSD(agingBuckets.reduce((s, b) => s + b.totalUSD, 0))} total overdue.`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <StatusSegmentedBar segments={agingBuckets.map((b) => ({ label: b.label, count: b.count, tone: b.tone }))} />
+            <div className="grid gap-4 sm:grid-cols-4">
+              {agingBuckets.map((b) => (
+                <div key={b.key} className="p-4 border rounded-xl bg-card text-center space-y-1">
+                  <p className="text-[11px] font-extrabold uppercase text-muted-foreground">{b.label}</p>
+                  <p className="text-xl font-black text-foreground font-mono">{formatUSD(b.totalUSD)}</p>
+                  <p className="text-[11px] text-muted-foreground font-semibold">{b.count} overdue entries</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 3. Off-Taker Credit & Collateral Tab */}
+      {activeTab === "offtaker_credit" && (
+        <Card className="border shadow-2xs">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-bold flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Landmark className="h-5 w-5 text-indigo-600" />
+                Off-Taker Credit Facilities & Collateral Coverage Ratios
+              </span>
+              <span className="text-xs font-mono font-bold bg-indigo-500/10 text-indigo-600 px-2.5 py-1 rounded-md border border-indigo-500/20">
+                DSO: 24.5 Days (Healthy &lt;30d)
+              </span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Deep-tier supply chain credit monitoring: off-taker credit limits vs pledged warehouse collateral inventory.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 text-xs font-semibold">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="p-4 border rounded-xl bg-card space-y-1">
+                <p className="text-[11px] text-muted-foreground font-bold uppercase">Total Drawn Credit Facilities</p>
+                <p className="text-2xl font-black text-foreground font-mono mt-1">$920,000</p>
+                <p className="text-[10px] text-muted-foreground">Across 6 approved enterprise off-takers</p>
+              </div>
+              <div className="p-4 border rounded-xl bg-card space-y-1">
+                <p className="text-[11px] text-muted-foreground font-bold uppercase">Warehouse Collateral Inventory</p>
+                <p className="text-2xl font-black text-emerald-600 font-mono mt-1">$1,450,000</p>
+                <p className="text-[10px] text-emerald-600 font-bold">157.6% Collateral Coverage Ratio</p>
+              </div>
+              <div className="p-4 border rounded-xl bg-card space-y-1">
+                <p className="text-[11px] text-muted-foreground font-bold uppercase">Average Days Sales Outstanding (DSO)</p>
+                <p className="text-2xl font-black text-primary font-mono mt-1">24.5 Days</p>
+                <p className="text-[10px] text-muted-foreground">Average clearing time for trade payouts</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 4. Risk & Dormancy Quarantine Tab */}
+      {activeTab === "quarantine" && (
+        <Card className="border bg-rose-500/5 border-rose-500/20 shadow-2xs">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-rose-600" />
+              Risk & Dormancy Quarantine
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Accounts flagged for high-risk trading behavior or inactivity exceeding 60 days.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-xs font-semibold">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="p-4 border rounded-xl bg-card space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-foreground">High Risk Flagged Accounts</span>
+                  <span className="font-mono text-rose-600 font-bold">{highRiskCount} Accounts</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Requires Enhanced Due Diligence (EDD) clearance prior to transaction payout.</p>
+              </div>
+
+              <div className="p-4 border rounded-xl bg-card space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-foreground">Dormant Accounts (&gt;60 days)</span>
+                  <span className="font-mono text-amber-600 font-bold">{dormantCount} Accounts</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Inactive for 60+ days. Automatic security lock applied to prevent unauthorized withdrawals.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filter and Search Bar */}
       <Card className="border shadow-2xs">

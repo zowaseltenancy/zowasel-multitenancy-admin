@@ -150,36 +150,65 @@ export const mockModulePlans: ModulePlan[] = [
     updatedAt: "2026-02-01T09:00:00Z",
   },
 
-  // Empty shells — every product shows the same set of named tiers, even
-  // where nothing's configured yet. Inactive by construction: a real
-  // placeholder to build into later, not a hidden/omitted plan. Per
-  // Busayo, Aug 7: "even if a plan has no module in it, include it there."
-  ...(["Free", "Starter", "Growth", "Carbon", "Enterprise", "Government"] as const).flatMap(
-    (tier) => {
-      const shellsNeeded: { id: string; product: "croppilot" | "marketplace" | "acess" }[] = [];
-      if (tier === "Enterprise" || tier === "Government") {
-        shellsNeeded.push({ id: `plan_croppilot_${tier.toLowerCase()}_shell`, product: "croppilot" });
-        shellsNeeded.push({ id: `plan_marketplace_${tier.toLowerCase()}_shell`, product: "marketplace" });
-      }
-      if (tier === "Starter" || tier === "Carbon") {
-        shellsNeeded.push({ id: `plan_marketplace_${tier.toLowerCase()}_shell`, product: "marketplace" });
-      }
-      // ACESS has no real plans yet — every tier gets a shell there.
-      shellsNeeded.push({ id: `plan_acess_${tier.toLowerCase()}_shell`, product: "acess" });
+  {
+    id: "plan_acess_starter",
+    product: "acess",
+    name: "Starter",
+    description: "Basic Alternative Credit Scoring & DVS 5 Cs Quiz Assessment.",
+    pricePerMonth: 69,
+    includedModuleIds: ["module_acess_credit_scoring", "sub_dvs_scoring"],
+    isActive: true,
+    createdBy: "system",
+    updatedAt: "2026-08-07T12:00:00Z",
+  },
+  {
+    id: "plan_acess_growth",
+    product: "acess",
+    name: "Growth",
+    description: "Credit Scoring, AgriPay Wallet Disbursements, and PAR 30/60/90 Credit Monitoring.",
+    pricePerMonth: 149,
+    includedModuleIds: [
+      "module_acess_credit_scoring",
+      "sub_dvs_scoring",
+      "sub_pds_predictive",
+      "module_acess_wallet_disbursement",
+      "module_acess_credit_monitoring",
+    ],
+    isActive: true,
+    createdBy: "system",
+    updatedAt: "2026-08-07T12:00:00Z",
+  },
+  {
+    id: "plan_acess_enterprise",
+    product: "acess",
+    name: "Enterprise",
+    description: "Full ACESS Suite — Credit Scoring, AgriPay Wallet, PAR Monitoring, and CRG Warehouse Guarantee.",
+    pricePerMonth: 299,
+    includedModuleIds: [
+      "module_acess_credit_scoring",
+      "sub_dvs_scoring",
+      "sub_pds_predictive",
+      "module_acess_wallet_disbursement",
+      "module_acess_credit_monitoring",
+      "module_acess_crg_guarantee",
+    ],
+    isActive: true,
+    createdBy: "system",
+    updatedAt: "2026-08-07T12:00:00Z",
+  },
 
-      return shellsNeeded.map(
-        (shell): ModulePlan => ({
-          id: shell.id,
-          product: shell.product,
-          name: tier,
-          description: "Not configured yet for this product — empty shell, ready to build into.",
-          pricePerMonth: 0,
-          includedModuleIds: [],
-          isActive: false,
-          createdBy: "system",
-          updatedAt: "2026-08-07T11:00:00Z",
-        })
-      );
-    }
+  // Empty shells for unconfigured tiers
+  ...(["Free", "Carbon", "Government"] as const).map(
+    (tier): ModulePlan => ({
+      id: `plan_acess_${tier.toLowerCase()}_shell`,
+      product: "acess",
+      name: tier,
+      description: "Not configured yet for ACESS — empty shell, ready to build into.",
+      pricePerMonth: 0,
+      includedModuleIds: [],
+      isActive: false,
+      createdBy: "system",
+      updatedAt: "2026-08-07T11:00:00Z",
+    })
   ),
 ];

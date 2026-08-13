@@ -4,7 +4,7 @@ import { useState } from "react";
 import { History, Search, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
+import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
 import { useFinanceAuditLog } from "@/features/finance-hub/context/FinanceAuditLogContext";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
 
@@ -57,14 +57,11 @@ export default function FinanceActivityLogPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight">Activity Log</h1>
-            <span className="rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-bold text-slate-600 border border-slate-500/20">
-              Finance-Specific Audit Trail
-            </span>
+            <PageHeaderInfo
+              title="Finance Activity Log Scope"
+              description="Every action that touches monetary state — reconcile, approve/reject, transfer, suspend, requisition sign-off — independently citable, timestamped, and scoped to geographic permissions."
+            />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Every action that touches money state — reconcile, approve/reject, transfer, suspend —
-            independently citable, scoped to what you can see.
-          </p>
         </div>
         <Button onClick={handleExportCSV} variant="outline" className="h-9 text-xs font-bold gap-2 text-primary border-primary/30">
           <Download className="h-4 w-4" /> Export Log (CSV)

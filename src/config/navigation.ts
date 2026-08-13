@@ -71,20 +71,32 @@ export const navigation: NavigationItem[] = [
     icon: TrendingUp,
     children: [
       {
-        label: "Analytics",
+        label: "Finance Analytics",
         href: "/admin/finance-hub/analytics",
       },
       {
-        label: "Master Account & Statements",
+        label: "Accounts & Statements",
         href: "/admin/finance-hub/account",
       },
       {
-        label: "Platform Ledger & Outflows",
+        label: "Ledger & Outflows",
         href: "/admin/finance-hub/transactions",
       },
       {
-        label: "Accounts Monitoring",
+        label: "Finance Monitoring",
         href: "/admin/finance-hub/accounts-monitor",
+      },
+      {
+        label: "Finance Governance",
+        href: "/admin/finance-hub/governance",
+      },
+      {
+        label: "Ceviant",
+        href: "/admin/finance-hub/ceviant",
+      },
+      {
+        label: "Digital Requisitions",
+        href: "/admin/finance-hub/requisitions",
       },
       {
         label: "Activity Log",

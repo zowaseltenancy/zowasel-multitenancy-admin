@@ -288,6 +288,42 @@ export default function Crm360PipelinePage() {
         </CardContent>
       </Card>
 
+      {/* Account Officer Reassignment Audit Timeline */}
+      <Card className="border shadow-2xs">
+        <CardHeader className="py-4">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <Clock className="h-4 w-4 text-purple-600" />
+            Account Officer Reassignment History & Audit Trail
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Historical log of past primary and secondary officer reassignments across tenant organizations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-xs font-semibold">
+          <div className="p-3 border rounded-xl bg-muted/20 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="font-bold text-foreground">Greenfields Agro Cooperative</p>
+              <p className="text-[11px] text-muted-foreground">Reassigned Primary Officer to <span className="text-primary font-bold">Chiamaka Eze</span></p>
+            </div>
+            <div className="text-right font-mono text-[11px] text-muted-foreground">
+              <span>2026-08-08 14:20</span>
+              <p className="text-[10px] text-purple-600 font-bold">By: Executive Admin</p>
+            </div>
+          </div>
+
+          <div className="p-3 border rounded-xl bg-muted/20 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="font-bold text-foreground">Sahel Grains Ltd</p>
+              <p className="text-[11px] text-muted-foreground">Reassigned Secondary Officer to <span className="text-primary font-bold">Ibrahim Musa</span></p>
+            </div>
+            <div className="text-right font-mono text-[11px] text-muted-foreground">
+              <span>2026-08-05 09:15</span>
+              <p className="text-[10px] text-purple-600 font-bold">By: Regional Director</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {reassignTarget && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">

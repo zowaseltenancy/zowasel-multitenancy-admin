@@ -25,31 +25,56 @@ import {
   ExportTable,
 } from "@/lib/export";
 
-interface Props {
-  table: ExportTable;
+interface Column<T> {
+  header: string;
+  accessor: keyof T | ((item: T) => string | number);
+}
 
+interface Props<T = any> {
+  table?: ExportTable;
+  data?: T[];
+  columns?: Column<T>[];
+  filename?: string;
+  targetElementId?: string;
   captureElementId?: string;
 }
 
-export default function ExportMenu({
-  table,
+export default function ExportMenu<T = any>({
+  table: explicitTable,
+  data,
+  columns,
+  filename,
+  targetElementId,
   captureElementId,
-}: Props) {
+}: Props<T>) {
   const [capturing, setCapturing] = useState(false);
+  const elementId = targetElementId || captureElementId;
+
+  const resolvedTable: ExportTable = explicitTable ?? {
+    title: filename || "Export_Report",
+    headers: columns ? columns.map((c) => c.header) : [],
+    rows:
+      data && columns
+        ? data.map((item) =>
+            columns.map((c) => {
+              if (typeof c.accessor === "function") {
+                return c.accessor(item);
+              }
+              return String(item[c.accessor] ?? "");
+            })
+          )
+        : [],
+  };
 
   const handleImageExport = async () => {
-    if (!captureElementId) return;
+    if (!elementId) return;
 
-    const element = document.getElementById(
-      captureElementId
-    );
-
+    const element = document.getElementById(elementId);
     if (!element) return;
 
     setCapturing(true);
-
     try {
-      await exportElementToImage(element, table.title);
+      await exportElementToImage(element, resolvedTable.title);
     } finally {
       setCapturing(false);
     }
@@ -59,42 +84,33 @@ export default function ExportMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
+          <Button variant="outline" size="sm" className="h-9 text-xs font-bold gap-2">
+            <Download className="h-4 w-4" />
+            Export Report
           </Button>
         }
       />
 
       <DropdownMenuContent>
-        <DropdownMenuItem
-          onClick={() => exportToCsv(table)}
-        >
-          <Table className="mr-2 h-4 w-4" />
-          CSV
+        <DropdownMenuItem onClick={() => exportToCsv(resolvedTable)}>
+          <Table className="mr-2 h-4 w-4 text-emerald-600" />
+          Export as CSV
         </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onClick={() => exportToExcel(table)}
-        >
-          <FileSpreadsheet className="mr-2 h-4 w-4" />
-          Excel
+        <DropdownMenuItem onClick={() => exportToExcel(resolvedTable)}>
+          <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600" />
+          Export as Excel (.xlsx)
         </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onClick={() => exportToPdf(table)}
-        >
-          <FileText className="mr-2 h-4 w-4" />
-          PDF
+        <DropdownMenuItem onClick={() => exportToPdf(resolvedTable)}>
+          <FileText className="mr-2 h-4 w-4 text-rose-600" />
+          Export as PDF (Document)
         </DropdownMenuItem>
 
-        {captureElementId && (
-          <DropdownMenuItem
-            disabled={capturing}
-            onClick={handleImageExport}
-          >
-            <ImageIcon className="mr-2 h-4 w-4" />
-            {capturing ? "Capturing..." : "Image (PNG)"}
+        {elementId && (
+          <DropdownMenuItem disabled={capturing} onClick={handleImageExport}>
+            <ImageIcon className="mr-2 h-4 w-4 text-primary" />
+            {capturing ? "Capturing..." : "Export as Image (PNG)"}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

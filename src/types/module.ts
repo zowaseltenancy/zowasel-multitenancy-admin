@@ -8,7 +8,8 @@ export type ModuleCategory =
   | "analytics"
   | "export_management"
   | "supply_chain"
-  | "carbon_sustainability";
+  | "carbon_sustainability"
+  | "acess";
 
 // The 3 real Zowasel platforms modules get consolidated under, per the
 // RVE-064 restructure (Aug 7). ACESS has zero modules today — its card

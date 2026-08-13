@@ -25,7 +25,7 @@ export default function FinanceOfficerSwitcher() {
       </div>
 
       <Select value={actingOfficer.id} onValueChange={(value) => setActingOfficerId(value ?? actingOfficer.id)}>
-        <SelectTrigger className="h-8 w-full sm:w-[280px] text-xs font-semibold">
+        <SelectTrigger className="h-8 w-full sm:w-[560px] max-w-full text-xs font-semibold">
           <SelectValue>
             {`${actingOfficer.firstName} ${actingOfficer.lastName} — ${actingOfficer.position}`}
           </SelectValue>

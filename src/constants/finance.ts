@@ -43,6 +43,12 @@ export const VAT_RATE_BY_COUNTRY: Record<string, number> = {
   TZ: 0.18,
 };
 
+export const WHT_RATES_BY_COUNTRY: Record<string, number> = {
+  NG: 0.10,
+  KE: 0.05,
+  TZ: 0.05,
+};
+
 // Monthly budget targets per category, in USD — sized to the real
 // magnitude of Zowasel's own transaction data (Platform Fee revenue runs
 // low thousands/month) rather than arbitrary round numbers.
@@ -52,7 +58,7 @@ export const MONTHLY_BUDGET_USD: Record<LedgerCategory, number> = {
   "Operational Outflow": 1500,
   "Dispute Fee": 300,
   "Escrow Settlement": 6000,
-  "Internal Transfer": 0,
+  "Internal Transfer": 500,
 };
 
 export const LEDGER_STATUS_TONE: Record<LedgerTransactionStatus, StatusTone> = {

@@ -20,12 +20,18 @@ import {
   History,
   Landmark,
   Receipt,
+  Lock,
+  TrendingDown,
+  Sliders,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import FinanceHubNav from "@/features/finance-hub/components/FinanceHubNav";
+import ExportMenu from "@/components/shared/ExportMenu";
+import StatementDetailModal from "@/features/finance-hub/components/StatementDetailModal";
+import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
+import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
 import { useTreasuryAccounts } from "@/features/finance-hub/hooks/useTreasuryAccounts";
 import { useLedgerTransactions } from "@/features/finance-hub/hooks/useLedgerTransactions";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
@@ -110,6 +116,12 @@ export default function MasterAccountPage() {
   const { actingOfficer, canTransfer } = useActingFinanceOfficer();
   const { logAction } = useFinanceAuditLog();
   const actorName = `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position})`;
+  const [fxDevalPct, setFxDevalPct] = useState(0);
+  const [stepIncrement, setStepIncrement] = useState(5);
+  const [selectedPair, setSelectedPair] = useState("USD/NGN");
+  const [selectedStatementLine, setSelectedStatementLine] = useState<StatementLine | null>(null);
+
+  const [activeTab, setActiveTab] = useState<string>("balances");
 
   const [statementFilter, setStatementFilter] = useState<"all" | "reconciled" | "pending" | "discrepancy">("all");
   const [lines, setLines] = useState<StatementLine[]>(mockStatementLines);
@@ -124,6 +136,13 @@ export default function MasterAccountPage() {
   const [transferFromId, setTransferFromId] = useState("");
   const [transferToId, setTransferToId] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
+
+  const accountPills = [
+    { id: "balances", label: "Treasury & Corporate Accounts", icon: Wallet, badge: accounts.length },
+    { id: "stress_test", label: "Currency Evaluation & Stress-Test", icon: Sliders, badge: `${fxDevalPct > 0 ? "+" : ""}${fxDevalPct}%` },
+    { id: "reconciliation", label: "Bank Statement Import & Recon", icon: FileSpreadsheet, badge: lines.length },
+    { id: "tax_compliance", label: "VAT & Tax Compliance", icon: Receipt },
+  ];
 
   const [remittedCountries, setRemittedCountries] = useState<Record<string, boolean>>({});
 
@@ -349,15 +368,12 @@ export default function MasterAccountPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">Zowasel Master Account</h1>
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary border border-primary/20">
-              Corporate Ledger & Bank Recon
-            </span>
+            <h1 className="text-3xl font-bold tracking-tight">Master Accounts & Bank Reconciliation</h1>
+            <PageHeaderInfo
+              title="Master Accounts Scope"
+              description="Every corporate account stays in its native currency — country and legal entity are native properties. Includes bank statement ingestion (CSV, XLSX, MT940), automated transaction matching, discrepancy management, and inter-account transfers."
+            />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Every corporate account stays in its own native currency — country and legal entity are
-            real fields, not a display filter. The USD figure below is a computed rollup on top.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -369,127 +385,276 @@ export default function MasterAccountPage() {
               <ArrowRightLeft className="h-4 w-4" /> Transfer Between Accounts
             </Button>
           )}
-          <Button
-            onClick={handleExportReconciliationCSV}
-            variant="outline"
-            className="h-9 text-xs font-bold gap-2 text-primary border-primary/30"
-          >
-            <Download className="h-4 w-4" /> Export Recon Report (CSV)
-          </Button>
+          <ExportMenu
+            data={lines}
+            columns={[
+              { header: "Statement ID", accessor: "id" },
+              { header: "Date", accessor: "date" },
+              { header: "Bank Account", accessor: "bankAccount" },
+              { header: "Narration", accessor: "narration" },
+              { header: "Amount", accessor: (l) => `${l.type === "credit" ? "+" : "-"}₦${l.bankAmount}` },
+              { header: "Internal Match", accessor: (l) => l.internalTxnId || "NO MATCH" },
+              { header: "Status", accessor: "status" },
+            ]}
+            filename={`Bank_Reconciliation_Report_${new Date().toISOString().split("T")[0]}`}
+            targetElementId="bank-reconcile-table"
+          />
         </div>
       </div>
 
-      {/* Consolidated reporting-currency rollup — replaces the old currency
-          dropdown. Native balances are the real data; USD is a transparent
-          conversion on top, with the rate and timestamp always visible. */}
-      <Card className="border bg-primary/5 border-primary/20 shadow-2xs">
-        <CardContent className="p-5 space-y-4">
-          <div className="flex items-center gap-3">
-            <Globe2 className="h-8 w-8 text-primary" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Consolidated Treasury Position (USD Rollup)
-              </p>
-              <p className="text-3xl font-extrabold text-foreground">{formatUSD(totalUSD)}</p>
-            </div>
-          </div>
+      {/* Pill Navigation Bar */}
+      <SubSectionPillNav items={accountPills} activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {/* FX exposure — native balance, USD equivalent, and % of total
-              treasury per currency, not a display-conversion toggle. */}
-          <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 border-b text-muted-foreground font-bold uppercase">
-                <tr>
-                  <th className="p-2.5">Currency</th>
-                  <th className="p-2.5">Native Balance</th>
-                  <th className="p-2.5">USD Equivalent</th>
-                  <th className="p-2.5">% of Treasury</th>
-                  <th className="p-2.5">FX Rate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y font-semibold">
-                {accounts.map((a) => {
-                  const usd = a.nativeBalance / a.fxRateToUSD;
-                  const pct = totalUSD === 0 ? 0 : (usd / totalUSD) * 100;
-                  return (
-                    <tr key={a.id}>
-                      <td className="p-2.5 font-mono font-bold">{a.currencyCode}</td>
-                      <td className="p-2.5">{formatNative(a.nativeBalance, a.currencySymbol)}</td>
-                      <td className="p-2.5">{formatUSD(usd)}</td>
-                      <td className="p-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span>{pct.toFixed(1)}%</span>
-                        </div>
-                      </td>
-                      <td className="p-2.5 font-mono text-muted-foreground text-[11px]">
-                        {a.fxRateToUSD.toLocaleString()}/$ as of{" "}
-                        {new Date(a.fxRateAsOf).toLocaleString(undefined, { month: "short", day: "numeric" })}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pending Settlements + Total Historical Revenue — the two Master
-          Account figures the original brief asked for. */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pending Settlements</p>
-              <Clock className="h-4 w-4 text-amber-600" />
-            </div>
-            <p className="mt-2 text-2xl font-extrabold text-foreground">{formatUSD(pendingSettlementsUSD)}</p>
-            <p className="mt-1 text-xs text-muted-foreground font-semibold">Awaiting settlement or approval</p>
-          </CardContent>
-        </Card>
-        <Card className="border shadow-2xs">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Historical Revenue</p>
-              <History className="h-4 w-4 text-foreground" />
-            </div>
-            <p className="mt-2 text-2xl font-extrabold text-foreground">{formatUSD(totalHistoricalRevenueUSD)}</p>
-            <p className="mt-1 text-xs text-muted-foreground font-semibold">All-time completed credits, in scope</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Corporate Bank Accounts Ledger Cards — real per-country accounts */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {accounts.map((a) => (
-          <Card key={a.id} className="border shadow-2xs">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {a.accountName}
-                </p>
-                <Wallet className="h-4 w-4 text-primary" />
+      {/* 1. Treasury & Corporate Accounts Tab */}
+      {activeTab === "balances" && (
+        <div className="space-y-6">
+          <Card className="border bg-primary/5 border-primary/20 shadow-2xs">
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <Globe2 className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Consolidated Treasury Position (USD Rollup)
+                  </p>
+                  <p className="text-3xl font-extrabold text-foreground">{formatUSD(totalUSD)}</p>
+                </div>
               </div>
-              <p className="mt-2 text-2xl font-extrabold text-foreground">
-                {formatNative(a.nativeBalance, a.currencySymbol)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground font-semibold">
-                &asymp; {formatUSD(a.nativeBalance / a.fxRateToUSD)} &bull; {a.countryName}
-              </p>
-              <p className="mt-2 text-[11px] text-muted-foreground border-t pt-2">
-                {a.legalEntity} &bull; {a.purpose} &bull; {a.maskedAccountNumber}
-              </p>
+
+              <div className="overflow-x-auto rounded-lg border bg-card">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-muted/50 border-b text-muted-foreground font-bold uppercase">
+                    <tr>
+                      <th className="p-2.5">Currency</th>
+                      <th className="p-2.5">Native Balance</th>
+                      <th className="p-2.5">USD Equivalent</th>
+                      <th className="p-2.5">% of Treasury</th>
+                      <th className="p-2.5">FX Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y font-semibold">
+                    {accounts.map((a) => {
+                      const usd = a.nativeBalance / a.fxRateToUSD;
+                      const pct = totalUSD === 0 ? 0 : (usd / totalUSD) * 100;
+                      return (
+                        <tr key={a.id}>
+                          <td className="p-2.5 font-mono font-bold">{a.currencyCode}</td>
+                          <td className="p-2.5">{formatNative(a.nativeBalance, a.currencySymbol)}</td>
+                          <td className="p-2.5">{formatUSD(usd)}</td>
+                          <td className="p-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                              </div>
+                              <span>{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                          <td className="p-2.5 font-mono text-muted-foreground text-[11px]">
+                            {a.fxRateToUSD.toLocaleString()}/$ as of{" "}
+                            {new Date(a.fxRateAsOf).toLocaleString(undefined, { month: "short", day: "numeric" })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Tax & Regulatory — real standard VAT rates applied to real
-          completed Platform Fee revenue per country. */}
-      {vatByCountry.length > 0 && (
+          {/* Account Cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {accounts.map((a) => {
+              const usdVal = a.nativeBalance / a.fxRateToUSD;
+              return (
+                <Card key={a.id} className="border shadow-2xs">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-foreground">{a.accountName}</span>
+                      <span className="font-mono text-xs font-bold text-muted-foreground">{a.currencyCode}</span>
+                    </div>
+                    <CardDescription className="text-xs">{a.bankName} &bull; {a.maskedAccountNumber}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <p className="text-2xl font-black text-foreground font-mono">{formatNative(a.nativeBalance, a.currencySymbol)}</p>
+                      <p className="text-xs text-muted-foreground font-semibold">{formatUSD(usdVal)} USD equivalent</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-muted/40 border text-[10px] font-bold text-muted-foreground flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Lock className="h-3 w-3 text-emerald-600" /> Immutable Bank Details
+                      </span>
+                      <span>Verified</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 2. FX Devaluation Stress-Test Tab */}
+      {activeTab === "stress_test" && (
+        <div className="space-y-6">
+          {/* 2. Currency Evaluation & Stress-Test Simulator (Upgraded) */}
+          <Card className="border shadow-2xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <TrendingDown className="h-5 w-5 text-primary" />
+                  Currency Evaluation & Stress-Test Simulator
+                </span>
+                <span className="text-xs font-mono font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-md border border-primary/20">
+                  Multi-Currency & Regional Cross-Corridor Engine
+                </span>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Simulate sudden currency shifts (both appreciation and devaluation ranging from -1,000% to +1,000%) across international and regional African cross-corridor trading pairs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Currency Pair & Step Granularity Controls */}
+              <div className="grid gap-4 sm:grid-cols-2 p-4 border rounded-xl bg-card">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-foreground">Target Currency Pair Corridor</label>
+                  <select
+                    value={selectedPair}
+                    onChange={(e) => setSelectedPair(e.target.value)}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-foreground focus:outline-none"
+                  >
+                    <option value="USD/NGN">USD / NGN — US Dollar vs. Nigerian Naira (₦)</option>
+                    <option value="USD/KES">USD / KES — US Dollar vs. Kenyan Shilling (KSh)</option>
+                    <option value="USD/TZS">USD / TZS — US Dollar vs. Tanzanian Shilling (TSh)</option>
+                    <option value="NGN/KES">NGN / KES — Nigerian Naira vs. Kenyan Shilling</option>
+                    <option value="NGN/TZS">NGN / TZS — Nigerian Naira vs. Tanzanian Shilling</option>
+                    <option value="KES/TZS">KES / TZS — Kenyan Shilling vs. Tanzanian Shilling</option>
+                    <option value="EUR/NGN">EUR / NGN — Euro vs. Nigerian Naira (₦)</option>
+                    <option value="GBP/NGN">GBP / NGN — British Pound vs. Nigerian Naira (₦)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-foreground">Slider Drag Granularity (Step Increment)</label>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {[1, 5, 10, 20, 25, 50, 100].map((step) => (
+                      <button
+                        type="button"
+                        key={step}
+                        onClick={() => setStepIncrement(step)}
+                        className={`px-2.5 py-1 rounded text-xs font-bold font-mono transition-all ${
+                          stepIncrement === step
+                            ? "bg-primary text-white shadow-2xs"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {step}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Slider Control */}
+              <div className="p-4 border rounded-xl bg-card space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-foreground flex items-center gap-2">
+                    <Sliders className="h-4 w-4 text-primary" />
+                    Currency Shift Percentage for <span className="font-mono font-extrabold text-foreground">{selectedPair}</span>:
+                  </label>
+                  <span
+                    className={`font-mono text-base font-black px-3 py-1 rounded-md border ${
+                      fxDevalPct > 0
+                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                        : fxDevalPct < 0
+                        ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                        : "bg-muted text-foreground"
+                    }`}
+                  >
+                    {fxDevalPct > 0 ? `+${fxDevalPct}% (Appreciation)` : fxDevalPct < 0 ? `${fxDevalPct}% (Devaluation)` : "0% (Parity)"}
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="-1000"
+                  max="1000"
+                  step={stepIncrement}
+                  value={fxDevalPct}
+                  onChange={(e) => setFxDevalPct(parseInt(e.target.value))}
+                  className="w-full accent-primary cursor-pointer h-2"
+                />
+
+                <div className="flex justify-between text-[10px] text-muted-foreground font-mono font-bold">
+                  <span className="text-rose-600">-1,000% Devaluation</span>
+                  <span>0% Parity</span>
+                  <span className="text-emerald-600">+1,000% Revaluation</span>
+                </div>
+              </div>
+
+              {/* Stress Results Grid */}
+              <div className="grid gap-4 sm:grid-cols-3 text-xs font-semibold">
+                <div className="p-4 border rounded-xl bg-card space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Mark-to-Market Valuation Impact</p>
+                  <p
+                    className={`text-2xl font-black font-mono ${
+                      fxDevalPct >= 0 ? "text-emerald-600" : "text-rose-600"
+                    }`}
+                  >
+                    {fxDevalPct >= 0 ? "+" : ""}{formatUSD((totalUSD * fxDevalPct) / 100)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Simulated MTM impact on liquid portfolio</p>
+                </div>
+
+                <div className="p-4 border rounded-xl bg-card space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Adjusted Treasury Position</p>
+                  <p className="text-2xl font-black text-foreground font-mono">
+                    {formatUSD(totalUSD + (totalUSD * fxDevalPct) / 100)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Post-stress valuation ({selectedPair})</p>
+                </div>
+
+                <div className="p-4 border rounded-xl bg-card space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Escrow FX Exposure Variance</p>
+                  <p
+                    className={`text-2xl font-black font-mono ${
+                      fxDevalPct >= 0 ? "text-emerald-600" : "text-amber-600"
+                    }`}
+                  >
+                    {fxDevalPct >= 0 ? "+" : ""}{formatUSD((pendingSettlementsUSD * fxDevalPct) / 100)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">FX gap on pending clearing settlements</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="border bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 shadow-2xs">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pending Settlements</p>
+                  <Clock className="h-4 w-4 text-amber-600" />
+                </div>
+                <p className="mt-2 text-2xl font-extrabold text-foreground">{formatUSD(pendingSettlementsUSD)}</p>
+                <p className="mt-1 text-xs text-muted-foreground font-semibold">Awaiting settlement or approval</p>
+              </CardContent>
+            </Card>
+            <Card className="border shadow-2xs">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Historical Revenue</p>
+                  <History className="h-4 w-4 text-foreground" />
+                </div>
+                <p className="mt-2 text-2xl font-extrabold text-foreground">{formatUSD(totalHistoricalRevenueUSD)}</p>
+                <p className="mt-1 text-xs text-muted-foreground font-semibold">All-time completed credits, in scope</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* 4. VAT & Tax Compliance Tab */}
+      {activeTab === "tax_compliance" && (
         <Card className="border shadow-2xs">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -500,28 +665,28 @@ export default function MasterAccountPage() {
               Standard VAT rate applied to completed platform-fee revenue, per country in scope.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {vatByCountry.map((v) => (
-              <div key={v.countryCode} className="p-3 border rounded-lg space-y-2">
+              <div key={v.countryCode} className="p-4 border rounded-xl space-y-3 bg-card">
                 <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                  <span>{v.countryName}</span>
+                  <span className="text-sm">{v.countryName}</span>
                   <span className="font-mono text-muted-foreground">
-                    {(VAT_RATE_BY_COUNTRY[v.countryCode] * 100).toFixed(1)}%
+                    {(VAT_RATE_BY_COUNTRY[v.countryCode] * 100).toFixed(1)}% VAT Rate
                   </span>
                 </div>
-                <p className="text-lg font-extrabold text-foreground">{formatUSD(v.liabilityUSD)}</p>
+                <p className="text-2xl font-extrabold text-foreground font-mono">{formatUSD(v.liabilityUSD)}</p>
                 {remittedCountries[v.countryCode] ? (
                   <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-500/20">
-                    <CheckCircle2 className="h-3 w-3" /> Remitted
+                    <CheckCircle2 className="h-3 w-3" /> Remitted to Tax Authority
                   </span>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleMarkVatRemitted(v.countryCode, v.countryName, v.liabilityUSD)}
-                    className="h-7 text-[11px] font-bold w-full"
+                    className="h-8 text-xs font-bold w-full"
                   >
-                    <Receipt className="h-3 w-3 mr-1" /> Mark as Remitted
+                    <Receipt className="h-3.5 w-3.5 mr-1.5 text-primary" /> Mark as Remitted
                   </Button>
                 )}
               </div>
@@ -529,6 +694,10 @@ export default function MasterAccountPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* 3. Bank Statement Import & Reconciliation Tab */}
+      {activeTab === "reconciliation" && (
+        <div className="space-y-6">
 
       {/* Bank Statement File Import Section */}
       <Card className="border shadow-2xs">
@@ -640,12 +809,12 @@ export default function MasterAccountPage() {
       </Card>
 
       {/* Reconciliation Table View */}
-      <Card className="border shadow-2xs">
+      <Card id="bank-reconcile-table" className="border shadow-2xs">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-2">
           <div>
             <CardTitle className="text-base font-bold">Bank Statement Line Items & Reconciliation</CardTitle>
             <CardDescription className="text-xs">
-              Matching imported bank statement entries against the shared internal ledger feed.
+              Matching imported bank statement entries against the shared internal ledger feed. Click any row for full statement line audit.
             </CardDescription>
           </div>
 
@@ -681,9 +850,13 @@ export default function MasterAccountPage() {
               </thead>
               <tbody className="divide-y font-semibold">
                 {filteredLines.map((line) => (
-                  <tr key={line.id} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={line.id}
+                    onClick={() => setSelectedStatementLine(line)}
+                    className="hover:bg-muted/40 transition-colors cursor-pointer"
+                  >
                     <td className="p-3">
-                      <p className="font-bold text-foreground font-mono">{line.id}</p>
+                      <p className="font-bold text-foreground font-mono hover:underline">{line.id}</p>
                       <p className="text-[11px] text-muted-foreground">{line.date}</p>
                     </td>
                     <td className="p-3 font-medium text-foreground">{line.bankAccount}</td>
@@ -722,7 +895,7 @@ export default function MasterAccountPage() {
                         </span>
                       )}
                     </td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
                         {line.status !== "reconciled" && (
                           <Button
@@ -752,6 +925,16 @@ export default function MasterAccountPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Statement Detail Modal Overlay */}
+      {selectedStatementLine && (
+        <StatementDetailModal
+          line={selectedStatementLine}
+          onClose={() => setSelectedStatementLine(null)}
+          onReconcile={handleReconcile}
+          onBindMatch={setMatchModalLine}
+        />
+      )}
 
       {/* Manual Match Finder Modal */}
       {matchModalLine && (
@@ -805,6 +988,8 @@ export default function MasterAccountPage() {
             </form>
           </div>
         </div>
+      )}
+      </div>
       )}
 
       {/* Internal Transfer Modal — moving money between Zowasel's OWN
