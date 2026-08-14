@@ -278,8 +278,8 @@ export default function AdminDashboard() {
           <div
             className={
               focusedCardIndex === null
-                ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 overflow-hidden p-1"
-                : "w-full overflow-hidden p-1"
+                ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4 p-1"
+                : "w-full p-1"
             }
           >
             {CARD_METADATA.map((meta, index) => {
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
               if (isAnyFocused && !isFocused) return null;
 
               return (
-                <div key={meta.id} className="overflow-hidden rounded-xl">
+                <div key={meta.id} className="rounded-xl h-full">
                   <motion.div
                     {...(isAnyFocused ? { layoutId: `dashboard-card-slot-${meta.id}` } : {})}
                     transition={{
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
                     onClick={() => focusedCardIndex === null && setFocusedCardIndex(index)}
                     className={
                       focusedCardIndex === null
-                        ? `group relative cursor-pointer rounded-xl transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:ring-2 ${meta.ringColor} transform-gpu`
+                        ? `group relative cursor-pointer rounded-xl h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:ring-2 ${meta.ringColor} transform-gpu`
                         : "w-full min-h-[360px] transform-gpu"
                     }
                   >
@@ -310,9 +310,9 @@ export default function AdminDashboard() {
                       <motion.span
                         initial={{ opacity: 0 }}
                         whileHover={{ opacity: 1 }}
-                        className={`absolute top-3 right-3 z-10 text-[10px] font-extrabold ${meta.badgeBg} text-white px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 pointer-events-none`}
+                        className={`absolute bottom-2.5 right-3 z-10 text-[10px] font-extrabold ${meta.badgeBg} text-white px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 pointer-events-none`}
                       >
-                        <Maximize2 className="h-2.5 w-2.5" /> Expand Overview
+                        <Maximize2 className="h-2.5 w-2.5" /> Expand
                       </motion.span>
                     )}
                     {renderCardContent(index, isFocused)}

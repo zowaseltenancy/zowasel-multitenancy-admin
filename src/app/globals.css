@@ -52,6 +52,17 @@
   --background: #f4f5fa;
   --foreground: #262c3f;
 
+  /* Brand Palette (Pantone Specifications) */
+  --brand-pantone-7741c: #438b3e;
+  --brand-pantone-359c: #b8e5b8;
+  --brand-pantone-144u: #ed8b00;
+  --brand-pantone-gray9c: #75787b;
+  --brand-pantone-2006c: #f6be00;
+  --brand-pantone-7512c: #9e6930;
+  --brand-pantone-425c: #54585a;
+  --brand-cream: #faf8f5;
+  --brand-card-tint: #f7faf7;
+
   --card: #ffffff;
   --card-foreground: #262c3f;
 
@@ -95,6 +106,17 @@
 html.dark {
   --background: #0d1117;
   --foreground: #f4f5fa;
+
+  /* Brand Palette (Pantone Specifications in Dark Theme) */
+  --brand-pantone-7741c: #438b3e;
+  --brand-pantone-359c: #b8e5b8;
+  --brand-pantone-144u: #ed8b00;
+  --brand-pantone-gray9c: #9aa1b1;
+  --brand-pantone-2006c: #f6be00;
+  --brand-pantone-7512c: #9e6930;
+  --brand-pantone-425c: #54585a;
+  --brand-cream: #0c1017;
+  --brand-card-tint: #141a22;
 
   --card: #161b22;
   --card-foreground: #f4f5fa;
@@ -144,4 +166,75 @@ html.dark {
   html {
     @apply font-sans;
   }
+}
+
+/* =========================================================================
+   AUTHENTICATION EXPERIENCE MOTION & TRANSITIONS (Specification Section 21-23)
+   Easing: cubic-bezier(0.22, 1, 0.36, 1) | Professional, subtle, no bounce
+   ========================================================================= */
+
+@keyframes authFadeSlideLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes authCardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authHeaderEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-auth-left {
+  animation: authFadeSlideLeft 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-auth-card {
+  animation: authCardEntrance 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-auth-header {
+  animation: authHeaderEntrance 480ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
+}
+
+.animate-auth-fade {
+  animation: authFadeIn 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Smooth Theme Switching (200-300ms) */
+.theme-transition,
+.theme-transition *,
+.theme-transition *:before,
+.theme-transition *:after {
+  transition: background-color 250ms ease, border-color 250ms ease, color 250ms ease, fill 250ms ease, stroke 250ms ease, box-shadow 250ms ease !important;
 }

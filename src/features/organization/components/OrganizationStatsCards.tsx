@@ -14,16 +14,16 @@ import { KybStatus } from "@/types/kyb";
 
 interface Props {
   organizations: Organization[];
-
   activeFilter: KybStatus | "all";
-
   onFilterChange: (value: KybStatus | "all") => void;
+  className?: string;
 }
 
 export default function OrganizationStatsCards({
   organizations,
   activeFilter,
   onFilterChange,
+  className,
 }: Props) {
   const stats: {
     label: string;
@@ -74,7 +74,7 @@ export default function OrganizationStatsCards({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 w-full", className)}>
       {stats.map((stat) => {
         const Icon = stat.icon;
         const isActive = stat.filter === activeFilter;
@@ -84,32 +84,32 @@ export default function OrganizationStatsCards({
             key={stat.label}
             type="button"
             onClick={() => onFilterChange(stat.filter)}
-            className="text-left cursor-pointer"
+            className="text-left cursor-pointer w-full min-w-0 focus:outline-none group"
           >
             <Card
               className={cn(
-                "transition-all hover:-translate-y-0.5 hover:shadow-md border shadow-2xs",
+                "w-full h-full min-w-0 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xs border shadow-2xs rounded-xl overflow-hidden",
                 stat.cardBg,
-                isActive && "ring-2 ring-primary border-primary"
+                isActive && "ring-2 ring-primary border-primary shadow-xs"
               )}
             >
-              <CardContent className="flex items-center gap-4 p-6">
+              <CardContent className="flex items-center gap-2.5 p-2.5 sm:p-3 min-w-0 w-full">
                 <div
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-xl border",
+                    "flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 aspect-square items-center justify-center rounded-full border transition-transform duration-200 group-hover:scale-105",
                     stat.iconClassName
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4 sm:h-4.5 sm:w-4.5 shrink-0" />
                 </div>
 
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
                     {stat.label}
                   </p>
 
-                  <h3 className="text-2xl font-bold mt-1">
-                    {stat.value}
+                  <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground truncate tabular-nums leading-tight">
+                    {stat.value.toLocaleString()}
                   </h3>
                 </div>
               </CardContent>

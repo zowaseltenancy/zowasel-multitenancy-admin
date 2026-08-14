@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatCompactMetric } from "@/lib/utils";
 import { ComparisonUnit, countInPeriod } from "@/lib/activityComparison";
 import { Organization } from "@/types/organization";
 import { PlatformUser } from "@/types/user";
@@ -89,41 +89,39 @@ export default function PlatformActivityCarouselCard({
   // SUMMARY VIEW (Landing 8-Card Grid)
   if (!isExpanded) {
     return (
-      <Card className="h-[210px] flex flex-col justify-between border shadow-2xs bg-card overflow-hidden">
-        <CardContent className="p-4 flex flex-col justify-between h-full space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+      <Card className="h-full min-h-[210px] flex flex-col justify-between border shadow-2xs bg-card overflow-hidden">
+        <CardContent className="p-3.5 sm:p-4 flex flex-col justify-between h-full space-y-2.5">
+          <div className="flex items-center justify-between gap-1.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
                 <Activity className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
-                  Platform Activity
-                </p>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground leading-none truncate">
+                Platform Activity
+              </p>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-500/20 shrink-0 whitespace-nowrap">
               <TrendingUp className="h-3 w-3" /> +14.2% Growth
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div className="p-2.5 rounded-lg border bg-sky-500/5 border-sky-500/20">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">Completed Txns</p>
-              <p className="text-2xl font-extrabold text-sky-600 mt-0.5">{totalTxns}</p>
+          <div className="grid grid-cols-2 gap-2 min-w-0">
+            <div className="p-2.5 rounded-lg border bg-sky-500/5 border-sky-500/20 min-w-0 overflow-hidden" title={`${totalTxns.toLocaleString()}`}>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground truncate">Completed Txns</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-sky-600 mt-0.5 truncate tracking-tight tabular-nums">{formatCompactMetric(totalTxns)}</p>
             </div>
-            <div className="p-2.5 rounded-lg border bg-muted/30">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">System Health</p>
-              <p className="text-2xl font-extrabold text-emerald-600 mt-0.5">99.9%</p>
+            <div className="p-2.5 rounded-lg border bg-muted/30 min-w-0 overflow-hidden">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground truncate">System Health</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-0.5 truncate tracking-tight tabular-nums">99.9%</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground pt-1 border-t">
-            <span>Settlements: {transactions.length}</span>
-            <span>&bull;</span>
-            <span>KYB Checks: {organizations.length}</span>
-            <span>&bull;</span>
-            <span>Payouts: 18</span>
+          <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground pt-1.5 border-t border-border/60 min-w-0 overflow-hidden">
+            <span className="truncate">Settlements: {formatCompactMetric(transactions.length)}</span>
+            <span className="shrink-0 mx-1">&bull;</span>
+            <span className="truncate">KYB: {formatCompactMetric(organizations.length)}</span>
+            <span className="shrink-0 mx-1">&bull;</span>
+            <span className="truncate">Payouts: 18</span>
           </div>
         </CardContent>
       </Card>
@@ -133,21 +131,21 @@ export default function PlatformActivityCarouselCard({
   // EXPANDED VIEW
   return (
     <Card className="min-h-[360px] flex flex-col justify-between border shadow-md bg-card overflow-hidden">
-      <CardContent className="p-6 flex flex-col justify-between h-full space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+      <CardContent className="p-4 sm:p-6 flex flex-col justify-between h-full space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
               <Activity className="h-5 w-5" />
             </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
                 Platform Activity & Event Velocity Comparison
               </p>
-              <h3 className="text-2xl font-extrabold text-foreground">{totalTxns} Live Completed Operations</h3>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-foreground truncate">{totalTxns} Live Completed Operations</h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button variant="outline" size="sm" className="h-8 text-xs font-bold cursor-pointer" onClick={prevSlide}>
               <ChevronLeft className="h-4 w-4 mr-1" /> Prev Period
             </Button>
@@ -160,7 +158,7 @@ export default function PlatformActivityCarouselCard({
           </div>
         </div>
 
-        <div className="w-full flex items-center gap-2 p-1.5 bg-muted/60 rounded-xl">
+        <div className="w-full flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 p-1.5 bg-muted/60 rounded-xl overflow-x-auto">
           {SLIDES.map((slide, idx) => (
             <button
               key={slide.label}
@@ -170,7 +168,7 @@ export default function PlatformActivityCarouselCard({
                 setCurrentIndex(idx);
               }}
               className={cn(
-                "flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center",
+                "flex-1 min-w-[90px] py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap",
                 currentIndex === idx
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-foreground hover:bg-card"
@@ -181,7 +179,7 @@ export default function PlatformActivityCarouselCard({
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {metrics.map((metric) => {
             const Icon = metric.icon;
             const change = metric.current - metric.previous;
@@ -189,19 +187,19 @@ export default function PlatformActivityCarouselCard({
             const percentChange = metric.previous === 0 ? null : (change / metric.previous) * 100;
 
             return (
-              <div key={metric.label} className="p-4 border rounded-xl bg-muted/20 space-y-2">
+              <div key={metric.label} className="p-4 border rounded-xl bg-muted/20 space-y-2 min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-muted-foreground">{metric.label}</span>
-                  <Icon className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold text-muted-foreground truncate">{metric.label}</span>
+                  <Icon className="h-4 w-4 text-primary shrink-0" />
                 </div>
-                <p className="text-3xl font-black text-foreground font-mono">{metric.current.toLocaleString()}</p>
-                <div className="flex items-center gap-1.5 text-xs font-bold">
+                <p className="text-2xl sm:text-3xl font-black text-foreground font-mono truncate">{metric.current.toLocaleString()}</p>
+                <div className="flex items-center gap-1.5 text-xs font-bold truncate">
                   {percentChange !== null ? (
-                    <span className={isPositive ? "text-emerald-600" : "text-rose-600"}>
+                    <span className={cn("truncate", isPositive ? "text-emerald-600" : "text-rose-600")}>
                       {isPositive ? "↑ +" : "↓ "}{percentChange.toFixed(0)}% vs previous
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">Baseline active</span>
+                    <span className="text-muted-foreground truncate">Baseline active</span>
                   )}
                 </div>
               </div>

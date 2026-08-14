@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, AlertCircle } from "lucide-react";
+import { ArrowRight, AlertCircle, Building2, RotateCcw } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import KybStatusBadge from "@/components/shared/KybStatusBadge";
 import OnboardedByCell from "@/components/shared/OnboardedByCell";
 import { Organization } from "@/types/organization";
 
 interface Props {
   organizations: Organization[];
+  onClearFilters?: () => void;
 }
 
 function getModuleCount(organization: Organization) {
@@ -21,11 +23,29 @@ function getPrimaryPlan(organization: Organization) {
   return organization.subscriptions[0]?.plan ?? "—";
 }
 
-export default function OrganizationTable({ organizations }: Props) {
+export default function OrganizationTable({ organizations, onClearFilters }: Props) {
   if (organizations.length === 0) {
     return (
-      <Card className="flex min-h-[160px] items-center justify-center p-6 text-sm text-muted-foreground">
-        No organizations match this filter.
+      <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed border-2">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#438B3E]/10 text-[#438B3E] dark:bg-[#438B3E]/20 dark:text-[#B8E5B8] mb-3.5">
+          <Building2 className="h-6 w-6" />
+        </div>
+        <h3 className="text-base font-semibold text-foreground">No organizations found</h3>
+        <p className="mt-1 text-xs text-muted-foreground max-w-sm">
+          No organizations match your current search and filter criteria.
+        </p>
+        {onClearFilters && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClearFilters}
+            className="mt-4 gap-1.5 rounded-xl border-[#438B3E]/30 text-[#438B3E] hover:bg-[#438B3E]/10 text-xs font-semibold cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Clear filters</span>
+          </Button>
+        )}
       </Card>
     );
   }

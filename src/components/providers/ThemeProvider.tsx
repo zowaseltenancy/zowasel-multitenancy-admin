@@ -74,10 +74,14 @@ export function ThemeProvider({
   const value = useMemo(
     () => ({
       theme,
-      toggleTheme: () =>
-        setTheme((current) =>
-          current === "dark" ? "light" : "dark"
-        ),
+      toggleTheme: () => {
+        const root = document.documentElement;
+        root.classList.add("theme-transition");
+        setTheme((current) => (current === "dark" ? "light" : "dark"));
+        setTimeout(() => {
+          root.classList.remove("theme-transition");
+        }, 300);
+      },
     }),
     [theme]
   );

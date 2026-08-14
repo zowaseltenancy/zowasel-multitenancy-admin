@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Layers, ChevronLeft, ChevronRight, Target, Megaphone, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatCompactMetric } from "@/lib/utils";
 import StatusSegmentedBar from "@/components/shared/StatusSegmentedBar";
 import CategoryChipRow from "@/components/shared/CategoryChipRow";
 import { LEAD_STATUS_LABELS } from "@/constants/lead";
@@ -82,39 +82,37 @@ export default function EngagementOpsCarouselCard({
   // SUMMARY VIEW (Landing 8-Card Grid)
   if (!isExpanded) {
     return (
-      <Card className="h-[210px] flex flex-col justify-between border shadow-2xs bg-card overflow-hidden">
-        <CardContent className="p-4 flex flex-col justify-between h-full space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+      <Card className="h-full min-h-[210px] flex flex-col justify-between border shadow-2xs bg-card overflow-hidden">
+        <CardContent className="p-3.5 sm:p-4 flex flex-col justify-between h-full space-y-2.5">
+          <div className="flex items-center justify-between gap-1.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
                 <Layers className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
-                  Engagement & Ops
-                </p>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground leading-none truncate">
+                Engagement & Ops
+              </p>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 border border-rose-500/20">
-              <CheckCircle2 className="h-3 w-3" /> {readyLeadsCount} Ready Leads
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 border border-rose-500/20 shrink-0 whitespace-nowrap">
+              <CheckCircle2 className="h-3 w-3" /> {formatCompactMetric(readyLeadsCount)} Ready
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div className="p-2.5 rounded-lg border bg-rose-500/5 border-rose-500/20">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">Active Modules</p>
-              <p className="text-2xl font-extrabold text-rose-600 mt-0.5">{activeModulesCount}</p>
+          <div className="grid grid-cols-2 gap-2 min-w-0">
+            <div className="p-2.5 rounded-lg border bg-rose-500/5 border-rose-500/20 min-w-0 overflow-hidden" title={`${activeModulesCount.toLocaleString()}`}>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground truncate">Active Modules</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-rose-600 mt-0.5 truncate tracking-tight tabular-nums">{formatCompactMetric(activeModulesCount)}</p>
             </div>
-            <div className="p-2.5 rounded-lg border bg-muted/30">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">Pipeline Leads</p>
-              <p className="text-2xl font-extrabold text-foreground mt-0.5">{leads.length}</p>
+            <div className="p-2.5 rounded-lg border bg-muted/30 min-w-0 overflow-hidden" title={`${leads.length.toLocaleString()}`}>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground truncate">Pipeline Leads</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-foreground mt-0.5 truncate tracking-tight tabular-nums">{formatCompactMetric(leads.length)}</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground pt-1 border-t">
-            <span>Ready: {readyLeadsCount}</span>
-            <span>&bull;</span>
-            <span>Campaigns Sent: {sentCampaignsCount}</span>
+          <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground pt-1.5 border-t border-border/60 min-w-0 overflow-hidden">
+            <span className="truncate">Ready: {formatCompactMetric(readyLeadsCount)}</span>
+            <span className="shrink-0 mx-1">&bull;</span>
+            <span className="truncate">Campaigns: {formatCompactMetric(sentCampaignsCount)}</span>
           </div>
         </CardContent>
       </Card>
@@ -124,21 +122,21 @@ export default function EngagementOpsCarouselCard({
   // EXPANDED VIEW
   return (
     <Card className="min-h-[360px] flex flex-col justify-between border shadow-md bg-card overflow-hidden">
-      <CardContent className="p-6 flex flex-col justify-between h-full space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+      <CardContent className="p-4 sm:p-6 flex flex-col justify-between h-full space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
               <Layers className="h-5 w-5" />
             </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
                 Engagement, CropPilot Modules & Growth Leads
               </p>
-              <h3 className="text-2xl font-extrabold text-foreground">{activeModulesCount} Subscribed Module Instances</h3>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-foreground truncate">{activeModulesCount.toLocaleString()} Subscribed Module Instances</h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button variant="outline" size="sm" className="h-8 text-xs font-bold cursor-pointer" onClick={prevSlide}>
               <ChevronLeft className="h-4 w-4 mr-1" /> Prev Section
             </Button>
@@ -151,7 +149,7 @@ export default function EngagementOpsCarouselCard({
           </div>
         </div>
 
-        <div className="w-full flex items-center gap-2 p-1.5 bg-muted/60 rounded-xl">
+        <div className="w-full flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 p-1.5 bg-muted/60 rounded-xl overflow-x-auto">
           {TABS.map((t, idx) => (
             <button
               key={t.key}
@@ -161,7 +159,7 @@ export default function EngagementOpsCarouselCard({
                 setCurrentIndex(idx);
               }}
               className={cn(
-                "flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center",
+                "flex-1 min-w-[90px] py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap",
                 currentIndex === idx
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-foreground hover:bg-card"
@@ -173,28 +171,28 @@ export default function EngagementOpsCarouselCard({
         </div>
 
         {activeTab.key === "modules" && (
-          <div className="p-4 border rounded-xl bg-muted/20">
-            <div className="p-4 border rounded-xl bg-card max-w-xs">
-              <p className="text-xs font-bold uppercase text-muted-foreground">Subscribed Module Instances</p>
-              <p className="text-3xl font-black text-rose-600 mt-2">{activeModulesCount}</p>
-              <p className="text-xs font-bold text-muted-foreground mt-1">Across all organizations in scope</p>
+          <div className="p-4 border rounded-xl bg-muted/20 min-w-0 overflow-hidden">
+            <div className="p-4 border rounded-xl bg-card max-w-xs min-w-0 overflow-hidden">
+              <p className="text-xs font-bold uppercase text-muted-foreground truncate">Subscribed Module Instances</p>
+              <p className="text-2xl sm:text-3xl font-black text-rose-600 mt-2 truncate">{activeModulesCount.toLocaleString()}</p>
+              <p className="text-xs font-bold text-muted-foreground mt-1 truncate">Across all organizations in scope</p>
             </div>
           </div>
         )}
 
         {activeTab.key === "leads" && (
-          <div className="p-4 border rounded-xl bg-muted/20">
-            <p className="text-xs font-bold uppercase text-muted-foreground mb-3">
-              {leads.length} Leads in Pipeline
+          <div className="p-4 border rounded-xl bg-muted/20 min-w-0 overflow-hidden">
+            <p className="text-xs font-bold uppercase text-muted-foreground mb-3 truncate">
+              {leads.length.toLocaleString()} Leads in Pipeline
             </p>
             <StatusSegmentedBar segments={leadSegments} />
           </div>
         )}
 
         {activeTab.key === "campaigns" && (
-          <div className="p-4 border rounded-xl bg-muted/20">
-            <p className="text-xs font-bold uppercase text-muted-foreground mb-3">
-              {sentCampaignsCount} Campaigns Sent, by Channel
+          <div className="p-4 border rounded-xl bg-muted/20 min-w-0 overflow-hidden">
+            <p className="text-xs font-bold uppercase text-muted-foreground mb-3 truncate">
+              {sentCampaignsCount.toLocaleString()} Campaigns Sent, by Channel
             </p>
             <CategoryChipRow items={campaignChannelChips} />
           </div>

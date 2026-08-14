@@ -84,23 +84,25 @@ export default function OrganizationsOverviewPage() {
       </div>
 
       {/* Snapshot Cards with Status Color Background Tints */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
-            <Card key={stat.label} className={`border shadow-2xs transition-colors ${stat.cardBg}`}>
-              <CardContent className="flex items-center gap-4 p-6">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${stat.iconClassName}`}>
-                  <Icon className="h-5 w-5" />
+            <Card key={stat.label} className={`border shadow-2xs transition-colors rounded-2xl overflow-hidden ${stat.cardBg}`}>
+              <CardContent className="flex items-center gap-3.5 sm:gap-4 p-4 sm:p-5 min-w-0">
+                <div className={`flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 aspect-square items-center justify-center rounded-full border ${stat.iconClassName}`}>
+                  <Icon className="h-5 w-5 sm:h-5.5 sm:w-5.5 shrink-0" />
                 </div>
 
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate">
                     {stat.label}
                   </p>
 
-                  <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
+                  <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground mt-0.5 truncate tabular-nums">
+                    {stat.value.toLocaleString()}
+                  </h3>
                 </div>
               </CardContent>
             </Card>
