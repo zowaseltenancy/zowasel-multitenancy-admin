@@ -11,6 +11,7 @@ import { Provider } from "@/types/provider";
 
 import ProviderEnvironmentBadge from "./ProviderEnvironmentBadge";
 import ProviderStatusBadge from "./ProviderStatusBadge";
+import { cn } from "@/lib/utils";
 
 interface ProviderCardProps {
   provider: Provider;
@@ -90,10 +91,13 @@ export default function ProviderCard({
 
         <div className="flex items-center gap-2">
           <Button
-            variant={
-              provider.isActive ? "outline" : "default"
-            }
-            className="flex-1"
+            variant={provider.isActive ? "outline" : "default"}
+            className={cn(
+              "flex-1 cursor-pointer font-semibold",
+              provider.isActive
+                ? "border-rose-500/40 text-rose-600 hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-400 dark:border-rose-500/40 dark:hover:bg-rose-500/20"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            )}
             onClick={() => onToggle(provider)}
           >
             {provider.isActive ? "Deactivate" : "Activate"}
@@ -103,7 +107,7 @@ export default function ProviderCard({
             href={`/admin/billing/providers/${provider.slug}`}
             className={buttonVariants({
               variant: "outline",
-              className: "flex-1",
+              className: "flex-1 cursor-pointer font-semibold border-primary/50 text-primary hover:bg-primary/10",
             })}
           >
             Manage

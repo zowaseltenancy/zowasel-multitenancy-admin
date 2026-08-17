@@ -71,21 +71,9 @@ export function useLedgerTransactions() {
     return entry;
   };
 
-  const validateTransaction = (id: string, validatedBy: string) => {
-    setLedgerOnly((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Pending Approval", recordedBy: t.recordedBy || validatedBy } : t))
-    );
-  };
-
   const approveTransaction = (id: string, approvedBy: string) => {
     setLedgerOnly((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status: "Completed", approvedBy } : t))
-    );
-  };
-
-  const authorizeTransaction = (id: string, authorizedBy: string) => {
-    setLedgerOnly((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Completed", approvedBy: authorizedBy } : t))
     );
   };
 
@@ -98,9 +86,7 @@ export function useLedgerTransactions() {
   return {
     transactions,
     addOfflineTransaction,
-    validateTransaction,
     approveTransaction,
-    authorizeTransaction,
     rejectTransaction,
   };
 }

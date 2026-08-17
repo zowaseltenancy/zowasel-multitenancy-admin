@@ -28,14 +28,18 @@ export default function TransactionDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-card border rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-card border rounded-2xl shadow-2xl w-full max-w-xl min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            <Tag className="h-5 w-5 text-primary" />
-            <div>
-              <h2 className="text-base font-extrabold text-foreground">Transaction Audit Detail</h2>
-              <p className="text-xs font-mono text-muted-foreground">{transaction.id}</p>
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element -- print-context asset, next/image adds no value here */}
+            <img src="/zowasel-logo-grey.png" alt="Zowasel" className="h-6 w-auto" />
+            <div className="flex items-center gap-2 border-l pl-3">
+              <Tag className="h-5 w-5 text-primary" />
+              <div>
+                <h2 className="text-base font-extrabold text-foreground">Transaction Audit Detail</h2>
+                <p className="text-xs font-mono text-muted-foreground">{transaction.id}</p>
+              </div>
             </div>
           </div>
           <button

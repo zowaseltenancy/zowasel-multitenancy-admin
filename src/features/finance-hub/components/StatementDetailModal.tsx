@@ -21,14 +21,18 @@ export default function StatementDetailModal({
 }: StatementDetailModalProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-card border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-card border rounded-2xl shadow-2xl w-full max-w-lg min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
-            <div>
-              <h2 className="text-base font-extrabold text-foreground">Bank Statement Line Detail</h2>
-              <p className="text-xs font-mono text-muted-foreground">{line.id}</p>
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element -- print-context asset, next/image adds no value here */}
+            <img src="/zowasel-logo-grey.png" alt="Zowasel" className="h-6 w-auto" />
+            <div className="flex items-center gap-2 border-l pl-3">
+              <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+              <div>
+                <h2 className="text-base font-extrabold text-foreground">Bank Statement Line Detail</h2>
+                <p className="text-xs font-mono text-muted-foreground">{line.id}</p>
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-md">

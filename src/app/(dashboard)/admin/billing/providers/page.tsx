@@ -10,7 +10,7 @@ import { Provider } from "@/types/provider";
 import ActivateProviderDialog from "@/features/billing/components/ActivateProviderDialog";
 import AddProviderDialog from "@/features/billing/components/AddProviderDialog";
 import ProviderGrid from "@/features/billing/components/ProviderGrid";
-import { useProviders } from "@/features/billing/hooks/useProviders";
+import { useProviders } from "@/features/billing/context/ProvidersContext";
 import { useFlashToast } from "@/hooks/useFlashToast";
 
 export default function ProvidersPage() {

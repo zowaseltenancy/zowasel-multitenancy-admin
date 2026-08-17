@@ -86,6 +86,5 @@ export interface Organization {
   countryName?: string;
   subRegion?: string;
   continent?: string;
-  isFinanciallyActive?: boolean;
   createdAt: string;
 }

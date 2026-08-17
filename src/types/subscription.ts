@@ -33,9 +33,21 @@ export interface Subscription {
 
   tier?: "Starter" | "Growth" | "Enterprise" | "Carbon" | "Government";
 
+  productId?: "croppilot" | "marketplace" | "acess" | "platform";
+
   autoRenew: boolean;
 
   startedAt: string;
 
   nextRenewal: string;
+
+  // Real, independent lifecycle fields — each status branch reads its own,
+  // instead of every label (Trial Ends / Due Since / Access Ended / Expires
+  // On) being the same `expiresAt` value relabeled by whatever `status`
+  // happens to be set. A record only ever populates the field(s) that match
+  // its actual status.
+  expiresAt?: string; // fixed-term, non-auto-renewing plans only
+  trialEndsAt?: string; // status: "Trial"
+  gracePeriodEndsAt?: string; // status: "Past Due" — grace window before suspension
+  accessEndedAt?: string; // status: "Cancelled"
 }

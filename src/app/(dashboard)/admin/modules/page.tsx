@@ -5,9 +5,9 @@ export default function ModulesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Module Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Product Modules</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Pick a product to manage its core modules, pricing, and plans.
+          Configure product modules, functional capabilities, and subscription tiers.
         </p>
       </div>
 

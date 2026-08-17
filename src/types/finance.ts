@@ -64,6 +64,27 @@ export interface LedgerTransaction {
   approvedBy?: string;
 }
 
+// The 5 real PlatformUserRole values that participate in Finance Hub's
+// maker-checker chain. This is the single source of truth for "who can
+// initiate/validate/approve/authorize" — Governance's Control Center Matrix
+// reads and writes it, and Requisitions/Master Account/Budget gate real
+// actions against it, instead of each screen inventing its own disconnected
+// notion of authority.
+export type FinanceGovernanceRole =
+  | "Country Finance Officer"
+  | "Regional Finance Manager"
+  | "Continental Finance Director"
+  | "Chief Financial Officer"
+  | "Chief Executive Officer";
+
+export interface FinanceRoleCapability {
+  canInitiate: boolean;
+  canValidate: boolean;
+  canApprove: boolean;
+  canAuthorize: boolean;
+  approvalCapLabel: string;
+}
+
 export type MonitoredAccountStatus = "Active" | "Dormant" | "Suspended";
 export type MonitoredAccountRiskTier = "Low Risk" | "Medium Risk" | "High Risk";
 
@@ -114,4 +135,43 @@ export interface FinanceAuditEntry {
   // Which country this action pertains to, if any — lets the Activity Log
   // be scoped by the acting officer the same way accounts/transactions are.
   countryCode?: string;
+}
+
+// A real budget: a specific category, a specific period, a specific target —
+// created and routed through the same maker-checker chain as Requisitions,
+// instead of being a flat constant nobody actually set for a specific
+// quarter or year. MONTHLY_BUDGET_USD (constants/finance.ts) still supplies
+// sensible defaults when drafting a new one.
+export type BudgetPeriodType = "weekly" | "monthly" | "quarterly" | "yearly";
+
+export type BudgetStatus = "draft" | "pending_approval" | "approved" | "rejected";
+
+export interface BudgetApprovalStep {
+  // The capability a step requires, not a named individual — a budget isn't
+  // tied to one fixed signatory roster the way a requisition's 4 blocks are.
+  role: FinanceGovernanceRole;
+  status: "pending" | "approved" | "rejected" | "awaiting";
+  officerId?: string;
+  officerName?: string;
+  timestamp?: string;
+  comment?: string;
+}
+
+export interface FinanceBudget {
+  id: string;
+  category: LedgerCategory;
+  periodType: BudgetPeriodType;
+  // Human label ("August 2026", "Q3 2026", "FY2026", "Wk 34, 2026") plus the
+  // real bounding dates it resolves to, so "actual" can be computed by
+  // filtering the shared ledger feed against periodStart/periodEnd — not
+  // re-guessed per screen.
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  targetUSD: number;
+  status: BudgetStatus;
+  createdByOfficerId: string;
+  createdByName: string;
+  createdAt: string;
+  approvalSteps: BudgetApprovalStep[];
 }

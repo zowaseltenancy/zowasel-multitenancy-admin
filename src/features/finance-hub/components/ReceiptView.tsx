@@ -27,7 +27,7 @@ export default function ReceiptView({ transaction, onClose }: Props) {
 
       <div
         id="receipt-print-area"
-        className="bg-card border rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150 print:rounded-none print:shadow-none"
+        className="bg-card border rounded-xl shadow-2xl w-full max-w-md min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150 print:rounded-none print:shadow-none print:min-w-0"
       >
         <div className="flex items-center justify-between p-5 border-b bg-muted/30 print:hidden">
           <h2 className="text-base font-bold text-foreground">Transaction Receipt</h2>
@@ -37,7 +37,9 @@ export default function ReceiptView({ transaction, onClose }: Props) {
         </div>
 
         <div className="p-6 space-y-5 text-sm">
-          <div className="text-center space-y-1 border-b pb-4">
+          <div className="flex flex-col items-center gap-2 border-b pb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- print-context asset, next/image adds no value here */}
+            <img src="/zowasel-logo-grey.png" alt="Zowasel" className="h-8 w-auto" />
             <p className="text-lg font-extrabold text-foreground">Zowasel Technologies</p>
             <p className="text-xs text-muted-foreground">Official Transaction Receipt</p>
           </div>

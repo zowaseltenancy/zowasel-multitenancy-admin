@@ -30,9 +30,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
 import { useFinanceAuditLog } from "@/features/finance-hub/context/FinanceAuditLogContext";
-import { formatUSD } from "@/features/finance-hub/utils/currency";
+import { formatUSD, convertToUSD } from "@/features/finance-hub/utils/currency";
 import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
 import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
+import ExportMenu from "@/components/shared/ExportMenu";
 
 interface RequisitionLineItem {
   sNo: number;
@@ -47,6 +48,12 @@ interface RequisitionLineItem {
 interface RequisitionSignatoryBlock {
   roleLabel: "Requested by" | "Authorized by" | "Approved by (H.O.D Finance)" | "Approved by (C.E.O)";
   name: string;
+  // Real FK into mockUsers — only set for the two Finance-governance stages
+  // ("Requested by"/"Authorized by" are departmental/operational sign-offs by
+  // staff who aren't modeled as Finance officers at all). When set, only the
+  // matching acting officer may sign this stage — the "name" field alone
+  // used to be purely decorative display text with nothing enforcing it.
+  officerId?: string;
   status: "approved" | "pending" | "rejected" | "awaiting";
   timestamp?: string;
   signatureText?: string;
@@ -84,7 +91,7 @@ const mockOfficialRequisitions: ZowaselOfficialRequisition[] = [
     dept: "Supply Chain",
     program: "Mechanization",
     location: "Nasarawa State (Doma -> Ibadan)",
-    staffName: "Michael Sotubo",
+    staffName: "Tobiloba Adewale",
     date: "2026-08-09",
     currencyCode: "NGN",
     currencySymbol: "₦",
@@ -104,9 +111,9 @@ const mockOfficialRequisitions: ZowaselOfficialRequisition[] = [
     status: "Pending Signatures",
     signatories: [
       { roleLabel: "Requested by", name: "Patience Dalyop", status: "approved", timestamp: "Aug 9, 10:30 AM", signatureText: "P. Dalyop (Signed)" },
-      { roleLabel: "Authorized by", name: "Michael Sotubo", status: "approved", timestamp: "Aug 9, 11:15 AM", signatureText: "M. Sotubo (Signed)", comment: "Verified hand tiller serial and driver manifest." },
-      { roleLabel: "Approved by (H.O.D Finance)", name: "Adeola Bamgbose", status: "pending" },
-      { roleLabel: "Approved by (C.E.O)", name: "Jerry Oche", status: "awaiting" },
+      { roleLabel: "Authorized by", name: "Tobiloba Adewale", status: "approved", timestamp: "Aug 9, 11:15 AM", signatureText: "T. Adewale (Signed)", comment: "Verified hand tiller serial and driver manifest." },
+      { roleLabel: "Approved by (H.O.D Finance)", name: "Folasade Bankole", officerId: "usr_fin_cfo", status: "pending" },
+      { roleLabel: "Approved by (C.E.O)", name: "Jerry Oche", officerId: "usr_staff_2", status: "awaiting" },
     ],
     attachments: [
       { name: "Freight_Invoice_HandTiller_Doma.pdf", type: "application/pdf", status: "Verified" },
@@ -122,7 +129,7 @@ const mockOfficialRequisitions: ZowaselOfficialRequisition[] = [
     dept: "Finance & Ops",
     program: "Payment Gateway",
     location: "Lagos State Headquarters",
-    staffName: "Bisi Akande",
+    staffName: "Chiamaka Obi",
     date: "2026-08-10",
     currencyCode: "NGN",
     currencySymbol: "₦",
@@ -142,12 +149,16 @@ const mockOfficialRequisitions: ZowaselOfficialRequisition[] = [
     status: "Pending Signatures",
     isAccountNameChange: true,
     policeReportAttached: true,
-    confirmationLetterAttached: true,
+    // Deliberately still missing — this is the one demonstrable blocked
+    // example. Without at least one real "not yet attached" case, the
+    // safeguard's block-and-unblock behavior can never actually be
+    // exercised, only theorized about.
+    confirmationLetterAttached: false,
     signatories: [
-      { roleLabel: "Requested by", name: "Bisi Akande", status: "approved", timestamp: "Aug 10, 02:15 PM", signatureText: "B. Akande (Signed)" },
-      { roleLabel: "Authorized by", name: "Tunde Ednut", status: "approved", timestamp: "Aug 10, 03:00 PM", signatureText: "T. Ednut (Signed)", comment: "Affidavit and police report cleared." },
-      { roleLabel: "Approved by (H.O.D Finance)", name: "Adeola Bamgbose", status: "pending" },
-      { roleLabel: "Approved by (C.E.O)", name: "Jerry Oche", status: "awaiting" },
+      { roleLabel: "Requested by", name: "Chiamaka Obi", status: "approved", timestamp: "Aug 10, 02:15 PM", signatureText: "C. Obi (Signed)" },
+      { roleLabel: "Authorized by", name: "Adebayo Ogunleye", status: "approved", timestamp: "Aug 10, 03:00 PM", signatureText: "A. Ogunleye (Signed)", comment: "Police report cleared — bank confirmation letter still outstanding." },
+      { roleLabel: "Approved by (H.O.D Finance)", name: "Folasade Bankole", officerId: "usr_fin_cfo", status: "pending" },
+      { roleLabel: "Approved by (C.E.O)", name: "Jerry Oche", officerId: "usr_staff_2", status: "awaiting" },
     ],
     attachments: [
       { name: "Police_Report_Fraud_Clearance_Ref882.pdf", type: "application/pdf", status: "Verified" },
@@ -175,7 +186,7 @@ export default function DigitalRequisitionsPage() {
   const [newDept, setNewDept] = useState("Supply Chain");
   const [newProgram, setNewProgram] = useState("Mechanization");
   const [newLocation, setNewLocation] = useState("Nasarawa State");
-  const [newStaffName, setNewStaffName] = useState(actingOfficer ? `${actingOfficer.firstName} ${actingOfficer.lastName}` : "Michael Sotubo");
+  const [newStaffName, setNewStaffName] = useState(actingOfficer ? `${actingOfficer.firstName} ${actingOfficer.lastName}` : "Tobiloba Adewale");
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1 Unit");
   const [newAmount, setNewAmount] = useState("");
@@ -194,7 +205,29 @@ export default function DigitalRequisitionsPage() {
     { id: "retirement", label: "Retirement & Acquittal Audit", icon: FileCheck },
   ];
 
+  // Which stage is next in line to be signed — the first "pending" block.
+  // "Requested by"/"Authorized by" have no officerId (operational staff, not
+  // modeled as Finance officers), so anyone acting can sign those. The two
+  // Finance-governance stages carry a real officerId, and only the officer
+  // it names may sign it — this is the actual answer to "were they assigned
+  // that from somewhere:" yes, via this FK, and no one else can act as them.
+  const blockedByIdentity = (req: ZowaselOfficialRequisition): string | null => {
+    const pendingStage = req.signatories.find((s) => s.status === "pending");
+    if (!pendingStage?.officerId) return null;
+    if (pendingStage.officerId === actingOfficer.id) return null;
+    return `Only ${pendingStage.name} (${pendingStage.roleLabel}) can sign this stage. You are acting as ${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position || actingOfficer.role}).`;
+  };
+
   const handleApproveStage = (reqId: string) => {
+    const target = requisitions.find((r) => r.id === reqId);
+    if (target) {
+      const blockReason = blockedByIdentity(target);
+      if (blockReason) {
+        toast.error(`STAGE BLOCKED: ${blockReason}`);
+        return;
+      }
+    }
+
     setRequisitions((prev) =>
       prev.map((r) => {
         if (r.id !== reqId) return r;
@@ -247,6 +280,15 @@ export default function DigitalRequisitionsPage() {
   };
 
   const handleRejectStage = (reqId: string) => {
+    const target = requisitions.find((r) => r.id === reqId);
+    if (target) {
+      const blockReason = blockedByIdentity(target);
+      if (blockReason) {
+        toast.error(`STAGE BLOCKED: ${blockReason}`);
+        return;
+      }
+    }
+
     setRequisitions((prev) =>
       prev.map((r) => {
         if (r.id !== reqId) return r;
@@ -263,6 +305,25 @@ export default function DigitalRequisitionsPage() {
     logAction(actorName, "Rejected Requisition Stage", reqId, commentInput || "Rejected");
     toast.error(`Requisition ${reqId} rejected.`);
     setCommentInput("");
+  };
+
+  const handleAttachSafeguardDoc = (reqId: string, which: "police" | "confirmation") => {
+    setRequisitions((prev) =>
+      prev.map((r) => {
+        if (r.id !== reqId) return r;
+        const updated =
+          which === "police" ? { ...r, policeReportAttached: true } : { ...r, confirmationLetterAttached: true };
+        if (activeReq?.id === reqId) setActiveReq(updated);
+        return updated;
+      })
+    );
+    logAction(
+      actorName,
+      which === "police" ? "Attached Police Fraud Clearance Report" : "Attached Stamped Bank Confirmation Letter",
+      reqId,
+      "Safeguard document verified"
+    );
+    toast.success(`${which === "police" ? "Police report" : "Bank confirmation letter"} attached and verified.`);
   };
 
   const handleRequestDocSubmit = (e: React.FormEvent) => {
@@ -311,7 +372,7 @@ export default function DigitalRequisitionsPage() {
         },
       ],
       totalAmountNative: amountVal,
-      totalAmountUSD: amountVal / 1550,
+      totalAmountUSD: convertToUSD(amountVal, "NGN"),
       status: "Pending Signatures",
       isAccountNameChange: isAccountEditToggle,
       policeReportAttached: !isAccountEditToggle,
@@ -320,9 +381,9 @@ export default function DigitalRequisitionsPage() {
       requestedDocs: [],
       signatories: [
         { roleLabel: "Requested by", name: newStaffName, status: "approved", timestamp: "Just now", signatureText: `${newStaffName} (Signed)` },
-        { roleLabel: "Authorized by", name: "Department Lead", status: "pending" },
-        { roleLabel: "Approved by (H.O.D Finance)", name: "Adeola Bamgbose", status: "awaiting" },
-        { roleLabel: "Approved by (C.E.O)", name: "Jerry Oche", status: "awaiting" },
+        { roleLabel: "Authorized by", name: "Adebayo Ogunleye", status: "pending" },
+        { roleLabel: "Approved by (H.O.D Finance)", name: "Folasade Bankole", officerId: "usr_fin_cfo", status: "awaiting" },
+        { roleLabel: "Approved by (C.E.O)", name: "Jerry Oche", officerId: "usr_staff_2", status: "awaiting" },
       ],
       attachments: [{ name: "Supporting_Requisition_Doc.pdf", type: "application/pdf", status: "Pending Review" }],
       appendixRetirementNotice: "Additional information (Invoice, Receipt, Name, Address, Phone number, and Account details) must be provided for retirement.",
@@ -354,10 +415,25 @@ export default function DigitalRequisitionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowCreateModal(true)} className="h-9 bg-primary font-bold text-xs gap-2 shadow-2xs">
+          <ExportMenu
+            data={requisitions}
+            columns={[
+              { header: "Ref No", accessor: "refNo" },
+              { header: "Date", accessor: "date" },
+              { header: "Department", accessor: "dept" },
+              { header: "Staff Name", accessor: "staffName" },
+              { header: "Program", accessor: "program" },
+              { header: "Amount (NGN)", accessor: (r: any) => `₦${r.totalAmountNative.toLocaleString()}` },
+              { header: "Amount (USD)", accessor: (r: any) => `$${r.totalAmountUSD.toLocaleString()}` },
+              { header: "Status", accessor: "status" },
+            ]}
+            filename={`Requisitions_Report_${new Date().toISOString().split("T")[0]}`}
+            targetElementId="official-requisition-capture"
+          />
+          <Button onClick={() => setShowCreateModal(true)} className="h-9 bg-primary font-bold text-xs gap-2 shadow-2xs cursor-pointer">
             <PlusCircle className="h-4 w-4" /> Create Requisition Form
           </Button>
-          <Button onClick={handlePrint} variant="outline" className="h-9 font-bold text-xs gap-2">
+          <Button onClick={handlePrint} variant="outline" className="h-9 font-bold text-xs gap-2 cursor-pointer">
             <Printer className="h-4 w-4" /> Print Form PDF
           </Button>
         </div>
@@ -406,7 +482,7 @@ export default function DigitalRequisitionsPage() {
           {/* Right: Pixel-Perfect Official Zowasel Requisition Form Document */}
           {activeReq && (
             <div className="lg:col-span-2 space-y-6">
-              <Card className="border shadow-lg bg-card overflow-hidden">
+              <Card id="official-requisition-capture" className="border shadow-lg bg-card overflow-hidden">
                 <CardContent className="p-8 space-y-6 bg-white text-black font-sans text-xs">
                   {/* Official Header with Actual /zowasel-logo-grey.png */}
                   <div className="flex items-start justify-between border-b pb-4">
@@ -529,6 +605,11 @@ export default function DigitalRequisitionsPage() {
                 {activeReq.status === "Pending Signatures" && (
                   <div className="bg-muted/30 p-4 border-t space-y-3">
                     <p className="text-xs font-bold text-foreground">Sign-Off Action Bar — Logged as {actorName}:</p>
+                    {blockedByIdentity(activeReq) && (
+                      <p className="text-[11px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                        <ShieldAlert className="h-3.5 w-3.5 shrink-0" /> {blockedByIdentity(activeReq)}
+                      </p>
+                    )}
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
@@ -539,6 +620,7 @@ export default function DigitalRequisitionsPage() {
                       />
                       <Button
                         size="sm"
+                        disabled={!!blockedByIdentity(activeReq)}
                         onClick={() => handleApproveStage(activeReq.id)}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8 gap-1.5 shrink-0"
                       >
@@ -547,6 +629,7 @@ export default function DigitalRequisitionsPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={!!blockedByIdentity(activeReq)}
                         onClick={() => handleRejectStage(activeReq.id)}
                         className="text-rose-600 border-rose-200 font-bold text-xs h-8 gap-1.5 shrink-0"
                       >
@@ -591,7 +674,8 @@ export default function DigitalRequisitionsPage() {
                     <Button
                       size="sm"
                       onClick={() => handleApproveStage(req.id)}
-                      disabled={req.status !== "Pending Signatures"}
+                      disabled={req.status !== "Pending Signatures" || !!blockedByIdentity(req)}
+                      title={blockedByIdentity(req) ?? undefined}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8 gap-1.5"
                     >
                       <CheckCircle2 className="h-4 w-4" /> Sign Current Stage
@@ -600,7 +684,8 @@ export default function DigitalRequisitionsPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleRejectStage(req.id)}
-                      disabled={req.status !== "Pending Signatures"}
+                      disabled={req.status !== "Pending Signatures" || !!blockedByIdentity(req)}
+                      title={blockedByIdentity(req) ?? undefined}
                       className="text-rose-600 border-rose-200 font-bold text-xs h-8 gap-1.5"
                     >
                       <XCircle className="h-4 w-4" /> Reject
@@ -731,19 +816,39 @@ export default function DigitalRequisitionsPage() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 text-xs font-semibold">
-                  <div className="p-3 border rounded-lg bg-card space-y-1">
+                  <div className="p-3 border rounded-lg bg-card space-y-2">
                     <p className="text-[11px] text-muted-foreground font-bold">1. Police Fraud Clearance Report</p>
                     <p className={`font-bold flex items-center gap-1.5 ${req.policeReportAttached ? "text-emerald-600" : "text-rose-600"}`}>
                       {req.policeReportAttached ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                       {req.policeReportAttached ? "Verified & Attached" : "Missing — System Blocking Sign-Off"}
                     </p>
+                    {!req.policeReportAttached && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAttachSafeguardDoc(req.id, "police")}
+                        className="h-7 text-[11px] font-bold gap-1 text-rose-600 border-rose-200"
+                      >
+                        <Paperclip className="h-3 w-3" /> Attach Police Report
+                      </Button>
+                    )}
                   </div>
-                  <div className="p-3 border rounded-lg bg-card space-y-1">
+                  <div className="p-3 border rounded-lg bg-card space-y-2">
                     <p className="text-[11px] text-muted-foreground font-bold">2. Stamped Bank Confirmation Letter</p>
                     <p className={`font-bold flex items-center gap-1.5 ${req.confirmationLetterAttached ? "text-emerald-600" : "text-rose-600"}`}>
                       {req.confirmationLetterAttached ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                       {req.confirmationLetterAttached ? "Verified & Attached" : "Missing — System Blocking Sign-Off"}
                     </p>
+                    {!req.confirmationLetterAttached && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAttachSafeguardDoc(req.id, "confirmation")}
+                        className="h-7 text-[11px] font-bold gap-1 text-rose-600 border-rose-200"
+                      >
+                        <Paperclip className="h-3 w-3" /> Attach Confirmation Letter
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -815,7 +920,7 @@ export default function DigitalRequisitionsPage() {
       {/* Modal: Request Additional Document */}
       {docRequestModalReqId && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md p-5 space-y-4">
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md min-w-[50vw] p-5 space-y-4">
             <h3 className="text-base font-bold text-foreground">Request Additional Document from Submitter</h3>
             <form onSubmit={handleRequestDocSubmit} className="space-y-3 text-xs font-semibold">
               <div>
@@ -845,7 +950,7 @@ export default function DigitalRequisitionsPage() {
       {/* Modal: Create Official Zowasel Requisition Form */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-xl min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-5 border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />

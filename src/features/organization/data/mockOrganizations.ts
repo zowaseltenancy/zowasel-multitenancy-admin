@@ -718,4 +718,38 @@ export const mockOrganizations: Organization[] = [
     ],
     createdAt: '2026-06-30T09:00:00Z',
   },
+  {
+    // Referenced by billing transactions (txn_012), settlements (stl_003),
+    // and a KYB-rejection notification before this org record existed —
+    // biz_1003 was the exact id the notification already used, so this
+    // fills the dangling FK rather than inventing a new one.
+    id: 'biz_1003',
+    businessId: 'biz_1003',
+    name: 'Delta Basin Farms',
+    type: 'buyer',
+    countryCode: 'KE',
+    countryName: 'Kenya',
+    subRegion: 'east_africa',
+    continent: 'africa',
+    owner: { name: 'Wafula Kiprotich', email: 'wafula@deltabasinfarms.co.ke', phone: '+254 722 908 441' },
+    teamMembers: [],
+    kybStatus: 'rejected',
+    kybSubmittedAt: '2026-07-22T09:15:00Z',
+    kybApprovedAt: null,
+    kybRejectionReason: 'Business registration certificate has expired.',
+    kybDocuments: [
+      { type: 'business_registration', url: '/kyb-sample-document-1.jpg', uploadedAt: '2026-07-22T09:15:00Z', status: 'rejected' },
+    ],
+    subscriptions: [
+      {
+        app: 'marketplace',
+        plan: 'Free',
+        planId: 'plan_marketplace_free',
+        activeModules: [],
+        billingState: 'free',
+        renewsAt: null,
+      },
+    ],
+    createdAt: '2026-07-01T09:00:00Z',
+  },
 ];

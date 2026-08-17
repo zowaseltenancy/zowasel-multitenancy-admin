@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Ban,
@@ -36,7 +37,7 @@ interface Props {
 export default function AccountLedgerDetailView({ organizationId }: Props) {
   const { accounts, toggleStatus } = useMonitoredAccounts();
   const { transactions } = useLedgerTransactions();
-  const { actingOfficer } = useActingFinanceOfficer();
+  const { actingOfficer, actingOfficerCapability } = useActingFinanceOfficer();
   const { entries, logAction } = useFinanceAuditLog();
   const actorName = `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position})`;
 
@@ -60,6 +61,12 @@ export default function AccountLedgerDetailView({ organizationId }: Props) {
   const accountActivity = entries.filter((e) => e.target === account.accountName);
 
   const handleToggleStatus = () => {
+    // Same gate as the Accounts Monitoring table's copy of this action —
+    // suspending/activating a tenant account requires Approve authority.
+    if (!actingOfficerCapability.canApprove) {
+      toast.error(`${actorName} does not hold Approve authority and cannot change account status.`);
+      return;
+    }
     toggleStatus(account.id);
     logAction(
       actorName,
@@ -130,6 +137,8 @@ export default function AccountLedgerDetailView({ organizationId }: Props) {
           </Button>
           <Button
             variant="outline"
+            disabled={!actingOfficerCapability.canApprove}
+            title={!actingOfficerCapability.canApprove ? "Requires Approve authority" : undefined}
             onClick={handleToggleStatus}
             className={`gap-1.5 ${
               account.status === "Active"

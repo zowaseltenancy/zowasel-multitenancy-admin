@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
 import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { toast } from "sonner";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
 import { useFinanceAuditLog } from "@/features/finance-hub/context/FinanceAuditLogContext";
@@ -88,6 +89,8 @@ interface WebhookLog {
   payloadSnippet: string;
 }
 
+const CEVIANT_CURRENCY_TO_COUNTRY: Record<string, string> = { NGN: "NG", KES: "KE", TZS: "TZ" };
+
 // --- Initial Mock Data ---
 const initialBankConnections: ConnectedBankProvider[] = [
   {
@@ -100,7 +103,10 @@ const initialBankConnections: ConnectedBankProvider[] = [
     currencyCode: "NGN",
     currencySymbol: "₦",
     balanceNative: 185400000,
-    fxRateToUSD: 1550,
+    // Rates match the platform's one real FX table (GLOBAL_COUNTRY_CURRENCIES
+    // / mockTreasuryAccounts) — this used to run a second, independently
+    // drifted rate (1550 vs the canonical 1540).
+    fxRateToUSD: 1540,
     apiStatus: "connected",
     lastSynced: "Just now",
     channelType: "Naira Commercial",
@@ -108,15 +114,19 @@ const initialBankConnections: ConnectedBankProvider[] = [
   },
   {
     id: "bank_zenith_02",
-    bankName: "Zenith Bank Treasury",
-    accountName: "Zowasel Escrow Reserve Account",
+    // Same physical account as Master Account's "TA-NG-01" treasury entry
+    // (account number prefix "101492****" already matched) — Ceviant is the
+    // live API sync of that same account, so name and balance now mirror it
+    // exactly instead of showing an independently-invented, unreconciled figure.
+    bankName: "Zenith Bank",
+    accountName: "Zenith Bank Master Corporate",
     accountNumber: "101492****04",
     countryCode: "NG",
     countryName: "Nigeria",
     currencyCode: "NGN",
     currencySymbol: "₦",
-    balanceNative: 420000000,
-    fxRateToUSD: 1550,
+    balanceNative: 485200000,
+    fxRateToUSD: 1540,
     apiStatus: "connected",
     lastSynced: "2 mins ago",
     channelType: "Naira Commercial",
@@ -140,15 +150,18 @@ const initialBankConnections: ConnectedBankProvider[] = [
   },
   {
     id: "bank_equity_ke_04",
-    bankName: "Equity Bank Kenya",
-    accountName: "Zowasel Agribusiness Kenya Ltd",
+    // Same physical account as Master Account's "TA-KE-01" treasury entry
+    // (account number prefix "440217****" already matched) — reconciled the
+    // same way as Zenith Bank above.
+    bankName: "Equity Bank",
+    accountName: "Equity Bank Kenya Collections",
     accountNumber: "440217****99",
     countryCode: "KE",
     countryName: "Kenya",
     currencyCode: "KES",
     currencySymbol: "KSh",
-    balanceNative: 28500000,
-    fxRateToUSD: 130,
+    balanceNative: 18400000,
+    fxRateToUSD: 129.5,
     apiStatus: "connected",
     lastSynced: "12 mins ago",
     channelType: "Multi-FX Engine",
@@ -158,13 +171,13 @@ const initialBankConnections: ConnectedBankProvider[] = [
     id: "bank_stanchart_tz_05",
     bankName: "Standard Chartered Tanzania",
     accountName: "Zowasel Commodity Sourcing TZ",
-    accountNumber: "902811****33",
+    accountNumber: "556214****19",
     countryCode: "TZ",
     countryName: "Tanzania",
     currencyCode: "TZS",
     currencySymbol: "TSh",
     balanceNative: 480000000,
-    fxRateToUSD: 2700,
+    fxRateToUSD: 2680,
     apiStatus: "connected",
     lastSynced: "18 mins ago",
     channelType: "Multi-FX Engine",
@@ -221,6 +234,18 @@ const initialVirtualAccounts: VirtualAccount[] = [
     collectionTag: "Maize Clearing",
     createdAt: "2026-08-08",
   },
+  {
+    id: "va_05",
+    virtualNuban: "9920148815",
+    bankName: "Standard Chartered Tanzania (via Ceviant)",
+    assignedTo: "Kilimanjaro Produce",
+    assignedRole: "Corporate Processor",
+    currency: "TZS",
+    balanceNative: 62000000,
+    status: "Active",
+    collectionTag: "Coffee & Maize Escrow",
+    createdAt: "2026-08-06",
+  },
 ];
 
 const initialFxLocks: FxRateLock[] = [
@@ -241,6 +266,15 @@ const initialFxLocks: FxRateLock[] = [
     expiryDate: "2026-08-20",
     status: "Active Lock",
     purpose: "East Africa Commodity Sourcing",
+  },
+  {
+    id: "fx_03",
+    pair: "USD/TZS",
+    rate: 2710.0,
+    amountUSD: 60000,
+    expiryDate: "2026-09-05",
+    status: "Active Lock",
+    purpose: "Tanzania Coffee Export Financing",
   },
 ];
 
@@ -271,8 +305,17 @@ const initialWebhookLogs: WebhookLog[] = [
   },
 ];
 
+const VA_PROVIDER_CURRENCY: Record<string, string> = {
+  "GTBank (via Ceviant)": "NGN",
+  "Zenith Bank (via Ceviant)": "NGN",
+  "Ceviant USD Gateway": "USD",
+  "Equity Bank (via Ceviant)": "KES",
+};
+
+const FX_PAIR_RATE: Record<string, number> = { "USD/NGN": 1548.5, "USD/KES": 129.8, "USD/TZS": 2710.0 };
+
 export default function CeviantSubHubPage() {
-  const { actingOfficer, isCountryInScope } = useActingFinanceOfficer();
+  const { actingOfficer, isCountryInScope, canTransfer, actingOfficerCapability } = useActingFinanceOfficer();
   const { logAction } = useFinanceAuditLog();
 
   const [activeSubTab, setActiveSubTab] = useState<string>("accounts");
@@ -308,17 +351,35 @@ export default function CeviantSubHubPage() {
 
   const actorName = `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position || "Officer"})`;
 
-  const ceviantPills = [
-    { id: "accounts", label: "Multi-Bank Aggregator & Balances", icon: Building2 },
-    { id: "virtual-accounts", label: "NUBAN Virtual Accounts Engine", icon: CreditCard, badge: `${virtualAccounts.length} Active` },
-    { id: "fx-liquidity", label: "Ceviant X FX & Liquidity Sweeping", icon: Globe2, badge: "130+ Currencies" },
-    { id: "developer-api", label: "APIs, Webhooks & Open Connectivity", icon: Zap, badge: "99.9% Uptime" },
-  ];
-
   const scopedConnections = connections.filter((conn) => {
     if (conn.countryCode === "US") return true;
     return isCountryInScope(conn.countryCode);
   });
+
+  // Same scoping rule as bank connections, applied to the sub-ledger and FX
+  // tabs — a Country Finance Officer for Nigeria has no business reason to
+  // see Kenyan virtual accounts or FX locks any more than they'd see Kenyan
+  // bank balances. USD is the global corporate currency (mirrors the "US"
+  // bank gateway exemption above), so it's visible at every scope.
+  const scopedVirtualAccounts = virtualAccounts.filter((va) => {
+    const countryCode = CEVIANT_CURRENCY_TO_COUNTRY[va.currency];
+    if (!countryCode) return true;
+    return isCountryInScope(countryCode);
+  });
+
+  const scopedFxLocks = fxLocks.filter((lock) => {
+    const quoteCurrency = lock.pair.split("/")[1];
+    const countryCode = CEVIANT_CURRENCY_TO_COUNTRY[quoteCurrency];
+    if (!countryCode) return true;
+    return isCountryInScope(countryCode);
+  });
+
+  const ceviantPills = [
+    { id: "accounts", label: "Multi-Bank Aggregator & Balances", icon: Building2 },
+    { id: "virtual-accounts", label: "NUBAN Virtual Accounts Engine", icon: CreditCard, badge: `${scopedVirtualAccounts.length} Active` },
+    { id: "fx-liquidity", label: "Ceviant X FX & Liquidity Sweeping", icon: Globe2, badge: "130+ Currencies" },
+    { id: "developer-api", label: "APIs, Webhooks & Open Connectivity", icon: Zap, badge: "99.9% Uptime" },
+  ];
 
   const filteredConnections = scopedConnections.filter((conn) => {
     const matchesSearch =
@@ -373,6 +434,10 @@ export default function CeviantSubHubPage() {
 
   const handleCreateBankConnection = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canTransfer) {
+      toast.error("Linking a new bank API is a treasury-policy action — requires Continental or Global authority.");
+      return;
+    }
     if (!newBankName || !newAccName || !newAccNum) {
       toast.error("Please fill in all bank connection fields.");
       return;
@@ -382,15 +447,15 @@ export default function CeviantSubHubPage() {
       bankName: newBankName,
       accountName: newAccName,
       accountNumber: newAccNum,
-      countryCode: newCurrency === "NGN" ? "NG" : newCurrency === "KES" ? "KE" : "US",
-      countryName: newCurrency === "NGN" ? "Nigeria" : newCurrency === "KES" ? "Kenya" : "United States",
+      countryCode: newCurrency === "NGN" ? "NG" : newCurrency === "KES" ? "KE" : newCurrency === "TZS" ? "TZ" : "US",
+      countryName: newCurrency === "NGN" ? "Nigeria" : newCurrency === "KES" ? "Kenya" : newCurrency === "TZS" ? "Tanzania" : "United States",
       currencyCode: newCurrency,
-      currencySymbol: newCurrency === "NGN" ? "₦" : newCurrency === "KES" ? "KSh" : "$",
+      currencySymbol: newCurrency === "NGN" ? "₦" : newCurrency === "KES" ? "KSh" : newCurrency === "TZS" ? "TSh" : "$",
       balanceNative: 50000000,
-      fxRateToUSD: newCurrency === "NGN" ? 1550 : newCurrency === "KES" ? 130 : 1.0,
+      fxRateToUSD: newCurrency === "NGN" ? 1540 : newCurrency === "KES" ? 129.5 : newCurrency === "TZS" ? 2680 : 1.0,
       apiStatus: "connected",
       lastSynced: "Just now",
-      channelType: newCurrency === "NGN" ? "Naira Commercial" : "USD Corporate",
+      channelType: newCurrency === "NGN" ? "Naira Commercial" : newCurrency === "USD" ? "USD Corporate" : "Multi-FX Engine",
       swiftBic: "CEVIMBXX",
     };
     setConnections([newConn, ...connections]);
@@ -404,6 +469,10 @@ export default function CeviantSubHubPage() {
 
   const handleIssueVirtualAccount = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!actingOfficerCapability.canInitiate) {
+      toast.error(`${actorName} does not hold Initiate authority under the Finance Control Center Matrix and cannot issue virtual accounts.`);
+      return;
+    }
     if (!vaAssignedTo) {
       toast.error("Please enter assigned organization name.");
       return;
@@ -415,7 +484,7 @@ export default function CeviantSubHubPage() {
       bankName: vaBankProvider,
       assignedTo: vaAssignedTo,
       assignedRole: vaRole,
-      currency: "NGN",
+      currency: VA_PROVIDER_CURRENCY[vaBankProvider] || "NGN",
       balanceNative: 0,
       status: "Active",
       collectionTag: "Automated Sub-Ledger Escrow",
@@ -430,11 +499,15 @@ export default function CeviantSubHubPage() {
 
   const handleExecuteFxSwap = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canTransfer) {
+      toast.error("Locking an FX rate against treasury liquidity requires Continental or Global transfer authority.");
+      return;
+    }
     const amountUSD = parseFloat(fxAmountUSD) || 10000;
     const newLock: FxRateLock = {
       id: `fx_${Date.now()}`,
       pair: fxPair,
-      rate: fxPair === "USD/NGN" ? 1548.5 : 129.8,
+      rate: FX_PAIR_RATE[fxPair] ?? 1,
       amountUSD,
       expiryDate: "2026-09-15",
       status: "Active Lock",
@@ -461,10 +534,27 @@ export default function CeviantSubHubPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ExportMenu
+            data={connections}
+            columns={[
+              { header: "Bank Name", accessor: "bankName" },
+              { header: "Account Name", accessor: "accountName" },
+              { header: "Account Number", accessor: "accountNumber" },
+              { header: "Country", accessor: "countryName" },
+              { header: "Currency", accessor: "currencyCode" },
+              { header: "Native Balance", accessor: (c: any) => formatNative(c.balanceNative, c.currencyCode) },
+              { header: "USD Value", accessor: (c: any) => formatUSD(c.balanceNative / c.fxRateToUSD) },
+              { header: "API Status", accessor: "apiStatus" },
+              { header: "Channel Type", accessor: "channelType" },
+            ]}
+            filename={`Ceviant_Treasury_Report_${new Date().toISOString().split("T")[0]}`}
+            targetElementId="ceviant-accounts-grid"
+          />
+
           <Button
             onClick={() => setShowConnectBankModal(true)}
             variant="outline"
-            className="h-9 text-xs font-bold gap-1.5 border-primary/30 text-primary"
+            className="h-9 text-xs font-bold gap-1.5 border-primary/30 text-primary cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Link Bank API
           </Button>
@@ -472,7 +562,7 @@ export default function CeviantSubHubPage() {
           <Button
             onClick={handleRefreshAllAPIs}
             disabled={isRefreshingAll}
-            className="h-9 bg-primary hover:bg-primary/90 text-xs font-bold gap-2 shadow-2xs"
+            className="h-9 bg-primary hover:bg-primary/90 text-xs font-bold gap-2 shadow-2xs cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshingAll ? "animate-spin" : ""}`} />
             {isRefreshingAll ? "Pulling Bank APIs..." : "Refresh All Bank APIs"}
@@ -552,7 +642,7 @@ export default function CeviantSubHubPage() {
           </Card>
 
           {/* Connected Bank Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div id="ceviant-accounts-grid" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredConnections.map((c) => {
               const usdVal = c.balanceNative / c.fxRateToUSD;
               return (
@@ -651,7 +741,7 @@ export default function CeviantSubHubPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y font-semibold">
-                    {virtualAccounts.map((va) => (
+                    {scopedVirtualAccounts.map((va) => (
                       <tr key={va.id} className="hover:bg-muted/20">
                         <td className="p-3 font-mono font-extrabold text-foreground">{va.virtualNuban}</td>
                         <td className="p-3 text-muted-foreground">{va.bankName}</td>
@@ -705,7 +795,7 @@ export default function CeviantSubHubPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {fxLocks.map((lock) => (
+                  {scopedFxLocks.map((lock) => (
                     <div key={lock.id} className="p-4 border rounded-xl bg-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-semibold">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -850,7 +940,7 @@ export default function CeviantSubHubPage() {
       {/* --- MODAL 1: Connect New Bank API --- */}
       {showConnectBankModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-card border rounded-2xl max-w-md w-full min-w-[50vw] p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" /> Connect New Bank API
@@ -915,7 +1005,7 @@ export default function CeviantSubHubPage() {
                 <Button type="button" variant="outline" onClick={() => setShowConnectBankModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/90 text-white font-bold">
+                <Button type="submit" disabled={!canTransfer} title={!canTransfer ? "Requires Continental or Global transfer authority" : undefined} className="bg-primary hover:bg-primary/90 text-white font-bold">
                   Connect Bank API
                 </Button>
               </div>
@@ -927,7 +1017,7 @@ export default function CeviantSubHubPage() {
       {/* --- MODAL 2: Issue NUBAN Virtual Account --- */}
       {showIssueVirtualModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-card border rounded-2xl max-w-md w-full min-w-[50vw] p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-indigo-600" /> Issue NUBAN Virtual Account
@@ -982,7 +1072,7 @@ export default function CeviantSubHubPage() {
                 <Button type="button" variant="outline" onClick={() => setShowIssueVirtualModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                <Button type="submit" disabled={!actingOfficerCapability.canInitiate} title={!actingOfficerCapability.canInitiate ? "Requires Initiate authority" : undefined} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
                   Generate NUBAN Account
                 </Button>
               </div>
@@ -994,7 +1084,7 @@ export default function CeviantSubHubPage() {
       {/* --- MODAL 3: Execute FX Swap / Rate Lock --- */}
       {showFxSwapModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-card border rounded-2xl max-w-md w-full min-w-[50vw] p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
                 <ArrowRightLeft className="h-5 w-5 text-sky-600" /> Ceviant X FX Rate Lock
@@ -1038,7 +1128,7 @@ export default function CeviantSubHubPage() {
                 <Button type="button" variant="outline" onClick={() => setShowFxSwapModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-sky-600 hover:bg-sky-700 text-white font-bold">
+                <Button type="submit" disabled={!canTransfer} title={!canTransfer ? "Requires Continental or Global transfer authority" : undefined} className="bg-sky-600 hover:bg-sky-700 text-white font-bold">
                   Execute Rate Lock
                 </Button>
               </div>
@@ -1050,7 +1140,7 @@ export default function CeviantSubHubPage() {
       {/* --- MODAL 4: Preview Electronic Bank Statement --- */}
       {statementBank && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+          <div className="bg-card border rounded-2xl max-w-lg w-full min-w-[50vw] p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <div>
                 <h3 className="font-bold text-lg text-foreground flex items-center gap-2">

@@ -20,6 +20,7 @@ import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
 import { useTreasuryAccounts } from "@/features/finance-hub/hooks/useTreasuryAccounts";
 import { useLedgerTransactions } from "@/features/finance-hub/hooks/useLedgerTransactions";
 import { useMonitoredAccounts } from "@/features/finance-hub/hooks/useMonitoredAccounts";
+import { useLiquidityForecast } from "@/features/finance-hub/hooks/useLiquidityForecast";
 import { convertToUSD, formatUSD } from "@/features/finance-hub/utils/currency";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -28,6 +29,8 @@ export default function FinanceHubOverviewPage() {
   const { accounts: treasuryAccounts, totalUSD } = useTreasuryAccounts();
   const { transactions } = useLedgerTransactions();
   const { accounts: monitoredAccounts } = useMonitoredAccounts();
+  const { runwayMonths, netInflow13wk } = useLiquidityForecast(transactions);
+  const projected13WkPosition = totalUSD + netInflow13wk;
   const treasuryCountryCount = new Set(treasuryAccounts.map((a) => a.countryCode)).size;
 
   // eslint-disable-next-line react-hooks/purity -- "last 30 days" is inherently wall-clock-relative
@@ -93,9 +96,10 @@ export default function FinanceHubOverviewPage() {
               </p>
               <TrendingUp className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">$1,784,500</p>
-            <p className="mt-1 text-xs text-emerald-600 font-bold">
-              +$428.5k net inflows forecasted
+            <p className="mt-2 text-3xl font-extrabold text-foreground">{formatUSD(projected13WkPosition)}</p>
+            <p className={`mt-1 text-xs font-bold ${netInflow13wk >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+              {netInflow13wk >= 0 ? "+" : ""}
+              {formatUSD(netInflow13wk)} net {netInflow13wk >= 0 ? "inflows" : "outflows"} forecasted
             </p>
           </CardContent>
         </Card>
@@ -104,12 +108,14 @@ export default function FinanceHubOverviewPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Working Capital Runway & DSO
+                Cash Runway (13-Wk Projection)
               </p>
               <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
-            <p className="mt-2 text-3xl font-extrabold text-foreground">14.2 Mos</p>
-            <p className="mt-1 text-xs text-purple-600 font-bold">DSO: 24.5 Days (Healthy &lt;30d)</p>
+            <p className="mt-2 text-3xl font-extrabold text-foreground">{runwayMonths.toFixed(1)} Mos</p>
+            <p className="mt-1 text-xs text-purple-600 font-bold">
+              Projected from real debit run-rate & scheduled renewals
+            </p>
           </CardContent>
         </Card>
 

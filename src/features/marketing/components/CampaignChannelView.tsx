@@ -34,15 +34,20 @@ export default function CampaignChannelView({ channel }: Props) {
     addCampaign({
       id: `camp_${Date.now()}`,
       channel: values.channel,
+      templateType: values.templateType,
       title: values.title,
       subject: values.subject,
       body: values.body,
+      heroImageUrl: values.heroImageUrl || undefined,
+      ctaLabel: values.ctaLabel || undefined,
+      ctaUrl: values.ctaUrl || undefined,
       audience: values.audience,
       status: values.scheduledAt ? "scheduled" : "sending",
       scheduledAt: values.scheduledAt || undefined,
       sentAt: values.scheduledAt ? undefined : new Date().toISOString(),
       deliveredCount: 0,
       failedCount: 0,
+      engagement: { openedCount: 0, clickedCount: 0, bouncedCount: 0, unsubscribedCount: 0, repliedCount: 0 },
       createdAt: new Date().toISOString().slice(0, 10),
     });
 

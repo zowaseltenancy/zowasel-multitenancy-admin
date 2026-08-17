@@ -6,7 +6,17 @@ import {
   MonitoredAccountRiskTier,
   MonitoredAccountStatus,
   StatementLineStatus,
+  FinanceGovernanceRole,
+  FinanceRoleCapability,
 } from "@/types/finance";
+
+// Re-exported for existing call sites (GovernanceView, FinanceOfficerContext)
+// that import these from constants/finance — the type definitions
+// themselves live in types/finance.ts now (a domain's shapes belong with its
+// other types, not its static data), needed there too so the new Budget
+// types can reference FinanceGovernanceRole without types/finance.ts
+// importing back from constants/finance.ts.
+export type { FinanceGovernanceRole, FinanceRoleCapability };
 
 export const LEDGER_CATEGORY_LABELS: Record<LedgerCategory, string> = {
   Subscription: "Subscription",
@@ -34,6 +44,22 @@ export const APPROVAL_THRESHOLD_USD: Record<GeographicScopeLevel, number | null>
 // practice keeps it out of the routine maker-checker ladder, restricted to
 // the levels that actually set consolidation/treasury policy.
 export const TRANSFER_CAPABLE_LEVELS: GeographicScopeLevel[] = ["continent", "global"];
+
+export const FINANCE_ROLE_CAPABILITIES: Record<FinanceGovernanceRole, FinanceRoleCapability> = {
+  "Country Finance Officer": { canInitiate: true, canValidate: true, canApprove: true, canAuthorize: false, approvalCapLabel: "$2,000" },
+  "Regional Finance Manager": { canInitiate: true, canValidate: true, canApprove: true, canAuthorize: false, approvalCapLabel: "$20,000" },
+  "Continental Finance Director": { canInitiate: true, canValidate: true, canApprove: true, canAuthorize: false, approvalCapLabel: "$200,000" },
+  "Chief Financial Officer": { canInitiate: true, canValidate: true, canApprove: true, canAuthorize: true, approvalCapLabel: "Uncapped" },
+  "Chief Executive Officer": { canInitiate: false, canValidate: false, canApprove: false, canAuthorize: true, approvalCapLabel: "Authorize Only" },
+};
+
+export const NO_FINANCE_CAPABILITY: FinanceRoleCapability = {
+  canInitiate: false,
+  canValidate: false,
+  canApprove: false,
+  canAuthorize: false,
+  approvalCapLabel: "No Access",
+};
 
 // Real, well-known standard VAT rates — used for the Tax & Regulatory
 // tracking card, not display-only figures.

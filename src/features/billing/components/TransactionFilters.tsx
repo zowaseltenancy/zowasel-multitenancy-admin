@@ -23,7 +23,6 @@ const TIMEFRAME_OPTIONS: {
   { label: "This Week", value: "week" },
   { label: "This Month", value: "month" },
   { label: "This Year", value: "year" },
-  { label: "Custom Range", value: "custom" },
 ];
 
 const ALL_STATUS_OPTIONS: {
@@ -67,16 +66,20 @@ export default function TransactionFilters({
 }: Props) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 w-full border-b border-border/80 pb-3">
-      {/* Timeframe Buttons + Direct Date Inputs on Same Line */}
+      {/* Timeframe Presets + Direct Calendar Pickers Always Visible */}
       <div className="flex flex-wrap items-center gap-2">
         {TIMEFRAME_OPTIONS.map((option) => (
           <button
             key={option.value}
             type="button"
-            onClick={() => onTimeframeChange(option.value)}
+            onClick={() => {
+              onTimeframeChange(option.value);
+              // Clear custom input strings when clicking preset
+              onCustomRangeChange({ start: "", end: "" });
+            }}
             className={cn(
               "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-              timeframe === option.value
+              timeframe === option.value && !customRange.start && !customRange.end
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
@@ -85,39 +88,39 @@ export default function TransactionFilters({
           </button>
         ))}
 
-        {/* Direct Calendar Inputs when Custom Range is active */}
-        {timeframe === "custom" && (
-          <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl border border-border">
-            <div className="flex items-center gap-1 text-xs">
-              <span className="text-[11px] font-semibold text-muted-foreground pl-1">From:</span>
-              <input
-                type="date"
-                value={customRange.start}
-                onChange={(event) =>
-                  onCustomRangeChange({
-                    ...customRange,
-                    start: event.target.value,
-                  })
-                }
-                className="h-7 rounded-lg border border-input bg-card px-2 text-xs font-mono outline-none focus-visible:border-primary cursor-pointer"
-              />
-            </div>
-            <div className="flex items-center gap-1 text-xs">
-              <span className="text-[11px] font-semibold text-muted-foreground">To:</span>
-              <input
-                type="date"
-                value={customRange.end}
-                onChange={(event) =>
-                  onCustomRangeChange({
-                    ...customRange,
-                    end: event.target.value,
-                  })
-                }
-                className="h-7 rounded-lg border border-input bg-card px-2 text-xs font-mono outline-none focus-visible:border-primary cursor-pointer"
-              />
-            </div>
+        {/* Direct Calendar Inputs Always Visible with Instant Filtering */}
+        <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl border border-border">
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-[11px] font-semibold text-muted-foreground pl-1">From:</span>
+            <input
+              type="date"
+              value={customRange.start}
+              onChange={(event) => {
+                onCustomRangeChange({
+                  ...customRange,
+                  start: event.target.value,
+                });
+                onTimeframeChange("custom");
+              }}
+              className="h-7 rounded-lg border border-input bg-card px-2 text-xs font-mono outline-none focus-visible:border-primary cursor-pointer"
+            />
           </div>
-        )}
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-[11px] font-semibold text-muted-foreground">To:</span>
+            <input
+              type="date"
+              value={customRange.end}
+              onChange={(event) => {
+                onCustomRangeChange({
+                  ...customRange,
+                  end: event.target.value,
+                });
+                onTimeframeChange("custom");
+              }}
+              className="h-7 rounded-lg border border-input bg-card px-2 text-xs font-mono outline-none focus-visible:border-primary cursor-pointer"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Unified Filter Row: Status Pills (matching Invoices/Settlements/Subscriptions), All Entities, Newest First */}

@@ -25,6 +25,7 @@ const roleStyles: Record<PlatformUserRole, string> = {
   "Continental Finance Director": "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950/50 dark:text-teal-200 dark:border-teal-800",
   "Regional Finance Manager": "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-950/50 dark:text-sky-200 dark:border-sky-800",
   "Country Finance Officer": "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-950/50 dark:text-violet-200 dark:border-violet-800",
+  "Chief Executive Officer": "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-200 dark:border-cyan-800",
 };
 
 export default function UserRoleBadge({ role }: Props) {

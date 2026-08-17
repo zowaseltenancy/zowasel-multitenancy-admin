@@ -9,7 +9,7 @@ import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { setFlashToast } from "@/lib/flashToast";
-import { useProviders } from "@/features/billing/hooks/useProviders";
+import { useProviders } from "@/features/billing/context/ProvidersContext";
 import ActivateProviderDialog from "@/features/billing/components/ActivateProviderDialog";
 import DeleteProviderDialog from "@/features/billing/components/DeleteProviderDialog";
 import ProviderEnvironmentBadge from "@/features/billing/components/ProviderEnvironmentBadge";
@@ -17,6 +17,8 @@ import { ProviderForm } from "@/features/billing/components/ProviderForm";
 import { ProviderHealthBadge } from "@/features/billing/components/ProviderHealthBadge";
 import { ProviderCredentials } from "@/features/billing/components/ProviderCredentials";
 import ProviderStatusBadge from "@/features/billing/components/ProviderStatusBadge";
+
+import { cn } from "@/lib/utils";
 
 interface Props {
   params: Promise<{
@@ -32,6 +34,7 @@ export default function ProviderDetailsPage({
   const {
     providers,
     toggleProvider,
+    updateProvider,
     deleteProvider,
   } = useProviders();
 
@@ -87,6 +90,12 @@ export default function ProviderDetailsPage({
               variant={
                 provider.isActive ? "outline" : "default"
               }
+              className={cn(
+                "cursor-pointer font-semibold",
+                provider.isActive
+                  ? "border-rose-500/40 text-rose-600 hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-400 dark:border-rose-500/40 dark:hover:bg-rose-500/20"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
               onClick={() => setToggleDialogOpen(true)}
             >
               {provider.isActive
@@ -96,7 +105,7 @@ export default function ProviderDetailsPage({
 
             <Button
               variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive/10"
+              className="border-destructive text-destructive hover:bg-destructive/10 cursor-pointer"
               onClick={() => setDeleteDialogOpen(true)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -106,9 +115,15 @@ export default function ProviderDetailsPage({
         </div>
       </div>
 
-      <ProviderForm provider={provider} />
+      <ProviderForm
+        provider={provider}
+        onUpdate={(updates) => updateProvider(provider.id, updates)}
+      />
 
-      <ProviderCredentials provider={provider} />
+      <ProviderCredentials
+        provider={provider}
+        onUpdate={(updates) => updateProvider(provider.id, updates)}
+      />
 
       <ProviderHealthBadge provider={provider} />
 

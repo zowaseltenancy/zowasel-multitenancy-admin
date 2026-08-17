@@ -1,5 +1,5 @@
 import { StatusTone } from "@/lib/statusTone";
-import { CampaignAudience, CampaignStatus, MarketingChannel } from "@/types/marketing";
+import { CampaignAudience, CampaignStatus, MarketingChannel, MarketingTemplateType } from "@/types/marketing";
 
 export const MARKETING_CHANNEL_LABELS: Record<MarketingChannel, string> = {
   newsletter: "Newsletter",
@@ -29,6 +29,15 @@ export const MARKETING_CHANNEL_COLORS: Record<MarketingChannel, string> = {
   newsletter: "bg-cyan-500",
   sms: "bg-amber-500",
   whatsapp: "bg-emerald-500",
+};
+
+// Accent color per template type, used for the picker card + a small tag in
+// the campaign detail header — purely visual, not a status/severity signal.
+export const MARKETING_TEMPLATE_COLORS: Record<MarketingTemplateType, string> = {
+  announcement: "bg-cyan-500",
+  product_listing: "bg-amber-500",
+  engagement: "bg-violet-500",
+  newsletter_digest: "bg-emerald-500",
 };
 
 export const CAMPAIGN_AUDIENCE_LABELS: Record<CampaignAudience, string> = {

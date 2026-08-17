@@ -23,17 +23,17 @@ export function matchesTimeframe(
   const date = new Date(dateIso);
   const now = new Date();
 
-  if (timeframe === "custom") {
-    if (!customRange?.start || !customRange?.end) {
-      return true;
+  if (timeframe === "custom" || (customRange && (customRange.start || customRange.end))) {
+    if (customRange?.start) {
+      const start = new Date(customRange.start);
+      if (date < start) return false;
     }
-
-    const start = new Date(customRange.start);
-
-    const end = new Date(customRange.end);
-    end.setHours(23, 59, 59, 999);
-
-    return date >= start && date <= end;
+    if (customRange?.end) {
+      const end = new Date(customRange.end);
+      end.setHours(23, 59, 59, 999);
+      if (date > end) return false;
+    }
+    return true;
   }
 
   if (timeframe === "today") {

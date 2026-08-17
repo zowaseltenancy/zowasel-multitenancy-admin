@@ -32,7 +32,7 @@ export default function WhtCertificateModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-card border rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-card border rounded-2xl shadow-2xl w-full max-w-xl min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b bg-muted/30 print:hidden">
           <div className="flex items-center gap-2">
@@ -50,10 +50,13 @@ export default function WhtCertificateModal({
         {/* Certificate Paper Content */}
         <div className="p-8 space-y-6 text-xs bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
           <div className="flex items-center justify-between border-b pb-4">
-            <div>
-              <h1 className="text-lg font-black tracking-tight text-primary uppercase">ZOWASEL PLATFORM LIMITED</h1>
-              <p className="text-[11px] font-semibold text-muted-foreground">Corporate Tax & Regulatory Compliance Division</p>
-              <p className="text-[10px] text-muted-foreground font-mono">Tax ID / TIN: 109281-ZOWASEL-GLOBAL</p>
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- print-context asset, next/image adds no value here */}
+              <img src="/zowasel-logo-grey.png" alt="Zowasel" className="h-8 w-auto" />
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground">Corporate Tax & Regulatory Compliance Division</p>
+                <p className="text-[10px] text-muted-foreground font-mono">Tax ID / TIN: 109281-ZOWASEL-GLOBAL</p>
+              </div>
             </div>
             <div className="text-right">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 border border-emerald-500/20">

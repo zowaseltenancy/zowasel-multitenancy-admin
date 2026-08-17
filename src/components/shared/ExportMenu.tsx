@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import {
+  captureElementForEmbed,
   exportElementToImage,
   exportToCsv,
   exportToExcel,
@@ -48,6 +49,7 @@ export default function ExportMenu<T = any>({
   captureElementId,
 }: Props<T>) {
   const [capturing, setCapturing] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const elementId = targetElementId || captureElementId;
 
   const resolvedTable: ExportTable = explicitTable ?? {
@@ -80,6 +82,20 @@ export default function ExportMenu<T = any>({
     }
   };
 
+  // When a chart element is available, the xlsx export embeds a real
+  // captured picture of it above the data — same visual as "Export as
+  // Image," just landing inside the workbook instead of a standalone file.
+  const handleExcelExport = async () => {
+    setExportingExcel(true);
+    try {
+      const element = elementId ? document.getElementById(elementId) : null;
+      const chartImage = element ? await captureElementForEmbed(element, resolvedTable.title) : undefined;
+      await exportToExcel(resolvedTable, chartImage);
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -91,26 +107,40 @@ export default function ExportMenu<T = any>({
         }
       />
 
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => exportToCsv(resolvedTable)}>
-          <Table className="mr-2 h-4 w-4 text-emerald-600" />
-          Export as CSV
+      <DropdownMenuContent className="w-56 min-w-[14rem] p-1.5" align="end">
+        <DropdownMenuItem
+          onClick={() => exportToCsv(resolvedTable)}
+          className="cursor-pointer whitespace-nowrap font-semibold text-xs py-2 px-2.5 flex items-center gap-2"
+        >
+          <Table className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span className="truncate">Export as CSV</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => exportToExcel(resolvedTable)}>
-          <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600" />
-          Export as Excel (.xlsx)
+        <DropdownMenuItem
+          disabled={exportingExcel}
+          onClick={handleExcelExport}
+          className="cursor-pointer whitespace-nowrap font-semibold text-xs py-2 px-2.5 flex items-center gap-2"
+        >
+          <FileSpreadsheet className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span className="truncate">{exportingExcel ? "Generating..." : "Export as XLSX"}</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => exportToPdf(resolvedTable)}>
-          <FileText className="mr-2 h-4 w-4 text-rose-600" />
-          Export as PDF (Document)
+        <DropdownMenuItem
+          onClick={() => exportToPdf(resolvedTable)}
+          className="cursor-pointer whitespace-nowrap font-semibold text-xs py-2 px-2.5 flex items-center gap-2"
+        >
+          <FileText className="h-4 w-4 text-rose-600 shrink-0" />
+          <span className="truncate">Export as PDF</span>
         </DropdownMenuItem>
 
         {elementId && (
-          <DropdownMenuItem disabled={capturing} onClick={handleImageExport}>
-            <ImageIcon className="mr-2 h-4 w-4 text-primary" />
-            {capturing ? "Capturing..." : "Export as Image (PNG)"}
+          <DropdownMenuItem
+            disabled={capturing}
+            onClick={handleImageExport}
+            className="cursor-pointer whitespace-nowrap font-semibold text-xs py-2 px-2.5 flex items-center gap-2"
+          >
+            <ImageIcon className="h-4 w-4 text-primary shrink-0" />
+            <span className="truncate">{capturing ? "Capturing..." : "Export as Image"}</span>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

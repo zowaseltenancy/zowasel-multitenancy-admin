@@ -75,6 +75,10 @@ export const navigation: NavigationItem[] = [
         href: "/admin/finance-hub/analytics",
       },
       {
+        label: "Budget Performance",
+        href: "/admin/finance-hub/budget",
+      },
+      {
         label: "Accounts & Statements",
         href: "/admin/finance-hub/account",
       },
@@ -122,7 +126,7 @@ export const navigation: NavigationItem[] = [
   },
 
   {
-    label: "Modules",
+    label: "Product Modules",
     href: "/admin/modules",
     icon: LayoutGrid,
     children: [

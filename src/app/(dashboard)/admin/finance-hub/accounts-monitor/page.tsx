@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   ShieldCheck,
   Users,
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import StatusSegmentedBar from "@/components/shared/StatusSegmentedBar";
 import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
 import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { useMonitoredAccounts } from "@/features/finance-hub/hooks/useMonitoredAccounts";
 import { useLedgerTransactions } from "@/features/finance-hub/hooks/useLedgerTransactions";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
@@ -33,6 +35,7 @@ import {
   MONITORED_ACCOUNT_STATUS_TONE,
 } from "@/constants/finance";
 import { statusBadgeClass } from "@/lib/statusTone";
+import { mockCreditObligors } from "@/features/finance-hub/data/mockCreditObligors";
 
 const AGING_BUCKETS = [
   { key: "current", label: "Current (0-30d)", tone: "info" as const, max: 30 },
@@ -44,7 +47,7 @@ const AGING_BUCKETS = [
 export default function AccountsMonitorPage() {
   const { accounts, toggleStatus, formatRelativeTime } = useMonitoredAccounts();
   const { transactions } = useLedgerTransactions();
-  const { actingOfficer } = useActingFinanceOfficer();
+  const { actingOfficer, actingOfficerCapability } = useActingFinanceOfficer();
   const { logAction } = useFinanceAuditLog();
   const [activeTab, setActiveTab] = useState<string>("directory");
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,46 +63,69 @@ export default function AccountsMonitorPage() {
       const days = (Date.now() - new Date(t.date).getTime()) / (1000 * 60 * 60 * 24);
       return days > minAge && days <= bucket.max;
     });
-    return {
-      ...bucket,
-      count: items.length,
-      totalUSD: items.reduce((sum, t) => sum + convertToUSD(t.amount, t.currencyCode), 0),
-    };
+    const totalUSD = items.reduce((sum, t) => sum + convertToUSD(t.amount, t.currencyCode), 0);
+    return { ...bucket, count: items.length, totalUSD, items };
   });
+
+  // Off-Taker Credit & Collateral — same real obligor data Analytics' Credit
+  // & Alternative Finance tab uses, not an independently hardcoded copy.
+  const totalDrawnCreditUSD = mockCreditObligors.reduce((sum, o) => sum + o.disbursedUSD, 0);
+  const collateralInventoryUSD = mockCreditObligors.reduce((sum, o) => sum + o.disbursedUSD * (o.collateralRatio / 100), 0);
+  const collateralCoverageRatio = totalDrawnCreditUSD > 0 ? (collateralInventoryUSD / totalDrawnCreditUSD) * 100 : 0;
 
   const filteredAccounts = accounts.filter((acc) => {
     const matchesSearch =
       acc.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       acc.id.toLowerCase().includes(searchQuery.toLowerCase());
-
     const matchesStatus = statusFilter === "All" || acc.status === statusFilter;
     const matchesType = typeFilter === "All" || acc.accountType === typeFilter;
-
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Every count below is derived from the real accounts array — no
-  // hardcoded header figure sitting above a handful of table rows.
   const activeCount = accounts.filter((a) => a.status === "Active").length;
-  const dormantCount = accounts.filter((a) => a.status === "Dormant").length;
   const highRiskCount = accounts.filter((a) => a.riskTier === "High Risk").length;
+  const dormantCount = accounts.filter((a) => a.status === "Dormant").length;
 
   const handleToggleStatus = (accountId: string, accountName: string, nextStatus: string, countryCode?: string) => {
+    // Suspending/activating a tenant account is at least as consequential as
+    // a statement-line reconciliation or VAT attestation — same Approve-level
+    // gate as those, not a routine click any acting officer can make.
+    if (!actingOfficerCapability.canApprove) {
+      toast.error(`${actingOfficer.firstName} ${actingOfficer.lastName} does not hold Approve authority and cannot change account status.`);
+      return;
+    }
     toggleStatus(accountId);
-    logAction(actingOfficer ? `${actingOfficer.firstName} ${actingOfficer.lastName}` : "System", `${nextStatus === "Active" ? "Activated" : "Suspended"} account`, accountName, undefined, countryCode);
+    logAction(
+      actingOfficer ? `${actingOfficer.firstName} ${actingOfficer.lastName}` : "System",
+      `${nextStatus === "Active" ? "Activated" : "Suspended"} account`,
+      accountName,
+      undefined,
+      countryCode
+    );
   };
 
   const monitorPills = [
     { id: "directory", label: "Monitored Directory", icon: Users, badge: accounts.length },
     { id: "aging", label: "AP/AR 30-60-90 Aging Waterfall", icon: Hourglass, badge: outstanding.length },
-    { id: "offtaker_credit", label: "Off-Taker Credit & Collateral", icon: Landmark, badge: "157.6%" },
+    { id: "offtaker_credit", label: "Off-Taker Credit & Collateral", icon: Landmark, badge: `${collateralCoverageRatio.toFixed(1)}%` },
     { id: "quarantine", label: "Risk & Dormancy Quarantine", icon: ShieldAlert, badge: highRiskCount + dormantCount },
+  ];
+
+  const exportColumns = [
+    { header: "Account ID", accessor: "id" as const },
+    { header: "Account Name", accessor: "accountName" as const },
+    { header: "Type", accessor: (a: any) => ORGANIZATION_TYPE_LABELS[a.accountType as keyof typeof ORGANIZATION_TYPE_LABELS] || a.accountType },
+    { header: "Balance (USD)", accessor: (a: any) => formatUSD(a.currentBalance) },
+    { header: "Volume Processed (USD)", accessor: (a: any) => formatUSD(a.totalVolumeProcessed) },
+    { header: "Risk Tier", accessor: "riskTier" as const },
+    { header: "Status", accessor: "status" as const },
+    { header: "Last Active", accessor: (a: any) => a.lastActive ? formatRelativeTime(a.lastActive) : "Never" },
   ];
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Accounts & Ledger Monitoring</h1>
           <PageHeaderInfo
@@ -107,6 +133,13 @@ export default function AccountsMonitorPage() {
             description="Real tenant organization tracking — volume, balance, and risk tiers computed from the shared ledger feed. Includes AP/AR 30-60-90 aging waterfall analysis, off-taker credit & collateral limits, and risk/dormancy quarantine management."
           />
         </div>
+
+        <ExportMenu
+          data={filteredAccounts}
+          columns={exportColumns}
+          filename={`Accounts_Monitoring_${new Date().toISOString().split("T")[0]}`}
+          targetElementId="monitored-accounts-table"
+        />
       </div>
 
       {/* Pill Navigation Bar */}
@@ -215,7 +248,7 @@ export default function AccountsMonitorPage() {
                 Off-Taker Credit Facilities & Collateral Coverage Ratios
               </span>
               <span className="text-xs font-mono font-bold bg-indigo-500/10 text-indigo-600 px-2.5 py-1 rounded-md border border-indigo-500/20">
-                DSO: 24.5 Days (Healthy &lt;30d)
+                {mockCreditObligors.filter((o) => o.nplStatus !== "Performing").length} on Watchlist
               </span>
             </CardTitle>
             <CardDescription className="text-xs">
@@ -223,21 +256,16 @@ export default function AccountsMonitorPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 text-xs font-semibold">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="p-4 border rounded-xl bg-card space-y-1">
                 <p className="text-[11px] text-muted-foreground font-bold uppercase">Total Drawn Credit Facilities</p>
-                <p className="text-2xl font-black text-foreground font-mono mt-1">$920,000</p>
-                <p className="text-[10px] text-muted-foreground">Across 6 approved enterprise off-takers</p>
+                <p className="text-2xl font-black text-foreground font-mono mt-1">{formatUSD(totalDrawnCreditUSD)}</p>
+                <p className="text-[10px] text-muted-foreground">Across {mockCreditObligors.length} approved enterprise off-takers</p>
               </div>
               <div className="p-4 border rounded-xl bg-card space-y-1">
                 <p className="text-[11px] text-muted-foreground font-bold uppercase">Warehouse Collateral Inventory</p>
-                <p className="text-2xl font-black text-emerald-600 font-mono mt-1">$1,450,000</p>
-                <p className="text-[10px] text-emerald-600 font-bold">157.6% Collateral Coverage Ratio</p>
-              </div>
-              <div className="p-4 border rounded-xl bg-card space-y-1">
-                <p className="text-[11px] text-muted-foreground font-bold uppercase">Average Days Sales Outstanding (DSO)</p>
-                <p className="text-2xl font-black text-primary font-mono mt-1">24.5 Days</p>
-                <p className="text-[10px] text-muted-foreground">Average clearing time for trade payouts</p>
+                <p className="text-2xl font-black text-emerald-600 font-mono mt-1">{formatUSD(collateralInventoryUSD)}</p>
+                <p className="text-[10px] text-emerald-600 font-bold">{collateralCoverageRatio.toFixed(1)}% Collateral Coverage Ratio</p>
               </div>
             </div>
           </CardContent>
@@ -327,7 +355,7 @@ export default function AccountsMonitorPage() {
       </Card>
 
       {/* Account Monitoring Table */}
-      <Card className="border shadow-2xs">
+      <Card id="monitored-accounts-table" className="border shadow-2xs">
         <CardHeader className="py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -401,6 +429,8 @@ export default function AccountsMonitorPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={!actingOfficerCapability.canApprove}
+                          title={!actingOfficerCapability.canApprove ? "Requires Approve authority" : undefined}
                           onClick={() => handleToggleStatus(acc.id, acc.accountName, acc.status === "Active" ? "Suspended" : "Active", acc.countryCode)}
                           className={`h-7 text-[11px] font-bold ${
                             acc.status === "Active"

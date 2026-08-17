@@ -17,7 +17,8 @@ export type PlatformUserRole =
   | "Chief Financial Officer"
   | "Continental Finance Director"
   | "Regional Finance Manager"
-  | "Country Finance Officer";
+  | "Country Finance Officer"
+  | "Chief Executive Officer";
 
 export type PlatformUserCategory =
   | "agent"

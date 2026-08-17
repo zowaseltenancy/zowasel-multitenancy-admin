@@ -8,11 +8,7 @@ import {
   Lock,
   UserCheck,
   CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
   Save,
-  Building,
-  Globe,
   Sliders,
   FileText,
 } from "lucide-react";
@@ -21,17 +17,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
 import PageHeaderInfo from "@/components/shared/PageHeaderInfo";
+import ExportMenu from "@/components/shared/ExportMenu";
 import { useActingFinanceOfficer } from "@/features/finance-hub/context/FinanceOfficerContext";
 import { useFinanceAuditLog } from "@/features/finance-hub/context/FinanceAuditLogContext";
 import { formatUSD } from "@/features/finance-hub/utils/currency";
-import { GeographicScopeLevel } from "@/types/user";
+import { FinanceGovernanceRole } from "@/constants/finance";
 
 export default function GovernanceView() {
-  const { actingOfficer, thresholds, updateThreshold } = useActingFinanceOfficer();
+  const { actingOfficer, thresholds, updateThreshold, isCFO, roleCapabilities, updateRoleCapability } = useActingFinanceOfficer();
   const { logAction } = useFinanceAuditLog();
   const actorName = actingOfficer ? `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position || "Staff"})` : "System";
-
-  const isCFO = actingOfficer?.geographicScopeLevel === "global" || actingOfficer?.position?.includes("CFO") || actingOfficer?.position?.includes("Chief");
 
   // Local state for editing thresholds before saving
   const [countryVal, setCountryVal] = useState<string>(thresholds.country?.toString() ?? "2000");
@@ -74,6 +69,35 @@ export default function GovernanceView() {
     toast.success("Governance approval threshold limits successfully updated and applied across Finance Hub.");
   };
 
+  // Field Agent was removed entirely per Jerry's Aug 14 correction (field
+  // agents don't belong in finance workflows at all, not even with every
+  // permission denied). The matrix rows are the same shared
+  // FINANCE_ROLE_CAPABILITIES the Requisitions and Master Account pages
+  // actually gate real approve/authorize/reconcile actions against — toggling
+  // a cell here genuinely changes what the acting officer can do elsewhere in
+  // the Hub, not just what this table displays.
+  const matrixRoles = Object.keys(roleCapabilities) as FinanceGovernanceRole[];
+
+  const toggleMatrixCell = (role: FinanceGovernanceRole, key: "canInitiate" | "canValidate" | "canApprove" | "canAuthorize") => {
+    if (!isCFO) return;
+    updateRoleCapability(role, key, !roleCapabilities[role][key]);
+  };
+
+  const handleSaveMatrix = () => {
+    logAction(
+      actorName,
+      "Updated Finance Control Center Matrix",
+      matrixRoles
+        .map((role) => {
+          const c = roleCapabilities[role];
+          return `${role}: I${c.canInitiate ? "✓" : "✗"} V${c.canValidate ? "✓" : "✗"} A${c.canApprove ? "✓" : "✗"} X${c.canAuthorize ? "✓" : "✗"}`;
+        })
+        .join(" · "),
+      "Configuration Saved"
+    );
+    toast.success("Control Center matrix updated and applied across Finance Hub.");
+  };
+
   const handleTogglePolicy = (policyName: string, newValue: boolean) => {
     logAction(
       actorName,
@@ -87,7 +111,7 @@ export default function GovernanceView() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Finance Governance & Controls</h1>
           <PageHeaderInfo
@@ -95,6 +119,22 @@ export default function GovernanceView() {
             description="Configure financial approval thresholds, maker-checker governance rules, multi-level authorization tiers, and fraud prevention protocols."
           />
         </div>
+
+        <ExportMenu
+          data={[
+            { tier: "Level 1: Country Finance Manager", scope: "Country Level", ceiling: formatUSD(thresholds.country || 2000), makerChecker: "Mandatory" },
+            { tier: "Level 2: Sub-Regional Director", scope: "Sub-Regional Hub", ceiling: formatUSD(thresholds.sub_region || 20000), makerChecker: "Mandatory" },
+            { tier: "Level 3: Continental Director", scope: "Continental Zone", ceiling: formatUSD(thresholds.continent || 200000), makerChecker: "Mandatory" },
+            { tier: "Level 4: Chief Financial Officer (CFO)", scope: "Global Platform", ceiling: "Unlimited ($200k+)", makerChecker: "Mandatory" },
+          ]}
+          columns={[
+            { header: "Authorization Tier", accessor: "tier" },
+            { header: "Geographic Scope", accessor: "scope" },
+            { header: "Approval Ceiling (USD)", accessor: "ceiling" },
+            { header: "Maker-Checker Rule", accessor: "makerChecker" },
+          ]}
+          filename={`Finance_Governance_Policy_${new Date().toISOString().split("T")[0]}`}
+        />
       </div>
 
       {/* Pill Navigation Bar */}
@@ -125,7 +165,7 @@ export default function GovernanceView() {
                   </div>
                   <h3 className="text-sm font-extrabold text-foreground">1. Initiator (Maker)</h3>
                   <p className="text-xs text-muted-foreground mt-1 font-semibold">
-                    Field agents, sales reps, or account officers who create offline transaction entries, requisitions, or invoices.
+                    Country Finance Officers and above who create offline transaction entries, requisitions, or invoices — field agents were removed from the finance workflow entirely.
                   </p>
                 </div>
                 <div className="pt-2 border-t text-[11px] font-bold text-sky-600 flex items-center gap-1">
@@ -304,48 +344,64 @@ export default function GovernanceView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y font-semibold">
-                  {[
-                    { role: "Field Agent / Local Officer", init: true, val: false, app: false, auth: false, cap: "$2,000" },
-                    { role: "Country Finance Officer", init: true, val: true, app: true, auth: false, cap: "$5,000" },
-                    { role: "Regional Finance Director", init: true, val: true, app: true, auth: false, cap: "$20,000" },
-                    { role: "Chief Financial Officer (CFO)", init: true, val: true, app: true, auth: true, cap: "Uncapped" },
-                    { role: "Chief Executive Officer (CEO)", init: false, val: false, app: false, auth: true, cap: "Authorize Only" },
-                  ].map((r) => (
-                    <tr key={r.role}>
-                      <td className="p-3 font-bold text-foreground">{r.role}</td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.init ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground"}`}>
-                          {r.init ? "ALLOWED" : "DENIED"}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.val ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground"}`}>
-                          {r.val ? "ALLOWED" : "DENIED"}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.app ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground"}`}>
-                          {r.app ? "ALLOWED" : "DENIED"}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.auth ? "bg-indigo-500/10 text-indigo-600 border border-indigo-500/20" : "bg-muted text-muted-foreground"}`}>
-                          {r.auth ? "ALLOWED" : "DENIED"}
-                        </span>
-                      </td>
-                      <td className="p-3 font-mono font-bold text-foreground">{r.cap}</td>
-                    </tr>
-                  ))}
+                  {matrixRoles.map((role) => {
+                    const c = roleCapabilities[role];
+                    return (
+                      <tr key={role} className={actingOfficer?.role === role ? "bg-primary/5" : undefined}>
+                        <td className="p-3 font-bold text-foreground">
+                          {role}
+                          {actingOfficer?.role === role && (
+                            <span className="ml-2 text-[9px] font-extrabold uppercase text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded">
+                              Acting As
+                            </span>
+                          )}
+                        </td>
+                        {(["canInitiate", "canValidate", "canApprove", "canAuthorize"] as const).map((key) => (
+                          <td className="p-3 text-center" key={key}>
+                            <button
+                              type="button"
+                              disabled={!isCFO}
+                              onClick={() => toggleMatrixCell(role, key)}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                                isCFO ? "cursor-pointer hover:opacity-80" : "cursor-not-allowed"
+                              } ${
+                                c[key]
+                                  ? key === "canAuthorize"
+                                    ? "bg-indigo-500/10 text-indigo-600 border border-indigo-500/20"
+                                    : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {c[key] ? "ALLOWED" : "DENIED"}
+                            </button>
+                          </td>
+                        ))}
+                        <td className="p-3 font-mono font-bold text-foreground">{c.approvalCapLabel}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
+            {!isCFO && (
+              <p className="text-[11px] font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                <Lock className="h-3 w-3" /> Read-only — only the CFO can change stage permissions.
+              </p>
+            )}
+
             <div className="p-4 border rounded-xl bg-muted/20 text-xs space-y-1">
               <p className="font-bold text-foreground">Rule Summary:</p>
-              <p className="text-muted-foreground">&bull; <strong>Finance Officers</strong>: Initiate & Validate only (cannot perform final release on transactions &gt; $5k).</p>
-              <p className="text-muted-foreground">&bull; <strong>CFO</strong>: Approves & Authorizes high-value treasury movements.</p>
-              <p className="text-muted-foreground">&bull; <strong>CEO</strong>: Authorize only (does not initiate or validate operational entries).</p>
+              <p className="text-muted-foreground">&bull; <strong>Country / Regional / Continental Finance Officers</strong>: Initiate, Validate & Approve up to their own tier ceiling ({formatUSD(thresholds.country ?? 2000)} / {formatUSD(thresholds.sub_region ?? 20000)} / {formatUSD(thresholds.continent ?? 200000)}) — cannot Authorize final release above that.</p>
+              <p className="text-muted-foreground">&bull; <strong>CFO</strong>: Approves & Authorizes uncapped, high-value treasury movements.</p>
+              <p className="text-muted-foreground">&bull; <strong>CEO</strong>: Authorize only (does not initiate, validate, or approve operational entries).</p>
             </div>
+
+            {isCFO && (
+              <Button onClick={handleSaveMatrix} className="w-full h-9 bg-primary font-bold gap-2 text-xs shadow-2xs">
+                <Save className="h-4 w-4" /> Save Control Center Matrix
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -376,12 +432,13 @@ export default function GovernanceView() {
                 </div>
                 <input
                   type="checkbox"
+                  disabled={!isCFO}
                   checked={preventSelfApproval}
                   onChange={(e) => {
                     setPreventSelfApproval(e.target.checked);
                     handleTogglePolicy("Self-Approval Prevention Rule", e.target.checked);
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -399,12 +456,13 @@ export default function GovernanceView() {
                 </div>
                 <input
                   type="checkbox"
+                  disabled={!isCFO}
                   checked={requireDualAuthBankChanges}
                   onChange={(e) => {
                     setRequireDualAuthBankChanges(e.target.checked);
                     handleTogglePolicy("Immutable Verified Banking Details", e.target.checked);
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -422,12 +480,13 @@ export default function GovernanceView() {
                 </div>
                 <input
                   type="checkbox"
+                  disabled={!isCFO}
                   checked={requireAffidavitForAccountEdit}
                   onChange={(e) => {
                     setRequireAffidavitForAccountEdit(e.target.checked);
                     handleTogglePolicy("Mandatory Legal Affidavit for Account Edits", e.target.checked);
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -445,12 +504,13 @@ export default function GovernanceView() {
                 </div>
                 <input
                   type="checkbox"
+                  disabled={!isCFO}
                   checked={enforceDocumentAttachments}
                   onChange={(e) => {
                     setEnforceDocumentAttachments(e.target.checked);
                     handleTogglePolicy("Mandatory Supporting Document Attachments", e.target.checked);
                   }}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>

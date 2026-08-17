@@ -28,6 +28,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CurrencyPairSelector from "@/components/shared/CurrencyPairSelector";
+import { getCrossRate } from "@/constants/currencies";
 import ExportMenu from "@/components/shared/ExportMenu";
 import StatementDetailModal from "@/features/finance-hub/components/StatementDetailModal";
 import SubSectionPillNav from "@/features/finance-hub/components/SubSectionPillNav";
@@ -113,12 +115,16 @@ const mockStatementLines: StatementLine[] = [
 export default function MasterAccountPage() {
   const { accounts, totalUSD, transferBetweenAccounts } = useTreasuryAccounts();
   const { transactions } = useLedgerTransactions();
-  const { actingOfficer, canTransfer } = useActingFinanceOfficer();
+  const { actingOfficer, canTransfer, actingOfficerCapability } = useActingFinanceOfficer();
   const { logAction } = useFinanceAuditLog();
   const actorName = `${actingOfficer.firstName} ${actingOfficer.lastName} (${actingOfficer.position})`;
   const [fxDevalPct, setFxDevalPct] = useState(0);
   const [stepIncrement, setStepIncrement] = useState(5);
-  const [selectedPair, setSelectedPair] = useState("USD/NGN");
+  const [baseCurrency, setBaseCurrency] = useState("USD");
+  const [compareCurrency, setCompareCurrency] = useState("NGN");
+  const selectedPair = `${baseCurrency}/${compareCurrency}`;
+  const baseCrossRate = getCrossRate(baseCurrency, compareCurrency);
+  const stressedCrossRate = baseCrossRate * (1 + fxDevalPct / 100);
   const [selectedStatementLine, setSelectedStatementLine] = useState<StatementLine | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>("balances");
@@ -210,6 +216,12 @@ export default function MasterAccountPage() {
   };
 
   const handleMarkVatRemitted = (countryCode: string, countryName: string, liabilityUSD: number) => {
+    // A statutory tax-remittance attestation is at least Approve-level, not
+    // a routine action every officer should be able to sign off on.
+    if (!actingOfficerCapability.canApprove) {
+      toast.error(`${actorName} does not hold Approve authority and cannot attest a VAT remittance.`);
+      return;
+    }
     setRemittedCountries((prev) => ({ ...prev, [countryCode]: true }));
     logAction(
       actorName,
@@ -230,6 +242,11 @@ export default function MasterAccountPage() {
   // match on a Completed transaction binds the statement line; no match
   // surfaces as a genuine discrepancy, not a scripted outcome.
   const ingestParsedRows = (rows: ParsedStatementRow[], format: string, bankAccount: string) => {
+    if (!actingOfficerCapability.canValidate) {
+      setUploadError(`${actorName} does not hold Validate authority and cannot import/auto-reconcile bank statements.`);
+      setUploadSuccess(null);
+      return;
+    }
     if (rows.length === 0) {
       setUploadError(`No parseable statement lines found in that ${format.toUpperCase()} file.`);
       setUploadSuccess(null);
@@ -259,6 +276,12 @@ export default function MasterAccountPage() {
       `${format.toUpperCase()} statement imported: ${newLines.length} line${newLines.length === 1 ? "" : "s"} ingested, ${
         newLines.filter((l) => l.status === "reconciled").length
       } auto-reconciled against live ledger transactions.`
+    );
+    logAction(
+      actorName,
+      "Imported bank statement",
+      bankAccount,
+      `${newLines.length} lines (${format.toUpperCase()}), ${newLines.filter((l) => l.status === "reconciled").length} auto-reconciled`
     );
     toast.success(`Bank statement imported — ${newLines.length} lines ingested.`);
   };
@@ -302,6 +325,15 @@ export default function MasterAccountPage() {
   };
 
   const handleReconcile = (id: string) => {
+    // Reconciliation is the Validator's job (Level 2 of the 4-level
+    // hierarchy — "Doc & Receipt Check") per the Control Center Matrix.
+    // Roles with canValidate = false (e.g. the CEO, who is authorize-only)
+    // can view statement lines but can't clear them.
+    if (!actingOfficerCapability.canValidate) {
+      toast.error(`${actorName} does not hold Validate authority under the Finance Control Center Matrix and cannot reconcile statement lines.`);
+      return;
+    }
+
     setLines((prev) =>
       prev.map((l) =>
         l.id === id
@@ -320,6 +352,12 @@ export default function MasterAccountPage() {
   const handleManualMatchSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!matchModalLine || !manualTxnInput) return;
+    // Same outcome as handleReconcile (marks the line reconciled) — must
+    // carry the same Validate-authority gate, or it's a backdoor around it.
+    if (!actingOfficerCapability.canValidate) {
+      toast.error(`${actorName} does not hold Validate authority under the Finance Control Center Matrix and cannot bind statement lines.`);
+      return;
+    }
 
     setLines((prev) =>
       prev.map((l) =>
@@ -515,23 +553,14 @@ export default function MasterAccountPage() {
             <CardContent className="space-y-5">
               {/* Currency Pair & Step Granularity Controls */}
               <div className="grid gap-4 sm:grid-cols-2 p-4 border rounded-xl bg-card">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-foreground">Target Currency Pair Corridor</label>
-                  <select
-                    value={selectedPair}
-                    onChange={(e) => setSelectedPair(e.target.value)}
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-foreground focus:outline-none"
-                  >
-                    <option value="USD/NGN">USD / NGN — US Dollar vs. Nigerian Naira (₦)</option>
-                    <option value="USD/KES">USD / KES — US Dollar vs. Kenyan Shilling (KSh)</option>
-                    <option value="USD/TZS">USD / TZS — US Dollar vs. Tanzanian Shilling (TSh)</option>
-                    <option value="NGN/KES">NGN / KES — Nigerian Naira vs. Kenyan Shilling</option>
-                    <option value="NGN/TZS">NGN / TZS — Nigerian Naira vs. Tanzanian Shilling</option>
-                    <option value="KES/TZS">KES / TZS — Kenyan Shilling vs. Tanzanian Shilling</option>
-                    <option value="EUR/NGN">EUR / NGN — Euro vs. Nigerian Naira (₦)</option>
-                    <option value="GBP/NGN">GBP / NGN — British Pound vs. Nigerian Naira (₦)</option>
-                  </select>
-                </div>
+                <CurrencyPairSelector
+                  base={baseCurrency}
+                  compare={compareCurrency}
+                  onChange={(base, compare) => {
+                    setBaseCurrency(base);
+                    setCompareCurrency(compare);
+                  }}
+                />
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-foreground">Slider Drag Granularity (Step Increment)</label>
@@ -552,6 +581,15 @@ export default function MasterAccountPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border bg-muted/20 p-3 text-xs font-semibold">
+                <span className="text-muted-foreground">
+                  Current rate: 1 {baseCurrency} = <span className="font-mono font-bold text-foreground">{baseCrossRate.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span> {compareCurrency}
+                </span>
+                <span className="text-muted-foreground">
+                  Stressed rate: 1 {baseCurrency} = <span className={`font-mono font-bold ${fxDevalPct >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{stressedCrossRate.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span> {compareCurrency}
+                </span>
               </div>
 
               {/* Slider Control */}
@@ -683,6 +721,8 @@ export default function MasterAccountPage() {
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={!actingOfficerCapability.canApprove}
+                    title={!actingOfficerCapability.canApprove ? `${actorName} lacks Approve authority` : undefined}
                     onClick={() => handleMarkVatRemitted(v.countryCode, v.countryName, v.liabilityUSD)}
                     className="h-8 text-xs font-bold w-full"
                   >
@@ -900,6 +940,8 @@ export default function MasterAccountPage() {
                         {line.status !== "reconciled" && (
                           <Button
                             size="sm"
+                            disabled={!actingOfficerCapability.canValidate}
+                            title={!actingOfficerCapability.canValidate ? `${actorName} lacks Validate authority` : undefined}
                             onClick={() => handleReconcile(line.id)}
                             className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                           >
@@ -939,7 +981,7 @@ export default function MasterAccountPage() {
       {/* Manual Match Finder Modal */}
       {matchModalLine && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-5 border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <Link2 className="h-5 w-5 text-primary" />
@@ -981,7 +1023,12 @@ export default function MasterAccountPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="h-8 text-xs bg-primary font-bold">
+                <Button
+                  type="submit"
+                  disabled={!actingOfficerCapability.canValidate}
+                  title={!actingOfficerCapability.canValidate ? `${actorName} lacks Validate authority` : undefined}
+                  className="h-8 text-xs bg-primary font-bold"
+                >
                   Bind & Reconcile
                 </Button>
               </div>
@@ -998,7 +1045,7 @@ export default function MasterAccountPage() {
           operation than routine approval, not another maker-checker tier. */}
       {transferOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md min-w-[50vw] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-5 border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="h-5 w-5 text-primary" />
