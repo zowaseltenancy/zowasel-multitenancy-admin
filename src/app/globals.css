@@ -215,6 +215,19 @@ html.dark {
   }
 }
 
+@keyframes wordReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
 .animate-auth-left {
   animation: authFadeSlideLeft 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -229,6 +242,10 @@ html.dark {
 
 .animate-auth-fade {
   animation: authFadeIn 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-word-reveal {
+  animation: wordReveal 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Smooth Theme Switching (200-300ms) */

@@ -27,9 +27,9 @@ export default function RoleCard({ role, isSelected, onSelect }: RoleCardProps) 
     >
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div
-              className={`p-2 rounded-lg ${
+              className={`p-2 rounded-lg shrink-0 ${
                 role.isSystemRole
                   ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                   : "bg-primary/10 text-primary"
@@ -41,8 +41,8 @@ export default function RoleCard({ role, isSelected, onSelect }: RoleCardProps) 
                 <Shield className="h-5 w-5" />
               )}
             </div>
-            <div>
-              <h3 className="font-semibold text-sm leading-tight">{role.name}</h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm leading-tight truncate">{role.name}</h3>
               {role.isSystemRole ? (
                 <span className="inline-block mt-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
                   System Role
@@ -60,7 +60,7 @@ export default function RoleCard({ role, isSelected, onSelect }: RoleCardProps) 
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed break-words">
           {role.description}
         </p>
 

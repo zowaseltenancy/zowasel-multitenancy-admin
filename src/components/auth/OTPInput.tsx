@@ -71,11 +71,11 @@ export default function OTPInput({
           maxLength={1}
           inputMode="numeric"
           aria-label={`Verification digit ${index + 1}`}
-          className={`h-12 sm:h-14 w-12 sm:w-14 text-center text-lg sm:text-xl font-bold rounded-xl border ${
+          className={`h-11 sm:h-12 w-11 sm:w-12 text-center text-lg sm:text-xl font-bold rounded-xl border ${
             hasError
               ? "border-destructive focus-visible:border-destructive focus-visible:ring-4 focus-visible:ring-destructive/15"
-              : "border-[#DCE8DC] dark:border-white/10 focus-visible:border-[#438B3E] focus-visible:ring-4 focus-visible:ring-[#438B3E]/15"
-          } bg-white dark:bg-[#19212D] text-foreground transition-all duration-200 shadow-xs`}
+              : "border-[#DCE8DC] focus-visible:border-[#438B3E] focus-visible:ring-4 focus-visible:ring-[#438B3E]/15"
+          } bg-white text-foreground transition-all duration-200 shadow-xs`}
           onChange={(e) => handleDigitChange(e.target.value, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}

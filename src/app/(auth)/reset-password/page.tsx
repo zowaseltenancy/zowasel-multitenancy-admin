@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
 
   // Password strength evaluation (bx.docx Section 17)
   const getStrength = (pass: string) => {
-    if (!pass) return { score: 0, label: "None", color: "bg-gray-200 dark:bg-gray-700" };
+    if (!pass) return { score: 0, label: "None", color: "bg-gray-200" };
     let score = 0;
     if (pass.length >= 8) score += 1;
     if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
@@ -58,24 +58,24 @@ export default function ResetPasswordPage() {
         />
 
         {isSuccess ? (
-          <div className="space-y-5 animate-auth-card">
-            <div className="p-4 rounded-xl bg-[#B8E5B8]/20 dark:bg-[#438B3E]/15 border border-[#B8E5B8]/40 dark:border-[#438B3E]/30 text-center text-sm text-[#438B3E] dark:text-[#B8E5B8] font-medium flex items-center justify-center gap-2">
-              <CheckCircle2 className="size-4.5 shrink-0" />
+          <div className="space-y-4 animate-auth-card">
+            <div className="p-3.5 rounded-xl bg-[#B8E5B8]/20 border border-[#B8E5B8]/40 text-center text-xs sm:text-sm text-[#438B3E] font-medium flex items-center justify-center gap-2">
+              <CheckCircle2 className="size-4 shrink-0" />
               <span>Password updated successfully!</span>
             </div>
 
             <Link
               href="/login"
-              className="group w-full h-12 rounded-xl bg-[#438B3E] hover:bg-[#367632] text-white font-semibold text-base shadow-md shadow-[#438B3E]/20 hover:shadow-lg hover:shadow-[#438B3E]/30 active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              className="group w-full h-11 rounded-xl bg-[#438B3E] hover:bg-[#367632] text-white font-semibold text-sm sm:text-base shadow-md shadow-[#438B3E]/20 hover:shadow-lg hover:shadow-[#438B3E]/30 active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
             >
               <span>Proceed to Sign In</span>
-              <ArrowRight className="size-4.5 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={2.2} />
+              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={2.2} />
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* New Password */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <PasswordField
                 id="new-password"
                 name="newPassword"
@@ -88,9 +88,9 @@ export default function ResetPasswordPage() {
 
               {/* Password Strength Meter (bx.docx Section 17 & 18) */}
               {newPassword && (
-                <div className="pt-1 space-y-1.5 animate-auth-fade">
-                  <div className="flex items-center justify-between text-xs font-medium">
-                    <span className="text-[#75787B] dark:text-[#9AA1B1]">Password strength</span>
+                <div className="pt-0.5 space-y-1 animate-auth-fade">
+                  <div className="flex items-center justify-between text-[11px] font-medium">
+                    <span className="text-[#75787B]">Password strength</span>
                     <span
                       className={
                         strength.label === "Strong"
@@ -103,58 +103,60 @@ export default function ResetPasswordPage() {
                       {strength.label}
                     </span>
                   </div>
-                  <div className="flex gap-1.5 h-1.5 w-full">
-                    <div className={`flex-1 rounded-full ${strength.score >= 1 ? strength.color : "bg-gray-200 dark:bg-white/10"}`} />
-                    <div className={`flex-1 rounded-full ${strength.score >= 2 ? strength.color : "bg-gray-200 dark:bg-white/10"}`} />
-                    <div className={`flex-1 rounded-full ${strength.score >= 3 ? strength.color : "bg-gray-200 dark:bg-white/10"}`} />
+                  <div className="flex gap-1.5 h-1 w-full">
+                    <div className={`flex-1 rounded-full ${strength.score >= 1 ? strength.color : "bg-gray-200"}`} />
+                    <div className={`flex-1 rounded-full ${strength.score >= 2 ? strength.color : "bg-gray-200"}`} />
+                    <div className={`flex-1 rounded-full ${strength.score >= 3 ? strength.color : "bg-gray-200"}`} />
                   </div>
-                  <p className="text-[11px] text-[#75787B] dark:text-muted-foreground">
-                    Use 8+ characters with a mix of letters, numbers, and symbols.
+                  <p className="text-[10px] text-[#75787B]">
+                    Use 8+ characters with letters, numbers & symbols.
                   </p>
                 </div>
               )}
             </div>
 
             {/* Confirm Password */}
-            <PasswordField
-              id="confirm-password"
-              name="confirmPassword"
-              label="Confirm new password"
-              placeholder="Confirm your new password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+            <div className="space-y-1.5">
+              <PasswordField
+                id="confirm-password"
+                name="confirmPassword"
+                label="Confirm new password"
+                placeholder="Confirm your new password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
 
             <Button
               type="submit"
               size="lg"
               disabled={isLoading}
-              className="group w-full h-12 rounded-xl bg-[#438B3E] hover:bg-[#367632] text-white font-semibold text-base shadow-md shadow-[#438B3E]/20 hover:shadow-lg hover:shadow-[#438B3E]/30 active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              className="group w-full h-11 rounded-xl bg-[#438B3E] hover:bg-[#367632] text-white font-semibold text-sm sm:text-base shadow-md shadow-[#438B3E]/20 hover:shadow-lg hover:shadow-[#438B3E]/30 active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="size-5 animate-spin" />
+                  <Loader2 className="size-4.5 animate-spin" />
                   <span>Updating password...</span>
                 </>
               ) : (
                 <>
                   <span>Reset password</span>
-                  <CheckCircle2 className="size-4.5 transition-transform duration-200 group-hover:scale-105" strokeWidth={2.2} />
+                  <CheckCircle2 className="size-4 transition-transform duration-200 group-hover:scale-105" strokeWidth={2.2} />
                 </>
               )}
             </Button>
 
             {/* Understated Security Indicator */}
-            <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-[#B8E5B8]/20 dark:bg-[#438B3E]/15 border border-[#B8E5B8]/40 dark:border-[#438B3E]/25 text-xs text-[#54585A] dark:text-[#9AA1B1] select-none">
-              <ShieldCheck className="size-4 text-[#438B3E] dark:text-[#B8E5B8] shrink-0" strokeWidth={2} />
-              <span className="font-medium">256-bit encrypted credential update</span>
+            <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-[#75787B] select-none">
+              <ShieldCheck className="size-3.5 text-[#438B3E] shrink-0" strokeWidth={2} />
+              <span className="font-medium text-[#54585A]">256-bit encrypted credential update</span>
             </div>
           </form>
         )}
 
         {/* Back to Sign In Link */}
-        <div className="pt-2 border-t border-[#EAE9F0] dark:border-white/5 text-center text-xs text-[#75787B] dark:text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
+        <div className="pt-1.5 border-t border-[#EAE9F0] text-center text-[11px] sm:text-xs text-[#75787B] flex items-center justify-center gap-1.5 flex-wrap">
           <Link
             href="/login"
             className="group font-semibold text-[#438B3E] hover:text-[#367632] hover:underline inline-flex items-center gap-1 transition-colors duration-150"

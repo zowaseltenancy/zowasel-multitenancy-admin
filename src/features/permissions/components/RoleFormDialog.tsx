@@ -199,10 +199,10 @@ export default function RoleFormDialog({
                     key={group.category}
                     className="p-4 rounded-xl border border-border/80 bg-accent/20 space-y-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="font-semibold text-sm">{group.label}</h5>
-                        <p className="text-xs text-muted-foreground">{group.description}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-semibold text-sm truncate">{group.label}</h5>
+                        <p className="text-xs text-muted-foreground break-words">{group.description}</p>
                       </div>
 
                       {!roleToEdit?.isSystemRole && (
@@ -211,7 +211,7 @@ export default function RoleFormDialog({
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleCategory(group.category, !allSelected)}
-                          className="text-xs text-primary h-7 px-2 hover:bg-primary/10"
+                          className="text-xs text-primary h-7 px-2 hover:bg-primary/10 shrink-0"
                         >
                           {allSelected ? "Deselect All" : "Select All Category"}
                         </Button>
@@ -225,28 +225,34 @@ export default function RoleFormDialog({
                           <div
                             key={permission.code}
                             onClick={() => togglePermission(permission.code)}
-                            className={`flex items-start gap-3 p-2.5 rounded-lg border transition-colors cursor-pointer ${
+                            className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all select-none w-full min-w-0 overflow-hidden ${
                               isChecked
-                                ? "bg-primary/5 border-primary/40"
-                                : "bg-background border-border hover:border-border/80"
-                            } ${roleToEdit?.isSystemRole ? "cursor-not-allowed opacity-80" : ""}`}
+                                ? "bg-primary/10 border-primary shadow-xs"
+                                : "bg-card border-neutral-200 dark:border-neutral-700 hover:border-primary/50 hover:bg-muted/40"
+                            } ${
+                              roleToEdit?.isSystemRole
+                                ? "cursor-not-allowed opacity-75"
+                                : "cursor-pointer"
+                            }`}
                           >
                             <Checkbox
                               checked={isChecked}
                               onCheckedChange={() => togglePermission(permission.code)}
                               disabled={roleToEdit?.isSystemRole}
-                              className="mt-0.5"
+                              className="mt-0.5 size-4.5 border-2 border-neutral-400 dark:border-neutral-500 shrink-0"
                             />
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-medium">{permission.name}</span>
+                            <div className="space-y-0.5 min-w-0 flex-1 overflow-hidden">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-semibold text-foreground break-words">
+                                  {permission.name}
+                                </span>
                                 {permission.isSensitive && (
-                                  <span className="text-[10px] bg-red-500/10 text-red-600 dark:text-red-400 font-semibold px-1 rounded">
+                                  <span className="text-[10px] bg-red-500/15 text-red-600 dark:text-red-400 font-semibold px-1.5 py-0.5 rounded shrink-0">
                                     Sensitive
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] text-muted-foreground leading-tight">
+                              <p className="text-[11px] text-muted-foreground leading-normal break-words text-pretty">
                                 {permission.description}
                               </p>
                             </div>

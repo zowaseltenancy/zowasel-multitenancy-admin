@@ -126,7 +126,6 @@ export default function PermissionMatrix({
                                         onCheckedChange={() =>
                                           onTogglePermission(role.id, permission.code)
                                         }
-                                        className="h-4 w-4"
                                       />
                                     </div>
                                   </td>

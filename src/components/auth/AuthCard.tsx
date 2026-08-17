@@ -13,11 +13,11 @@ export default function AuthCard({
   return (
     <div
       className={cn(
-        "w-full max-w-[500px] mx-auto rounded-[22px] border border-[#DCE8DC] dark:border-white/10 bg-[#F7FAF7] dark:bg-[#141A22] p-8 sm:p-10 shadow-xl shadow-[#438B3E]/[0.03] dark:shadow-black/40 transition-all duration-200 animate-auth-card",
+        "w-full max-w-[460px] mx-auto rounded-[20px] border border-[#DCE8DC] bg-[#F7FAF7] p-6 sm:p-8 shadow-xl shadow-[#438B3E]/[0.03] transition-all duration-200 animate-auth-card",
         className
       )}
     >
-      <div className="space-y-6 sm:space-y-7">
+      <div className="space-y-4 sm:space-y-5">
         {children}
       </div>
     </div>
