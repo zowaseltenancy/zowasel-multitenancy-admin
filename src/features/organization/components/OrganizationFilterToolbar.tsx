@@ -10,7 +10,6 @@ import {
   SlidersHorizontal,
   X,
   CreditCard,
-  ShieldCheck,
   UserCheck,
   Building,
 } from "lucide-react";
@@ -31,13 +30,11 @@ import {
 } from "@/components/ui/popover";
 import { KybStatus } from "@/types/kyb";
 import { Organization, OrganizationType } from "@/types/organization";
-import { cn } from "@/lib/utils";
 
 export interface OrganizationFiltersState {
   status: KybStatus | "all";
   plan: string;
   modules: string[];
-  kybStatus: KybStatus | "all";
   onboardedBy: string;
   type: OrganizationType | "all";
   moduleCount: "all" | "0" | "1-2" | "3+";
@@ -48,7 +45,6 @@ export const INITIAL_ORGANIZATION_FILTERS: OrganizationFiltersState = {
   status: "all",
   plan: "all",
   modules: [],
-  kybStatus: "all",
   onboardedBy: "all",
   type: "all",
   moduleCount: "all",
@@ -118,7 +114,6 @@ export default function OrganizationFilterToolbar({
   const [isModulesOpen, setIsModulesOpen] = useState(false);
 
   // Temporary state for More Filters popover
-  const [tempKyb, setTempKyb] = useState<KybStatus | "all">(filters.kybStatus);
   const [tempOnboardedBy, setTempOnboardedBy] = useState<string>(filters.onboardedBy);
   const [tempType, setTempType] = useState<OrganizationType | "all">(filters.type);
   const [tempModuleCount, setTempModuleCount] = useState<"all" | "0" | "1-2" | "3+">(filters.moduleCount);
@@ -144,7 +139,6 @@ export default function OrganizationFilterToolbar({
   // Calculate secondary active filter count for "More Filters"
   const secondaryFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.kybStatus !== "all") count++;
     if (filters.onboardedBy !== "all") count++;
     if (filters.type !== "all") count++;
     if (filters.moduleCount !== "all") count++;
@@ -157,7 +151,6 @@ export default function OrganizationFilterToolbar({
       (filters.status !== "all" && !hideStatusInToolbar) ||
       filters.plan !== "all" ||
       filters.modules.length > 0 ||
-      filters.kybStatus !== "all" ||
       filters.onboardedBy !== "all" ||
       filters.type !== "all" ||
       filters.moduleCount !== "all" ||
@@ -197,7 +190,6 @@ export default function OrganizationFilterToolbar({
   const handleApplyMoreFilters = () => {
     onFilterChange({
       ...filters,
-      kybStatus: tempKyb,
       onboardedBy: tempOnboardedBy,
       type: tempType,
       moduleCount: tempModuleCount,
@@ -206,13 +198,11 @@ export default function OrganizationFilterToolbar({
   };
 
   const handleClearMoreFilters = () => {
-    setTempKyb("all");
     setTempOnboardedBy("all");
     setTempType("all");
     setTempModuleCount("all");
     onFilterChange({
       ...filters,
-      kybStatus: "all",
       onboardedBy: "all",
       type: "all",
       moduleCount: "all",
@@ -318,7 +308,13 @@ export default function OrganizationFilterToolbar({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 rounded-2xl p-3 shadow-xl">
+            <PopoverContent
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              collisionAvoidance={{ side: "none" }}
+              className="w-72 rounded-2xl p-3 shadow-xl"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b border-border pb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -390,7 +386,6 @@ export default function OrganizationFilterToolbar({
             onOpenChange={(open) => {
               setIsMoreOpen(open);
               if (open) {
-                setTempKyb(filters.kybStatus);
                 setTempOnboardedBy(filters.onboardedBy);
                 setTempType(filters.type);
                 setTempModuleCount(filters.moduleCount);
@@ -413,7 +408,13 @@ export default function OrganizationFilterToolbar({
               )}
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-80 rounded-2xl p-4 shadow-xl">
+            <PopoverContent
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              collisionAvoidance={{ side: "none" }}
+              className="w-80 rounded-2xl p-4 shadow-xl"
+            >
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-2">
                   <div className="flex items-center gap-1.5">
@@ -429,25 +430,7 @@ export default function OrganizationFilterToolbar({
                   )}
                 </div>
 
-                {/* Secondary 1: KYB Status */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <ShieldCheck className="h-3.5 w-3.5 text-[#438B3E]" />
-                    <span>KYB Status</span>
-                  </label>
-                  <select
-                    value={tempKyb}
-                    onChange={(e) => setTempKyb(e.target.value as KybStatus | "all")}
-                    className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#438B3E]/30"
-                  >
-                    <option value="all">All KYB statuses</option>
-                    <option value="approved">Approved</option>
-                    <option value="pending">Pending</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-
-                {/* Secondary 2: Organization Type */}
+                {/* Secondary 1: Organization Type */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                     <Building className="h-3.5 w-3.5 text-[#438B3E]" />
@@ -466,7 +449,7 @@ export default function OrganizationFilterToolbar({
                   </select>
                 </div>
 
-                {/* Secondary 3: Onboarded By Staff */}
+                {/* Secondary 2: Onboarded By Staff */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                     <UserCheck className="h-3.5 w-3.5 text-[#438B3E]" />
@@ -486,7 +469,7 @@ export default function OrganizationFilterToolbar({
                   </select>
                 </div>
 
-                {/* Secondary 4: Module Count */}
+                {/* Secondary 3: Module Count */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-[#438B3E]" />
@@ -552,7 +535,7 @@ export default function OrganizationFilterToolbar({
         </div>
       </div>
 
-      {/* Active Filter Chips Bar (Section 5 of qx.docx) */}
+      {/* Active Filter Chips Bar */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 animate-auth-fade">
           <span className="text-xs font-semibold text-muted-foreground mr-1">Active filters:</span>
@@ -604,20 +587,6 @@ export default function OrganizationFilterToolbar({
               </span>
             );
           })}
-
-          {/* KYB Status chip */}
-          {filters.kybStatus !== "all" && (
-            <span className="inline-flex items-center gap-1 rounded-lg border border-[#438B3E]/20 bg-[#438B3E]/10 px-2 py-1 text-xs font-medium text-[#438B3E] dark:bg-[#438B3E]/20 dark:text-[#B8E5B8]">
-              <span>KYB: <strong className="capitalize">{filters.kybStatus}</strong></span>
-              <button
-                type="button"
-                onClick={() => updateFilter("kybStatus", "all")}
-                className="hover:opacity-75 cursor-pointer ml-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          )}
 
           {/* Type chip */}
           {filters.type !== "all" && (

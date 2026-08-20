@@ -144,7 +144,13 @@ function CompactRegionScopeSelector({ value, onChange, className, align = "end" 
       </PopoverTrigger>
 
       {/* Popover Content Menu (Ultra-Fast 0ms Instant Load! No map rendered inside popover) */}
-      <PopoverContent align={align} side="bottom" sideOffset={8} className="w-[380px] p-0 shadow-2xl border-border bg-card overflow-hidden">
+      <PopoverContent
+        align={align}
+        side="bottom"
+        sideOffset={8}
+        collisionAvoidance={{ side: "none" }}
+        className="w-[380px] p-0 shadow-2xl border-border bg-card overflow-hidden"
+      >
         {/* Header Bar */}
         <div className="p-3 border-b border-border flex items-center justify-between bg-muted/40">
           <div className="flex items-center gap-2">

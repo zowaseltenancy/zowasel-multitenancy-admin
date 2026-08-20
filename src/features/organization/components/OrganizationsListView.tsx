@@ -107,21 +107,17 @@ export default function OrganizationsListView({
         );
 
       // 4. Region Filter (specific country)
-      // 4. Secondary: KYB Status
-      const matchesKyb =
-        filters.kybStatus === "all" || organization.kybStatus === filters.kybStatus;
-
-      // 5. Secondary: Onboarded By Staff / Agent
+      // 4. Secondary: Onboarded By Staff / Agent
       const matchesOnboardedBy =
         filters.onboardedBy === "all" ||
         organization.onboardedByAgent?.id === filters.onboardedBy ||
         organization.assignedStaff?.primary?.id === filters.onboardedBy;
 
-      // 6. Secondary: Organization Type
+      // 5. Secondary: Organization Type
       const matchesType =
         filters.type === "all" || organization.type === filters.type;
 
-      // 7. Secondary: Module Count
+      // 6. Secondary: Module Count
       const modCount = getModuleCount(organization);
       let matchesModCount = true;
       if (filters.moduleCount === "0") {
@@ -132,7 +128,7 @@ export default function OrganizationsListView({
         matchesModCount = modCount >= 3;
       }
 
-      // 8. Search Query
+      // 7. Search Query
       const query = filters.search.trim().toLowerCase();
       const matchesSearch =
         query.length === 0 ||
@@ -141,7 +137,7 @@ export default function OrganizationsListView({
         organization.owner.name.toLowerCase().includes(query) ||
         organization.owner.email.toLowerCase().includes(query);
 
-      // 9. Global Geographic Scope (Map Selector)
+      // 8. Global Geographic Scope (Map Selector)
       const matchesContinent =
         geoFilter.continent === "all" || organization.continent === geoFilter.continent;
       const matchesSubRegion =
@@ -153,7 +149,6 @@ export default function OrganizationsListView({
         matchesStatus &&
         matchesPlan &&
         matchesModules &&
-        matchesKyb &&
         matchesOnboardedBy &&
         matchesType &&
         matchesModCount &&

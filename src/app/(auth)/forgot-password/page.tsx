@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AuthLayout,
@@ -13,17 +14,44 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | undefined>(undefined);
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (errorMessage) setErrorMessage(null);
+    if (emailError) setEmailError(undefined);
+  };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isLoading) return;
+
+    if (!email.trim()) {
+      setEmailError("Email address is required.");
+      setErrorMessage("Please enter your registered email address.");
+      toast.error("Email address is required.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError("Please enter a valid email address.");
+      setErrorMessage("Invalid email format. Please check and try again.");
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    setEmailError(undefined);
+    setErrorMessage(null);
     setIsLoading(true);
 
     setTimeout(() => {
       setIsLoading(false);
       setIsSubmitted(true);
+      toast.success("Password recovery instructions sent!");
     }, 600);
   };
 
@@ -41,8 +69,9 @@ export default function ForgotPasswordPage() {
 
         {isSubmitted ? (
           <div className="space-y-4 animate-auth-card">
-            <div className="p-3.5 rounded-xl bg-[#B8E5B8]/20 border border-[#B8E5B8]/40 text-center text-xs sm:text-sm text-[#438B3E] font-medium">
-              Please check your email inbox for password recovery instructions.
+            <div className="p-3.5 rounded-xl bg-[#B8E5B8]/20 border border-[#B8E5B8]/40 text-center text-xs sm:text-sm text-[#438B3E] font-medium flex items-center justify-center gap-2">
+              <CheckCircle2 className="size-4 shrink-0" />
+              <span>Please check your inbox for recovery instructions.</span>
             </div>
 
             <Link
@@ -55,7 +84,24 @@ export default function ForgotPasswordPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            <EmailField />
+            {/* Top Error Alert Banner */}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive animate-auth-fade shadow-xs"
+              >
+                <AlertCircle className="size-4 shrink-0 mt-0.5 text-destructive" />
+                <div className="flex-1">
+                  <p className="font-semibold leading-relaxed">{errorMessage}</p>
+                </div>
+              </div>
+            )}
+
+            <EmailField
+              value={email}
+              onChange={handleEmailChange}
+              error={emailError}
+            />
 
             <Button
               type="submit"
