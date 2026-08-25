@@ -2,13 +2,33 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, UserCheck, Building2, Cpu, Layers, Landmark, TrendingUp, Wallet, ShieldCheck, Globe2 } from "lucide-react";
+import {
+  ArrowRight,
+  UserCheck,
+  Building2,
+  Cpu,
+  Layers,
+  Landmark,
+  TrendingUp,
+  Wallet,
+  ShieldCheck,
+  Globe2,
+  CalendarClock,
+  UserPlus,
+  Shield,
+  Eye,
+  Lock,
+  CalendarDays,
+} from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useUsers } from "@/features/users/hooks/useUsers";
 import { StaffDepartment } from "@/types/user";
 
-const DEPARTMENT_META: Record<StaffDepartment, { icon: typeof Building2; cardBg: string; iconClassName: string }> = {
+const DEPARTMENT_META: Record<
+  StaffDepartment,
+  { icon: typeof Building2; cardBg: string; iconClassName: string }
+> = {
   Executive: {
     icon: Building2,
     cardBg: "bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20",
@@ -61,20 +81,100 @@ const DEPARTMENTS = Object.keys(DEPARTMENT_META) as StaffDepartment[];
 export default function ZowaselStaffOverviewPage() {
   const { users } = useUsers();
 
-  const staff = useMemo(() => users.filter((user) => user.userCategory === "staff"), [users]);
+  // Filter staff users
+  const staff = useMemo(
+    () => users.filter((user) => user.userCategory === "staff"),
+    [users]
+  );
 
   const activeCount = staff.filter((s) => s.status === "active").length;
 
+  // Placeholder – replace with real data from your leave API
+  const pendingLeaveCount = 0;
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Zowasel Staff</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Internal Zowasel personnel, separate from platform/tenant users — {staff.length} staff across{" "}
-          {DEPARTMENTS.length} departments, {activeCount} currently active.
+          Internal Zowasel personnel, separate from platform/tenant users —{" "}
+          {staff.length} staff across {DEPARTMENTS.length} departments,{" "}
+          {activeCount} currently active.
         </p>
       </div>
 
+      {/* Global Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href="/admin/staff/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+        >
+          <UserPlus className="h-4 w-4" />
+          Add Employee
+        </Link>
+        <Link
+          href="/admin/staff/leave/request"
+          className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <CalendarClock className="h-4 w-4" />
+          Request Leave
+        </Link>
+        <Link
+          href="/admin/staff/roles"
+          className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <Shield className="h-4 w-4" />
+          Manage Roles
+        </Link>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 border border-blue-500/30">
+              <UserCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Staff</p>
+              <p className="text-2xl font-bold">{staff.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
+              <UserCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Staff</p>
+              <p className="text-2xl font-bold">{activeCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/15 text-orange-600 border border-orange-500/30">
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pending Leave Requests</p>
+              <p className="text-2xl font-bold">{pendingLeaveCount}</p>
+              <Link
+                href="/admin/staff/leave"
+                className="text-xs text-primary hover:underline"
+              >
+                Review →
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Department Cards with Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {DEPARTMENTS.map((dept) => {
           const meta = DEPARTMENT_META[dept];
@@ -82,26 +182,62 @@ export default function ZowaselStaffOverviewPage() {
           const count = staff.filter((s) => s.department === dept).length;
 
           return (
-            <Link key={dept} href={`/admin/staff/directory?department=${encodeURIComponent(dept)}`} className="group block">
-              <Card className={`border shadow-2xs transition-all hover:scale-[1.02] ${meta.cardBg}`}>
-                <CardContent className="flex flex-col justify-between p-4 min-h-[110px]">
+            <div key={dept} className="group relative">
+              <Card
+                className={`border shadow-2xs transition-all hover:scale-[1.02] ${meta.cardBg}`}
+              >
+                <CardContent className="flex flex-col justify-between p-4 min-h-[140px]">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{dept}</p>
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${meta.iconClassName}`}>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {dept}
+                    </p>
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg border ${meta.iconClassName}`}
+                    >
                       <Icon className="h-4 w-4" />
                     </div>
                   </div>
+
                   <div className="mt-2 flex items-baseline justify-between">
                     <p className="text-2xl font-bold">{count}</p>
                     <ArrowRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                   </div>
+
+                  {/* Quick action links */}
+                  <div className="mt-3 flex items-center gap-2 border-t pt-2">
+                    <Link
+                      href={`/admin/staff/directory?department=${encodeURIComponent(dept)}`}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                      title="View Staff"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      View
+                    </Link>
+                    <Link
+                      href={`/admin/staff/permissions?department=${encodeURIComponent(dept)}`}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                      title="Manage Permissions"
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      Permissions
+                    </Link>
+                    <Link
+                      href={`/admin/staff/leave?department=${encodeURIComponent(dept)}`}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                      title="Leave Requests"
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Leave
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
-            </Link>
+            </div>
           );
         })}
       </div>
 
+      {/* Full directory link */}
       <Link
         href="/admin/staff/directory"
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"

@@ -1,10 +1,12 @@
-import { StaffMember, StaffRole, LeaveRequest } from '@/types/staff';
+import { StaffMember, StaffRole, LeaveRequest, Department,DepartmentRole } from '@/types/staff';
 import { mockRoles, mockStaff, mockLeaveRequests } from '@/data/mockStaff';
 
 interface StaffDB {
   staff: StaffMember[];
   roles: StaffRole[];
   leaveRequests: LeaveRequest[];
+  departments: Department[];
+  departmentRoles: DepartmentRole[];
 }
 
 const STORAGE_KEY = 'staff_management_db';
@@ -98,5 +100,41 @@ export class StaffRepository {
       db.leaveRequests[idx] = { ...db.leaveRequests[idx], ...updates, updatedAt: new Date().toISOString() };
       this.writeDB(db);
     }
+  }
+
+  
+  // StaffRepository.ts
+  getDepartmentRoles(departmentId?: string): DepartmentRole[] {
+    const db = this.readDB();
+    if (departmentId) {
+      return db.departmentRoles.filter(r => r.departmentId === departmentId);
+    }
+    return db.departmentRoles;
+  }
+
+  addDepartmentRole(role: Omit<DepartmentRole, 'id'>): DepartmentRole {
+    const db = this.readDB();
+    const newRole: DepartmentRole = {
+      ...role,
+      id: `drole-${Date.now()}`,
+    };
+    db.departmentRoles.push(newRole);
+    this.writeDB(db);
+    return newRole;
+  }
+
+  updateDepartmentRole(id: string, updates: Partial<DepartmentRole>) {
+    const db = this.readDB();
+    const idx = db.departmentRoles.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      db.departmentRoles[idx] = { ...db.departmentRoles[idx], ...updates };
+      this.writeDB(db);
+    }
+  }
+
+  deleteDepartmentRole(id: string) {
+    const db = this.readDB();
+    db.departmentRoles = db.departmentRoles.filter(r => r.id !== id);
+    this.writeDB(db);
   }
 }

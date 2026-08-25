@@ -1,20 +1,44 @@
-// app/(admin)/admin/staff/directory/page.tsx
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStaff } from '@/hooks/useStaff';
 import { StaffListTable } from '@/components/staff/StaffListTable';
-import { AddStaffDialog } from '@/components/staff/AddStaffDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download } from 'lucide-react';
+import { Download, Plus, Loader2 } from 'lucide-react';
 
 export default function StaffDirectoryPage() {
-  const { repo, refresh } = useStaff();
+  const { repo } = useStaff();
+  const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [deptFilter, setDeptFilter] = useState('all');
-  const [addOpen, setAddOpen] = useState(false);
+  const router = useRouter();
 
+  // Mark as mounted on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render data-dependent UI until mounted
+  if (!mounted) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
+            <p className="text-muted-foreground">Manage Zowasel internal staff</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // From here on, we are client‑side – localStorage is available
   const staffList = repo.getAllStaff();
   const roles = repo.getRoles();
   const departments = Array.from(new Set(staffList.map((s) => s.department))).sort();
@@ -56,7 +80,10 @@ export default function StaffDirectoryPage() {
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
-          <Button onClick={() => setAddOpen(true)}>Add Staff</Button>
+          <Button onClick={() => router.push('/admin/staff/onboarding')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Staff
+          </Button>
         </div>
       </div>
 
@@ -68,7 +95,7 @@ export default function StaffDirectoryPage() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* Native role filter */}
+        {/* Role filter */}
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
@@ -82,7 +109,7 @@ export default function StaffDirectoryPage() {
           ))}
         </select>
 
-        {/* Native department filter */}
+        {/* Department filter */}
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
@@ -98,15 +125,6 @@ export default function StaffDirectoryPage() {
       </div>
 
       <StaffListTable staff={filtered} roles={roles} />
-
-      <AddStaffDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onSuccess={() => {
-          refresh();
-          setAddOpen(false);
-        }}
-      />
     </div>
   );
 }

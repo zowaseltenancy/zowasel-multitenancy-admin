@@ -155,7 +155,7 @@ export const navigation: NavigationItem[] = [
   },
 
   {
-    label: "Zowasel Staff",
+    label: "Staff Management",
     href: "/admin/staff",
     icon: UserCheck,
     children: [
@@ -163,9 +163,20 @@ export const navigation: NavigationItem[] = [
         label: "Staff Directory",
         href: "/admin/staff/directory",
       },
+      {
+        label: "Onboard Staff",
+        href: "/admin/staff/onboarding",
+      },
     ],
   },
-
+  {
+    label: "Departments",
+    href: "/admin/staff/departments",
+    icon: Building2,
+    children: [
+      { label: "Overview", href: "/admin/staff/departments" },
+    ],
+  },
   {
     label: "Notifications",
     href: "/admin/notifications",

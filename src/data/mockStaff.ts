@@ -1,4 +1,4 @@
-import { StaffRole, StaffMember, LeaveRequest } from '@/types/staff';
+import { StaffRole, StaffMember, LeaveRequest,Department,DepartmentRole } from '@/types/staff';
 
 // ---------- Permission Codes ----------
 export const PERMISSION_CODES = {
@@ -70,6 +70,68 @@ export const mockStaff: StaffMember[] = [
     avatarUrl: 'https://i.pravatar.cc/150?u=alice',
     dateJoined: '2025-01-15T08:00:00Z',
     lastActive: new Date().toISOString(),
+    dateOfBirth: '1990-05-12',
+    gender: 'female',
+    maritalStatus: 'Married',
+    nationality: 'Nigerian',
+    employeeId: 'EMP-001',
+    managerId: 'STAFF-000',
+    employmentType: 'full-time',
+    workLocation: 'Lagos HQ',
+    address: {
+      line1: '12 Admiralty Way',
+      line2: 'Lekki Phase 1',
+      city: 'Lekki',
+      state: 'Lagos',
+      country: 'Nigeria',
+      postalCode: '105102',
+    },
+    nextOfKin: {
+      fullName: 'Chuka Okonkwo',
+      relationship: 'Spouse',
+      phone: '+2348098765432',
+      email: 'chuka@example.com',
+      address: 'Same as staff',
+    },
+    education: [
+      {
+        institution: 'University of Lagos',
+        degree: 'B.Sc. Computer Science',
+        fieldOfStudy: 'Computer Science',
+        startYear: '2008',
+        endYear: '2012',
+      },
+      {
+        institution: 'Lagos Business School',
+        degree: 'MBA',
+        fieldOfStudy: 'Management',
+        startYear: '2015',
+        endYear: '2017',
+      },
+    ],
+    workExperience: [
+      {
+        company: 'TechCorp Nigeria',
+        jobTitle: 'Software Engineer',
+        startDate: '2012-06-01',
+        endDate: '2015-08-31',
+        description: 'Built internal tools.',
+      },
+      {
+        company: 'Zowasel',
+        jobTitle: 'CTO',
+        startDate: '2015-09-01',
+        endDate: '',
+        description: 'Leading technology strategy.',
+      },
+    ],
+    bank: {
+      bankName: 'Access Bank',
+      accountNumber: '0123456789',
+      sortCode: '044123456',
+      taxId: 'NIN-123456789',
+    },
+    documents: ['cv_alice.pdf', 'certificate_mba.pdf'],
   },
   {
     id: 'staff-david',
@@ -83,6 +145,35 @@ export const mockStaff: StaffMember[] = [
     avatarUrl: 'https://i.pravatar.cc/150?u=david',
     dateJoined: '2025-02-20T09:00:00Z',
     lastActive: new Date(Date.now() - 3600000).toISOString(),
+    dateOfBirth: '1988-11-03',
+    gender: 'male',
+    maritalStatus: 'Single',
+    nationality: 'Nigerian',
+    employeeId: 'EMP-002',
+    employmentType: 'full-time',
+    workLocation: 'Abuja Office',
+    address: {
+      line1: '45 Garki Street',
+      city: 'Abuja',
+      state: 'FCT',
+      country: 'Nigeria',
+    },
+    nextOfKin: {
+      fullName: 'Emeka Okafor',
+      relationship: 'Brother',
+      phone: '+2348076543210',
+    },
+    education: [
+      {
+        institution: 'University of Nigeria',
+        degree: 'B.A. Sociology',
+        startYear: '2006',
+        endYear: '2010',
+      },
+    ],
+    workExperience: [],
+    bank: {},
+    documents: [],
   },
   {
     id: 'staff-grace',
@@ -96,6 +187,50 @@ export const mockStaff: StaffMember[] = [
     avatarUrl: 'https://i.pravatar.cc/150?u=grace',
     dateJoined: '2025-03-10T10:00:00Z',
     lastActive: new Date(Date.now() - 7200000).toISOString(),
+    dateOfBirth: '1992-07-19',
+    gender: 'female',
+    maritalStatus: 'Married',
+    nationality: 'Nigerian',
+    employeeId: 'EMP-003',
+    employmentType: 'full-time',
+    workLocation: 'Lagos HQ',
+    address: {
+      line1: '3 Banana Island Road',
+      city: 'Ikoyi',
+      state: 'Lagos',
+      country: 'Nigeria',
+      postalCode: '101233',
+    },
+    nextOfKin: {
+      fullName: 'Femi Adebayo',
+      relationship: 'Spouse',
+      phone: '+2348087654321',
+      email: 'femi@example.com',
+    },
+    education: [
+      {
+        institution: 'University of Ibadan',
+        degree: 'B.Sc. Economics',
+        startYear: '2010',
+        endYear: '2014',
+      },
+    ],
+    workExperience: [
+      {
+        company: 'FinBank',
+        jobTitle: 'Financial Analyst',
+        startDate: '2014-08-01',
+        endDate: '2017-12-31',
+        description: 'Analyzed market trends.',
+      },
+    ],
+    bank: {
+      bankName: 'GTBank',
+      accountNumber: '1098765432',
+      sortCode: '058152345',
+      taxId: 'NIN-987654321',
+    },
+    documents: ['cover_letter.pdf'],
   },
   {
     id: 'staff-ibrahim',
@@ -109,6 +244,28 @@ export const mockStaff: StaffMember[] = [
     avatarUrl: 'https://i.pravatar.cc/150?u=ibrahim',
     dateJoined: '2025-04-05T11:00:00Z',
     lastActive: new Date(Date.now() - 86400000).toISOString(),
+    dateOfBirth: '1985-02-28',
+    gender: 'male',
+    maritalStatus: 'Single',
+    nationality: 'Nigerian',
+    employeeId: 'EMP-004',
+    employmentType: 'contract',
+    workLocation: 'Remote',
+    address: {
+      line1: '78 Zaria Road',
+      city: 'Kano',
+      state: 'Kano',
+      country: 'Nigeria',
+    },
+    nextOfKin: {
+      fullName: 'Aisha Sule',
+      relationship: 'Sister',
+      phone: '+2348067890123',
+    },
+    education: [],
+    workExperience: [],
+    bank: {},
+    documents: [],
   },
 ];
 
@@ -134,5 +291,33 @@ export const mockLeaveRequests: LeaveRequest[] = [
     approvedBy: 'staff-alice',
     createdAt: '2025-08-02T09:00:00Z',
     updatedAt: '2025-08-03T08:00:00Z',
+  },
+];
+
+export const mockDepartments: Department[] = [
+  { id: 'dept-tech', name: 'Technology', description: 'Software and IT', headId: 'staff-alice', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+  { id: 'dept-programs', name: 'Programs', description: 'Operations and Programs', headId: 'staff-david', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+  { id: 'dept-sales', name: 'Sales', description: 'Sales and Marketing', headId: 'staff-grace', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+  { id: 'dept-finance', name: 'Finance', description: 'Finance and Accounting', headId: 'staff-ibrahim', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z' },
+];
+
+export const mockDepartmentRoles: DepartmentRole[] = [
+  {
+    id: 'drole-1',
+    departmentId: 'dept-tech',
+    name: 'Lead Developer',
+    permissions: {
+      staff: { read: true, write: false, approve: false, delete: false },
+      finance: { read: true, write: true, approve: false, delete: false },
+      kyb: { read: true, write: false, approve: true, delete: false },
+    },
+  },
+  {
+    id: 'drole-2',
+    departmentId: 'dept-sales',
+    name: 'Sales Specialist',
+    permissions: {
+      sales: { read: true, write: true, approve: true, delete: false },
+    },
   },
 ];

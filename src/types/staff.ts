@@ -1,34 +1,119 @@
-export type StaffRole = {
-  id: string;
-  name: string;          // e.g. "Super Admin", "KYB Reviewer"
-  description: string;
-  permissions: string[]; // permission codes like "approve_kyb", "manage_staff"
-  isSystemRole: boolean; // cannot be deleted
-};
-
-export type StaffMember = {
+export interface StaffMember {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  department: string;    // "Technology", "Programs", etc.
-  roleId: string;        // FK to StaffRole
-  status: 'active' | 'inactive' | 'suspended';
+  department: string;
+  roleId: string;
+  status: 'active' | 'inactive';
   avatarUrl?: string;
-  dateJoined: string;
-  lastActive: string;
-  countryCode?: string;
-};
+  dateJoined?: string;
+  lastActive?: string;
 
-export type LeaveRequest = {
+  // New fields for biodata
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  maritalStatus?: string;
+  nationality?: string;
+  employeeId?: string;
+  managerId?: string;
+  employmentType?: 'full-time' | 'part-time' | 'contract';
+  workLocation?: string;
+
+  address?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode?: string;
+  };
+
+  nextOfKin?: {
+    fullName: string;
+    relationship: string;
+    phone: string;
+    email?: string;
+    address?: string;
+  };
+
+  education?: {
+    institution: string;
+    degree: string;
+    fieldOfStudy?: string;
+    startYear?: string;
+    endYear?: string;
+  }[];
+
+  workExperience?: {
+    company: string;
+    jobTitle: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }[];
+
+  bank?: {
+    bankName?: string;
+    accountNumber?: string;
+    sortCode?: string;
+    taxId?: string;
+  };
+
+  documents?: string[];   // file URLs or names
+}
+
+export interface StaffRole {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isSystemRole: boolean;
+}
+
+export interface LeaveRequest {
   id: string;
   staffId: string;
   startDate: string;
   endDate: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  approvedBy?: string;  // staffId of approver
+  approvedBy?: string;
   createdAt: string;
   updatedAt: string;
-};
+}
+
+// Department
+export interface Department {
+  id: string;
+  name: string;
+  description: string;
+  headId: string | null;        // staff member id
+  headName?: string;            // denormalized for display
+  staffCount?: number;          // denormalized
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Department-specific Role
+export interface DepartmentRole {
+  id: string;
+  departmentId: string;
+  name: string;                 // e.g. "Lead Developer"
+  permissions: Record<string, PermissionSet>; // key = module, e.g. "finance", "kyb"
+}
+
+export interface PermissionSet {
+  read: boolean;
+  write: boolean;
+  approve: boolean;
+  delete: boolean;
+}
+
+// Permission Matrix Module definition (for the grid)
+export interface PermissionModule {
+  key: string;      // e.g. "finance", "kyb", "staff"
+  label: string;    // e.g. "Finance"
+  icon?: React.ComponentType<{ className?: string }>;
+}

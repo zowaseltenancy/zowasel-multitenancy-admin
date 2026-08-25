@@ -1,11 +1,14 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+'use client';
+
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { WhatsAppRepository } from '@/lib/whatsappRepository';
 import { seedDB } from '@/data/mockWhatsApp';
 
 interface ContextValue {
   repo: WhatsAppRepository;
-  refresh: () => void;
-  resetTrigger: number;
+  version: number;
+  ready: boolean;
+  mutate: <T>(fn: (repo: WhatsAppRepository) => T) => T;
   resetData: () => void;
 }
 
@@ -13,31 +16,33 @@ const WhatsAppRepoContext = createContext<ContextValue | null>(null);
 
 export const WhatsAppRepoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const repoRef = useRef<WhatsAppRepository>(new WhatsAppRepository());
-  const [, forceRender] = useState(0);
-  const [resetTrigger, setResetTrigger] = useState(0);
-  const hasInitialized = useRef(false);
+  const [version, setVersion] = useState(0);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !hasInitialized.current) {
-      repoRef.current.init(seedDB);
-      hasInitialized.current = true;
-      forceRender(n => n + 1); // trigger re-render after seeding
-    }
+    repoRef.current.init(seedDB);
+    setReady(true);
+    setVersion(v => v + 1);
   }, []);
 
-  const refresh = useCallback(() => forceRender(n => n + 1), []);
+  // Every write goes through this. Bumping version is not optional.
+  const mutate = useCallback(<T,>(fn: (repo: WhatsAppRepository) => T): T => {
+    const result = fn(repoRef.current);
+    setVersion(v => v + 1);
+    return result;
+  }, []);
 
   const resetData = useCallback(() => {
     repoRef.current.resetDB(seedDB);
-    setResetTrigger(prev => prev + 1);
-    refresh();
-  }, [refresh]);
+    setVersion(v => v + 1);
+  }, []);
 
-  return (
-    <WhatsAppRepoContext.Provider value={{ repo: repoRef.current, refresh, resetTrigger, resetData }}>
-      {children}
-    </WhatsAppRepoContext.Provider>
+  const value = useMemo(
+    () => ({ repo: repoRef.current, version, ready, mutate, resetData }),
+    [version, ready, mutate, resetData]
   );
+
+  return <WhatsAppRepoContext.Provider value={value}>{children}</WhatsAppRepoContext.Provider>;
 };
 
 export const useWhatsAppRepo = () => {
