@@ -13,10 +13,11 @@ const STORAGE_KEY = 'staff_management_db';
 
 export class StaffRepository {
   private readDB(): StaffDB {
-    if (typeof window === 'undefined') return { staff: [], roles: [], leaveRequests: [] };
+    const empty: StaffDB = { staff: [], roles: [], leaveRequests: [], departments: [], departmentRoles: [] };
+    if (typeof window === 'undefined') return empty;
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { staff: [], roles: [], leaveRequests: [] };
-    return JSON.parse(raw);
+    if (!raw) return empty;
+    return { ...empty, ...JSON.parse(raw) };
   }
 
   private writeDB(db: StaffDB) {
@@ -29,6 +30,8 @@ export class StaffRepository {
         staff: mockStaff,
         roles: mockRoles,
         leaveRequests: mockLeaveRequests,
+        departments: [],
+        departmentRoles: [],
       });
     }
   }
@@ -73,6 +76,43 @@ export class StaffRepository {
   // ---- Roles ----
   getRoles(): StaffRole[] {
     return this.readDB().roles;
+  }
+
+  // ---- Departments ----
+  getDepartments(): Department[] {
+    return this.readDB().departments;
+  }
+
+  getDepartmentById(id: string): Department | undefined {
+    return this.readDB().departments.find(d => d.id === id);
+  }
+
+  addDepartment(dept: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>): Department {
+    const db = this.readDB();
+    const newDept: Department = {
+      ...dept,
+      id: `dept-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    db.departments.push(newDept);
+    this.writeDB(db);
+    return newDept;
+  }
+
+  updateDepartment(id: string, updates: Partial<Department>) {
+    const db = this.readDB();
+    const idx = db.departments.findIndex(d => d.id === id);
+    if (idx !== -1) {
+      db.departments[idx] = { ...db.departments[idx], ...updates, updatedAt: new Date().toISOString() };
+      this.writeDB(db);
+    }
+  }
+
+  deleteDepartment(id: string) {
+    const db = this.readDB();
+    db.departments = db.departments.filter(d => d.id !== id);
+    this.writeDB(db);
   }
 
   // ---- Leave Requests ----

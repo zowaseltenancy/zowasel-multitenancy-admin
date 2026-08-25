@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useStaff } from '@/hooks/useStaff';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Plus, Building2, Users, UserCog } from 'lucide-react';
+import { ArrowRight, Plus, Building2, Users, UserCog, Loader2 } from 'lucide-react';
 import { Department } from '@/types/staff';
 import { useRouter } from 'next/navigation';
 import { DepartmentDrawer } from '@/components/staff/DepartmentDrawer';

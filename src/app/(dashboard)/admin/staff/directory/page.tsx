@@ -18,6 +18,11 @@ import {
   ChevronRight,
   Shield,
   MoreHorizontal,
+  Users,
+  UserCheck,
+  UserMinus,
+  Clock,
+  ImageIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +68,11 @@ import { toast } from "sonner";
 import { useStaff } from "@/hooks/useStaff";
 
 const PAGE_SIZE = 10;
+
+// Helper to get initials
+const getInitials = (firstName: string, lastName: string) => {
+  return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
+};
 
 export default function StaffDirectoryPage() {
   const { repo, refresh } = useStaff();
@@ -190,7 +200,6 @@ export default function StaffDirectoryPage() {
     setRoleEditOpen(true);
   };
 
-  // New: save role change
   const saveRoleChange = () => {
     if (!roleEditStaff || !selectedRoleId) return;
     repo.updateStaff(roleEditStaff.id, { roleId: selectedRoleId });
@@ -198,6 +207,14 @@ export default function StaffDirectoryPage() {
     toast.success(`Role updated for ${roleEditStaff.firstName} ${roleEditStaff.lastName}`);
     setRoleEditOpen(false);
   };
+
+  // Quick view tabs (set status filter)
+  const quickViews = [
+    { label: "All", value: "all", icon: Users },
+    { label: "Active", value: "active", icon: UserCheck },
+    { label: "Inactive", value: "inactive", icon: UserMinus },
+    { label: "Pending", value: "pending", icon: Clock },
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -240,6 +257,26 @@ export default function StaffDirectoryPage() {
             Add Staff
           </Button>
         </div>
+      </div>
+
+      {/* Quick view tabs */}
+      <div className="flex flex-wrap gap-2">
+        {quickViews.map((view) => {
+          const Icon = view.icon;
+          const isActive = statusFilter === view.value;
+          return (
+            <Button
+              key={view.value}
+              variant={isActive ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(view.value)}
+              className="flex items-center gap-1"
+            >
+              <Icon className="h-4 w-4" />
+              {view.label}
+            </Button>
+          );
+        })}
       </div>
 
       {/* Filters */}
@@ -322,10 +359,26 @@ export default function StaffDirectoryPage() {
             ) : (
               paginated.map((staff) => {
                 const role = roles.find((r) => r.id === staff.roleId);
+                const avatarUrl = staff.personalInfo?.avatarUrl || staff.avatarUrl;
                 return (
                   <TableRow key={staff.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
-                      {staff.firstName} {staff.lastName}
+                      <div className="flex items-center gap-3">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={`${staff.firstName} ${staff.lastName}`}
+                            className="h-8 w-8 rounded-full object-cover border"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                            {getInitials(staff.firstName, staff.lastName)}
+                          </div>
+                        )}
+                        <span>
+                          {staff.firstName} {staff.lastName}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>{staff.email}</TableCell>
                     <TableCell>{staff.phone}</TableCell>
@@ -456,49 +509,63 @@ export default function StaffDirectoryPage() {
             <DialogDescription>Overview of employee information</DialogDescription>
           </DialogHeader>
           {viewStaff && (
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="font-medium">Name</span>
-                <span>
-                  {viewStaff.firstName} {viewStaff.lastName}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Email</span>
-                <span>{viewStaff.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Phone</span>
-                <span>{viewStaff.phone}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Department</span>
-                <span>{viewStaff.department}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Role</span>
-                <span>{roles.find((r) => r.id === viewStaff.roleId)?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Status</span>
-                <Badge variant={viewStaff.status === "active" ? "success" : "destructive"}>
-                  {viewStaff.status}
-                </Badge>
-              </div>
-              {viewStaff.managerId && (
-                <div className="flex justify-between">
-                  <span className="font-medium">Manager</span>
-                  <span>
-                    {staffList.find((s) => s.id === viewStaff.managerId)?.firstName}{" "}
-                    {staffList.find((s) => s.id === viewStaff.managerId)?.lastName}
-                  </span>
+            <div className="space-y-4">
+              {/* Profile picture */}
+              <div className="flex items-center gap-4">
+                {viewStaff.personalInfo?.avatarUrl || viewStaff.avatarUrl ? (
+                  <img
+                    src={viewStaff.personalInfo?.avatarUrl || viewStaff.avatarUrl}
+                    alt={`${viewStaff.firstName} ${viewStaff.lastName}`}
+                    className="h-16 w-16 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+                    {getInitials(viewStaff.firstName, viewStaff.lastName)}
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-lg">
+                    {viewStaff.firstName} {viewStaff.lastName}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{viewStaff.email}</p>
                 </div>
-              )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex justify-between">
+                  <span className="font-medium">Phone</span>
+                  <span>{viewStaff.phone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Department</span>
+                  <span>{viewStaff.department}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Role</span>
+                  <span>{roles.find((r) => r.id === viewStaff.roleId)?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Status</span>
+                  <Badge variant={viewStaff.status === "active" ? "success" : "destructive"}>
+                    {viewStaff.status}
+                  </Badge>
+                </div>
+                {viewStaff.managerId && (
+                  <div className="flex justify-between col-span-2">
+                    <span className="font-medium">Manager</span>
+                    <span>
+                      {staffList.find((s) => s.id === viewStaff.managerId)?.firstName}{" "}
+                      {staffList.find((s) => s.id === viewStaff.managerId)?.lastName}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
+      {/* Role Edit Dialog */}
       <Dialog open={roleEditOpen} onOpenChange={setRoleEditOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>

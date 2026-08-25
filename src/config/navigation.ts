@@ -219,15 +219,15 @@ export const navigation: NavigationItem[] = [
       {
         label: "Roles & Permissions",
         href: "/admin/staff/roles"
-      }
-    ],
-  },
-  {
-    label: "Departments",
-    href: "/admin/staff/departments",
-    icon: Building2,
-    children: [
-      { label: "Overview", href: "/admin/staff/departments" },
+      },
+      {
+        label: "Departments",
+        href: "/admin/staff/departments",
+        icon: Building2,
+        children: [
+          { label: "Overview", href: "/admin/staff/departments" },
+        ],
+      },
     ],
   },
   {
