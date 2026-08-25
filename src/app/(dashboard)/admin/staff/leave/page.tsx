@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   CalendarDays,
   Clock,
@@ -12,13 +13,11 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  Filter,
   User,
   Building2,
   CalendarRange,
   FileText,
-  Check,
-  X,
+  Eye,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +40,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -52,11 +50,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ---------- Types & Mock Data ----------
 type LeaveType = "Annual" | "Sick" | "Casual" | "Unpaid";
@@ -67,7 +65,7 @@ interface LeaveRequest {
   employeeName: string;
   department: string;
   type: LeaveType;
-  startDate: string; // ISO date
+  startDate: string;
   endDate: string;
   reason: string;
   status: LeaveStatus;
@@ -81,8 +79,32 @@ const CURRENT_USER = {
   department: "Technology",
 };
 
-// Initial mock leave requests
+// Mock data – replace with API calls
 const INITIAL_REQUESTS: LeaveRequest[] = [
+    {
+    id: "LR-006",
+    employeeName: "Grace Lee",
+    department: "Technology",
+    type: "Annual",
+    startDate: "2026-08-10",
+    endDate: "2026-08-12",
+    reason: "Conference",
+    status: "Approved",
+    workingDays: 3,
+    submittedAt: "2026-07-25",
+  },
+  {
+    id: "LR-007",
+    employeeName: "Henry Wilson",
+    department: "Sales",
+    type: "Casual",
+    startDate: "2026-08-20",
+    endDate: "2026-08-21",
+    reason: "Personal",
+    status: "Approved",
+    workingDays: 2,
+    submittedAt: "2026-08-01",
+  },
   {
     id: "LR-001",
     employeeName: "Alice Johnson",
@@ -105,6 +127,7 @@ const INITIAL_REQUESTS: LeaveRequest[] = [
     reason: "Flu",
     status: "Pending",
     workingDays: 2,
+    attachment: "doctor_note.pdf",
     submittedAt: "2025-03-15",
   },
   {
@@ -145,12 +168,11 @@ const INITIAL_REQUESTS: LeaveRequest[] = [
   },
 ];
 
-// Leave balance mock (per user)
 const LEAVE_BALANCES = {
   Annual: { total: 20, taken: 5 },
   Sick: { total: 10, taken: 2 },
   Casual: { total: 5, taken: 1 },
-  Unpaid: { total: 0, taken: 0 }, // unpaid has no limit
+  Unpaid: { total: 0, taken: 0 },
 };
 
 // ---------- Helper Functions ----------
@@ -161,7 +183,7 @@ function calculateWorkingDays(start: string, end: string): number {
   const current = new Date(startDate);
   while (current <= endDate) {
     const day = current.getDay();
-    if (day !== 0 && day !== 6) count++; // skip weekends
+    if (day !== 0 && day !== 6) count++;
     current.setDate(current.getDate() + 1);
   }
   return count;
@@ -173,12 +195,6 @@ function formatDate(dateStr: string): string {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function isOverlapping(req1: LeaveRequest, req2: LeaveRequest): boolean {
-  return (
-    req1.startDate <= req2.endDate && req2.startDate <= req1.endDate
-  );
 }
 
 // ---------- Components ----------
@@ -237,20 +253,15 @@ function StatusBadge({ status }: { status: LeaveStatus }) {
 
 // ---------- Main Page ----------
 export default function LeaveManagementPage() {
-  const [activeTab, setActiveTab] = useState<
-    "my-leave" | "approvals" | "calendar"
-  >("my-leave");
+  const [activeTab, setActiveTab] = useState<"my-leave" | "calendar">("my-leave");
   const [requests, setRequests] = useState<LeaveRequest[]>(INITIAL_REQUESTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [rejectModal, setRejectModal] = useState<{
-    open: boolean;
-    requestIds: string[];
-  }>({ open: false, requestIds: [] });
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [filterDepartment, setFilterDepartment] = useState<string>("all");
-  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
 
-  // ----- Form state for new request -----
+  // Calendar state
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [calendarDepartment, setCalendarDepartment] = useState<string>("all");
+
   const [form, setForm] = useState({
     type: "Annual" as LeaveType,
     startDate: "",
@@ -266,28 +277,9 @@ export default function LeaveManagementPage() {
     return 0;
   }, [form.startDate, form.endDate]);
 
-  // Derived data
-  const myRequests = requests.filter(
-    (r) => r.employeeName === CURRENT_USER.name
-  );
-  const pendingRequests = requests.filter((r) => r.status === "Pending");
-  const filteredApprovals =
-    filterDepartment === "all"
-      ? pendingRequests
-      : pendingRequests.filter((r) => r.department === filterDepartment);
+  const myRequests = requests.filter((r) => r.employeeName === CURRENT_USER.name);
+  const pendingCount = requests.filter((r) => r.status === "Pending").length;
 
-  // Conflict detection: a request conflicts if dates overlap with any other pending/approved request in same department (excluding itself)
-  const getConflict = (req: LeaveRequest) => {
-    return requests.some(
-      (r) =>
-        r.id !== req.id &&
-        r.department === req.department &&
-        r.status !== "Rejected" &&
-        isOverlapping(r, req)
-    );
-  };
-
-  // Handlers
   const handleSubmitRequest = () => {
     const newReq: LeaveRequest = {
       id: `LR-${String(requests.length + 1).padStart(3, "0")}`,
@@ -304,45 +296,18 @@ export default function LeaveManagementPage() {
     };
     setRequests([newReq, ...requests]);
     setIsModalOpen(false);
-    setForm({
-      type: "Annual",
-      startDate: "",
-      endDate: "",
-      reason: "",
-      attachment: null,
-    });
+    setForm({ type: "Annual", startDate: "", endDate: "", reason: "", attachment: null });
   };
 
   const handleWithdraw = (id: string) => {
     setRequests(requests.filter((r) => r.id !== id));
   };
 
-  const handleApprove = (ids: string[]) => {
-    setRequests(
-      requests.map((r) => (ids.includes(r.id) ? { ...r, status: "Approved" as LeaveStatus } : r))
-    );
-    setSelectedIds([]);
-  };
-
-  const handleReject = (ids: string[], reason: string) => {
-    setRequests(
-      requests.map((r) =>
-        ids.includes(r.id) ? { ...r, status: "Rejected" as LeaveStatus, reason } : r
-      )
-    );
-    setRejectModal({ open: false, requestIds: [] });
-    setSelectedIds([]);
-  };
-
-  const openRejectModal = (ids: string[]) => {
-    setRejectModal({ open: true, requestIds: ids });
-  };
-
   // Calendar helpers
   const daysInMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const monthStartDay = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth(), 1).getDay(); // 0=Sun
+    new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const calendarDays = useMemo(() => {
     const year = calendarMonth.getFullYear();
@@ -351,7 +316,6 @@ export default function LeaveManagementPage() {
     const startDay = monthStartDay(calendarMonth);
     const days: (number | null)[] = Array(startDay).fill(null);
     for (let d = 1; d <= totalDays; d++) days.push(d);
-    // fill remaining to complete weeks
     while (days.length % 7 !== 0) days.push(null);
     return days;
   }, [calendarMonth]);
@@ -360,35 +324,60 @@ export default function LeaveManagementPage() {
     const dateStr = `${calendarMonth.getFullYear()}-${String(
       calendarMonth.getMonth() + 1
     ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return requests.filter(
+    let filtered = requests.filter(
       (r) =>
         r.status === "Approved" &&
         r.startDate <= dateStr &&
         r.endDate >= dateStr
     );
+    if (calendarDepartment !== "all") {
+      filtered = filtered.filter((r) => r.department === calendarDepartment);
+    }
+    return filtered;
   };
+
+  // Month and Year options
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leave Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Leave</h1>
           <p className="text-sm text-muted-foreground">
-            Request time off, approve team absences, and view the department calendar.
+            Request time off and view your leave history.
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Request Leave
-        </Button>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/staff/leave/request"
+            className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Approval Queue
+            {pendingCount > 0 && (
+              <Badge variant="warning" className="ml-1">
+                {pendingCount}
+              </Badge>
+            )}
+          </Link>
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Request Leave
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
       <div className="flex space-x-1 rounded-lg bg-muted p-1">
         {[
-          { key: "my-leave", label: "My Leave", icon: User },
-          { key: "approvals", label: "Approval Queue", icon: CheckCircle2 },
+          { key: "my-leave", label: "My Requests", icon: User },
           { key: "calendar", label: "Department Calendar", icon: CalendarDays },
         ].map((tab) => (
           <button
@@ -409,10 +398,8 @@ export default function LeaveManagementPage() {
       {/* Tab Content */}
       {activeTab === "my-leave" && (
         <div className="space-y-6">
-          {/* Balance Cards */}
           <LeaveBalanceCards />
 
-          {/* My Requests Table */}
           <Card>
             <CardHeader>
               <CardTitle>My Requests</CardTitle>
@@ -437,23 +424,49 @@ export default function LeaveManagementPage() {
                         {formatDate(req.startDate)} → {formatDate(req.endDate)}
                       </TableCell>
                       <TableCell>{req.workingDays}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {req.reason}
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help underline decoration-dotted">
+                                {req.reason.length > 20
+                                  ? req.reason.substring(0, 20) + "..."
+                                  : req.reason}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{req.reason}</p>
+                              {req.attachment && (
+                                <p className="mt-1 text-xs">
+                                  Attachment: {req.attachment}
+                                </p>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={req.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        {req.status === "Pending" && (
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => handleWithdraw(req.id)}
+                            size="icon"
+                            onClick={() => setSelectedRequest(req)}
                           >
-                            <Trash2 className="mr-1 h-4 w-4" />
-                            Withdraw
+                            <Eye className="h-4 w-4" />
                           </Button>
-                        )}
+                          {req.status === "Pending" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleWithdraw(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -464,13 +477,60 @@ export default function LeaveManagementPage() {
         </div>
       )}
 
-      {activeTab === "approvals" && (
-        <div className="space-y-4">
-          {/* Filters & Batch Actions */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+      {activeTab === "calendar" && (
+        <Card>
+          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>Department Calendar</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Month Selector */}
+              <Select
+                value={String(calendarMonth.getMonth())}
+                onValueChange={(value) => {
+                  const newMonth = parseInt(value);
+                  setCalendarMonth(
+                    new Date(calendarMonth.getFullYear(), newMonth, 1)
+                  );
+                }}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, idx) => (
+                    <SelectItem key={idx} value={String(idx)}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Year Selector */}
+              <Select
+                value={String(calendarMonth.getFullYear())}
+                onValueChange={(value) => {
+                  const newYear = parseInt(value);
+                  setCalendarMonth(
+                    new Date(newYear, calendarMonth.getMonth(), 1)
+                  );
+                }}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={String(year)}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Department Filter */}
+              <Select
+                value={calendarDepartment}
+                onValueChange={setCalendarDepartment}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
@@ -479,165 +539,10 @@ export default function LeaveManagementPage() {
                   <SelectItem value="Technology">Technology</SelectItem>
                   <SelectItem value="Finance">Finance</SelectItem>
                   <SelectItem value="Sales">Sales</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            {selectedIds.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleApprove(selectedIds)}
-                >
-                  <Check className="mr-1 h-4 w-4" />
-                  Approve ({selectedIds.length})
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => openRejectModal(selectedIds)}
-                >
-                  <X className="mr-1 h-4 w-4" />
-                  Reject
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Approval Table */}
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <input
-                        type="checkbox"
-                        onChange={(e) =>
-                          setSelectedIds(
-                            e.target.checked
-                              ? filteredApprovals.map((r) => r.id)
-                              : []
-                          )
-                        }
-                        checked={
-                          filteredApprovals.length > 0 &&
-                          selectedIds.length === filteredApprovals.length
-                        }
-                        className="h-4 w-4"
-                      />
-                    </TableHead>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Dates</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Conflict</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredApprovals.map((req) => {
-                    const hasConflict = getConflict(req);
-                    return (
-                      <TableRow key={req.id}>
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.includes(req.id)}
-                            onChange={(e) =>
-                              setSelectedIds(
-                                e.target.checked
-                                  ? [...selectedIds, req.id]
-                                  : selectedIds.filter((id) => id !== req.id)
-                              )
-                            }
-                            className="h-4 w-4"
-                          />
-                        </TableCell>
-                        <TableCell>{req.employeeName}</TableCell>
-                        <TableCell>{req.department}</TableCell>
-                        <TableCell>{req.type}</TableCell>
-                        <TableCell>
-                          {formatDate(req.startDate)} → {formatDate(req.endDate)}
-                        </TableCell>
-                        <TableCell>{req.workingDays}</TableCell>
-                        <TableCell>
-                          {hasConflict ? (
-                            <span className="inline-flex items-center gap-1 text-amber-600">
-                              <AlertTriangle className="h-4 w-4" />
-                              Overlap
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">None</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleApprove([req.id])}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => openRejectModal([req.id])}
-                          >
-                            Reject
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {activeTab === "calendar" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>
-              {calendarMonth.toLocaleDateString("en-US", {
-                month: "long",
-                year: "numeric",
-              })}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() - 1,
-                      1
-                    )
-                  )
-                }
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() + 1,
-                      1
-                    )
-                  )
-                }
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -655,7 +560,7 @@ export default function LeaveManagementPage() {
                 return (
                   <div
                     key={idx}
-                    className="min-h-[80px] bg-background p-1 text-sm"
+                    className="min-h-[90px] bg-background p-1 text-sm"
                   >
                     {day && (
                       <>
@@ -663,17 +568,32 @@ export default function LeaveManagementPage() {
                           {day}
                         </div>
                         <div className="mt-1 space-y-1">
-                          {leaves.slice(0, 2).map((leave) => (
-                            <div
-                              key={leave.id}
-                              className="rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary"
-                            >
-                              {leave.employeeName.split(" ")[0]} - {leave.type}
-                            </div>
+                          {leaves.slice(0, 3).map((leave) => (
+                            <TooltipProvider key={leave.id}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="cursor-pointer rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary hover:bg-primary/20">
+                                    {leave.employeeName.split(" ")[0]} - {leave.type}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="font-medium">
+                                    {leave.employeeName}
+                                  </p>
+                                  <p className="text-xs">
+                                    {leave.type} · {formatDate(leave.startDate)} →{" "}
+                                    {formatDate(leave.endDate)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {leave.workingDays} working days
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           ))}
-                          {leaves.length > 2 && (
+                          {leaves.length > 3 && (
                             <div className="text-[10px] text-muted-foreground">
-                              +{leaves.length - 2} more
+                              +{leaves.length - 3} more
                             </div>
                           )}
                         </div>
@@ -789,47 +709,48 @@ export default function LeaveManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Reject Modal */}
-      <Dialog
-        open={rejectModal.open}
-        onOpenChange={(open) => !open && setRejectModal({ open: false, requestIds: [] })}
-      >
-        <DialogContent className="sm:max-w-[400px]">
+      {/* Detail Modal */}
+      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Reject Request(s)</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejection (mandatory).
-            </DialogDescription>
+            <DialogTitle>Request Details</DialogTitle>
           </DialogHeader>
-          <Textarea
-            placeholder="Reason for rejection..."
-            onChange={(e) => {
-              // Store reason temporarily in a ref or state; we'll use a local variable
-              // But for simplicity we'll store in a hidden state inside component
-              // In a real app, use a separate state
-              // Here we'll use a closure variable:
-              (window as any).rejectReason = e.target.value;
-            }}
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRejectModal({ open: false, requestIds: [] })}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                const reason = (window as any).rejectReason || "";
-                if (reason.trim()) {
-                  handleReject(rejectModal.requestIds, reason);
-                }
-              }}
-            >
-              Confirm Reject
-            </Button>
-          </DialogFooter>
+          {selectedRequest && (
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Type:</span>
+                <span>{selectedRequest.type}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Dates:</span>
+                <span>
+                  {formatDate(selectedRequest.startDate)} →{" "}
+                  {formatDate(selectedRequest.endDate)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Working Days:</span>
+                <span>{selectedRequest.workingDays}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Status:</span>
+                <StatusBadge status={selectedRequest.status} />
+              </div>
+              <div>
+                <span className="text-sm font-medium">Reason:</span>
+                <p className="mt-1 text-sm">{selectedRequest.reason}</p>
+              </div>
+              {selectedRequest.attachment && (
+                <div>
+                  <span className="text-sm font-medium">Attachment:</span>
+                  <p className="mt-1 text-sm">
+                    <FileText className="mr-1 inline h-4 w-4" />
+                    {selectedRequest.attachment}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

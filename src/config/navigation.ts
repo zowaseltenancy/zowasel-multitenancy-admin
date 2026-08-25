@@ -205,13 +205,21 @@ export const navigation: NavigationItem[] = [
     icon: UserCheck,
     children: [
       {
+        label: "Onboard Staff",
+        href: "/admin/staff/onboarding",
+      },
+      {
         label: "Staff Directory",
         href: "/admin/staff/directory",
       },
       {
-        label: "Onboard Staff",
-        href: "/admin/staff/onboarding",
+        label: "Leave Requests",
+        href: "/admin/staff/leave",
       },
+      {
+        label: "Roles & Permissions",
+        href: "/admin/staff/roles"
+      }
     ],
   },
   {
