@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 import { staffFormSchema, StaffFormValues } from '@/lib/validations/staff';
 
-
 const STEPS = [
   'Personal Info',
   'Employment',
