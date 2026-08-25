@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Webcam from 'react-webcam';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,8 +15,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Upload, FileText, ImageIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Plus,
+  Trash2,
+  Upload,
+  FileText,
+  ImageIcon,
+  Camera,
+  X,
+} from 'lucide-react';
 import { staffFormSchema, StaffFormValues } from '@/lib/validations/staff';
+
 
 const STEPS = [
   'Personal Info',
@@ -45,6 +58,8 @@ export function StaffOnboardingForm({
   isSubmitting = false,
 }: StaffOnboardingFormProps) {
   const [step, setStep] = useState(0);
+  const [showCamera, setShowCamera] = useState(false);
+  const webcamRef = useRef<Webcam>(null);
 
   const methods = useForm<z.input<typeof staffFormSchema>>({
     resolver: zodResolver(staffFormSchema),
@@ -89,6 +104,28 @@ export function StaffOnboardingForm({
     await onSubmit(data as StaffFormValues);
   });
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue('personalInfo.avatarUrl', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Capture photo from camera
+  const capturePhoto = useCallback(() => {
+    if (webcamRef.current) {
+      const imageSrc = webcamRef.current.getScreenshot();
+      if (imageSrc) {
+        setValue('personalInfo.avatarUrl', imageSrc);
+        setShowCamera(false);
+      }
+    }
+  }, [webcamRef, setValue]);
+
   return (
     <div className="space-y-6">
       {/* Progress bar */}
@@ -122,39 +159,72 @@ export function StaffOnboardingForm({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              {/* IMAGE UPLOAD */}
+              {/* IMAGE UPLOAD / CAMERA CAPTURE */}
               <div className="md:col-span-2">
                 <label className="text-sm font-medium leading-none">Profile Photo</label>
-                <div className="flex items-center gap-4 mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer border rounded-md px-3 py-2 text-sm hover:bg-accent">
-                    <ImageIcon className="h-4 w-4" />
-                    Choose Image
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setValue('personalInfo.avatarUrl', reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
+                <div className="flex items-start gap-4 mt-2">
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer border rounded-md px-3 py-2 text-sm hover:bg-accent">
+                      <ImageIcon className="h-4 w-4" />
+                      Choose Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowCamera(!showCamera)}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      {showCamera ? 'Cancel Camera' : 'Capture from Camera'}
+                    </Button>
+                  </div>
+
+                  {/* Photo preview */}
                   {watch('personalInfo.avatarUrl') && (
-                    <img
-                      src={watch('personalInfo.avatarUrl')}
-                      alt="Preview"
-                      className="h-16 w-16 rounded-full object-cover border shadow-sm"
-                    />
+                    <div className="relative">
+                      <img
+                        src={watch('personalInfo.avatarUrl')}
+                        alt="Preview"
+                        className="h-24 w-24 rounded-full object-cover border shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setValue('personalInfo.avatarUrl', '')}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   )}
                 </div>
+
+                {/* Camera view */}
+                {showCamera && (
+                  <div className="mt-4 space-y-2">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      videoConstraints={{ facingMode: 'user' }}
+                      className="rounded-lg border w-full max-w-md"
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={capturePhoto}>Capture</Button>
+                      <Button variant="ghost" onClick={() => setShowCamera(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Other personal info fields remain unchanged */}
               <div>
                 <label className="text-sm font-medium leading-none">First Name *</label>
                 <Input {...register('personalInfo.firstName')} placeholder="John" />
