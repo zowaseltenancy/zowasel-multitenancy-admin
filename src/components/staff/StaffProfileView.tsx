@@ -15,7 +15,7 @@ interface Props {
   departmentRoles?: DepartmentRole[];
 }
 
-export function StaffProfileView({ staff, roles }: Props) {
+export function StaffProfileView({ staff, roles, departmentRoles  }: Props) {
   const roleName = roles.find(r => r.id === staff.roleId)?.name || 'N/A';
   const initials = `${staff.firstName?.[0] || ''}${staff.lastName?.[0] || ''}`.toUpperCase();
 

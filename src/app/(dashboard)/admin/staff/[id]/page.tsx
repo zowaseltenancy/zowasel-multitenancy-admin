@@ -28,7 +28,7 @@ export default function StaffProfilePage() {
     if (data) {
       setStaff(data);
       // Fetch all department roles (could filter by staff's departmentRoleIds)
-      const allDeptRoles = repo.getDepartmentRoles();
+      const allDeptRoles = repo.getDepartmentRoles() || [];
       const assignedRoleIds = data.departmentRoleIds || [];
       const assignedRoles = allDeptRoles.filter(r => assignedRoleIds.includes(r.id));
       setDepartmentRoles(assignedRoles);
