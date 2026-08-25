@@ -233,7 +233,7 @@ export default function DepartmentsPage() {
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent
           className="w-full sm:max-w-2xl lg:max-w-4xl p-0 overflow-y-auto"
-          style={{ maxWidth: '600px' }}  // 👈 much wider detail view
+          style={{ maxWidth: '600px' }}
         >
           {selectedDept && (
             <div className="p-6 sm:p-8">
