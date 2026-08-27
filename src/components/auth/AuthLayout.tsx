@@ -50,7 +50,7 @@ const wordVariants = {
     filter: "blur(0px)",
     transition: {
       duration: 0.45,
-      ease: [0.22, 1, 0.36, 1],
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
 };
@@ -74,7 +74,7 @@ const featureItemVariants = {
     scale: 1,
     transition: {
       duration: 0.4,
-      ease: [0.22, 1, 0.36, 1],
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
 };
@@ -163,7 +163,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }}
             className="mb-3 flex items-center justify-center"
           >
             <Image
@@ -179,7 +179,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] as const }}
             className="mt-0.5 text-xs sm:text-sm font-bold tracking-[0.2em] text-[#B8E5B8] uppercase"
           >
             MULTITENANCY PLATFORM
@@ -189,7 +189,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <motion.div
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] as const }}
             className="my-3.5 h-[3px] w-24 rounded-full bg-gradient-to-r from-[#2E6830] via-[#B8E5B8] to-[#ED8B00] shadow-xs origin-center"
             aria-hidden="true"
           />

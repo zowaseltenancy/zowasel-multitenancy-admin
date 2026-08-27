@@ -1,4 +1,7 @@
-import { UserRole } from "./permissions";
+// `UserRole` was never exported from ./permissions — PlatformUserRole in
+// ./user is the role union that exists. This file is currently imported
+// nowhere; the live auth types are in features/auth/api/auth.types.ts.
+import { PlatformUserRole } from "./user";
 import { KybStatus } from "./kyb";
 
 export interface AuthUser {
@@ -7,7 +10,7 @@ export interface AuthUser {
   name: string;
   firstName?: string;
   lastName?: string;
-  role: UserRole;
+  role: PlatformUserRole;
   businessId?: string;
   organizationId?: string;
   kybStatus?: KybStatus;
