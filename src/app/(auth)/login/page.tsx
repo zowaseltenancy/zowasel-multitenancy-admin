@@ -15,6 +15,7 @@ import {
 } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { setStoredAdmin } from "@/lib/auth-session";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,6 +82,14 @@ export default function LoginPage() {
         toast.error("Invalid email or password.");
         return;
       }
+
+      setStoredAdmin({
+        id: "admin-1",
+        email: email.trim() || "admin@zowasel.com",
+        firstName: "Busayo",
+        lastName: "Shodunke",
+        role: "SUPER_ADMIN",
+      });
 
       setIsLoading(false);
       toast.success("Signed in successfully!");

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getApiErrorMessage } from "@/lib/axios";
 import {
   clearAdminSession,
+  getAdminAccessToken,
   setAdminAccessToken,
   setStoredAdmin,
 } from "@/lib/auth-session";
@@ -26,6 +27,9 @@ export function useAdminMe() {
   return useQuery({
     queryKey: authKeys.me(),
     queryFn: authApi.me,
+    enabled: typeof window !== "undefined" && Boolean(getAdminAccessToken()),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
