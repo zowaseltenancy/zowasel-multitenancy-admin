@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Sprout, Store, CreditCard, Layers, ArrowLeft, Filter } from "lucide-react";
@@ -28,7 +28,7 @@ const PRODUCT_TABS = [
   { key: "acess", label: "ACESS", icon: CreditCard },
 ] as const;
 
-export default function SubscriptionsListView({
+function SubscriptionsListViewContent({
   title,
   description,
   statusFilter,
@@ -280,5 +280,16 @@ export default function SubscriptionsListView({
         />
       </section>
     </div>
+  );
+}
+
+// useSearchParams() opts the tree into client-side rendering, which Next
+// requires a Suspense boundary around — without one the production build fails
+// while prerendering every page that renders this view.
+export default function SubscriptionsListView(props: Parameters<typeof SubscriptionsListViewContent>[0]) {
+  return (
+    <Suspense fallback={null}>
+      <SubscriptionsListViewContent {...props} />
+    </Suspense>
   );
 }
