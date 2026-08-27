@@ -212,7 +212,7 @@ export default function VerifyOtpPage() {
 
               <Link
                 href="/login"
-                className="group font-semibold text-[#54585A] hover:text-foreground hover:underline inline-flex items-center gap-1 transition-colors duration-150"
+                className="group font-semibold text-[#54585A] hover:text-[#262C3F] hover:underline inline-flex items-center gap-1 transition-colors duration-150"
               >
                 <ArrowLeft className="size-3.5 inline transition-transform duration-150 group-hover:-translate-x-0.5" />
                 <span>Back to login</span>

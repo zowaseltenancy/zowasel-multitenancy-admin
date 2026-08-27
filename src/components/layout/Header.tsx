@@ -15,13 +15,25 @@ import {
   Info,
   X,
   ArrowRight,
+  LogOut,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Breadcrumbs from "./Breadcrumbs";
 import UserMenu from "./UserMenu";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Header({ onToggle }: { onToggle: () => void }) {
   const router = useRouter();
@@ -58,6 +70,14 @@ export default function Header({ onToggle }: { onToggle: () => void }) {
   const handleGoToCategory = (category: string) => {
     setIsOpen(false);
     router.push(`/admin/notifications/${category}`);
+  };
+
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleLogout = () => {
+    setShowLogoutDialog(false);
+    toast.success("Signed out successfully. See you soon!");
+    router.push("/login");
   };
 
   return (
@@ -223,8 +243,60 @@ export default function Header({ onToggle }: { onToggle: () => void }) {
         </div>
 
         <ThemeToggle />
+        
+        <div className="h-6 w-px bg-border/60 mx-0.5" />
+
         <UserMenu />
+
+        {/* Logout button close to the profile icon */}
+        <button
+          type="button"
+          onClick={() => setShowLogoutDialog(true)}
+          title="Log out"
+          aria-label="Log out"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-2 text-xs font-semibold text-muted-foreground transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-600 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">Log out</span>
+        </button>
       </div>
+
+      {/* Confirmation Dialog for Logout */}
+      <AlertDialog
+        open={showLogoutDialog}
+        onOpenChange={(value) => {
+          if (!value) setShowLogoutDialog(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto sm:mx-0 flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/10 text-rose-600">
+              <LogOut className="h-5 w-5" />
+            </div>
+            <AlertDialogTitle className="text-base font-bold">
+              Log out of Zowasel Admin?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Are you sure you want to end your current admin session? You will be redirected to the sign-in page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel
+              onClick={() => setShowLogoutDialog(false)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-destructive text-white hover:bg-destructive/90 cursor-pointer"
+            >
+              Log out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }
