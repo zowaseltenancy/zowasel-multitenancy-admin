@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageHeader } from "@/components/layout/PageHeaderContext";
-import { useOrganizations } from "../hooks/useOrganizations";
+import { getApiErrorMessage } from "@/lib/axios";
+import { useOrganization, useOrganizations } from "../hooks/useOrganizations";
 
 import OrganizationKybTab from "./OrganizationKybTab";
 
@@ -18,15 +19,16 @@ export default function KybDetailView({
   organizationId,
 }: Props) {
   const {
-    organizations,
     approveKyb,
     rejectKyb,
     markKybPending,
   } = useOrganizations();
 
-  const organization = organizations.find(
-    (item) => item.id === organizationId
-  );
+  // GET /admin/businesses/{id} — the KYB screen needs the detail projection
+  // (documents, rejection reason, submitted/approved timestamps), none of which
+  // are on the list row this used to search.
+  const detailQuery = useOrganization(organizationId);
+  const organization = detailQuery.data;
 
   usePageHeader(
     organization?.name ?? "KYB Review",
@@ -35,7 +37,26 @@ export default function KybDetailView({
       : undefined
   );
 
+  if (detailQuery.isLoading) {
+    return (
+      <Card className="flex min-h-[240px] items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading KYB record…
+      </Card>
+    );
+  }
+
   if (!organization) {
+    const status = (detailQuery.error as { response?: { status?: number } } | null)?.response?.status;
+    if (detailQuery.isError && status !== 404) {
+      return (
+        <Card className="flex min-h-[240px] flex-col items-center justify-center gap-2 p-6 text-center">
+          <p className="text-sm font-medium text-foreground">Unable to load this KYB record</p>
+          <p className="max-w-md text-xs text-muted-foreground">
+            {getApiErrorMessage(detailQuery.error, "Please try again.")}
+          </p>
+        </Card>
+      );
+    }
     notFound();
   }
 

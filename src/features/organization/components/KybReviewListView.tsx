@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { KybStatus } from "@/types/kyb";
+import { Card } from "@/components/ui/card";
 import { useOrganizations } from "../hooks/useOrganizations";
 import Pagination from "@/components/shared/Pagination";
 
@@ -24,27 +25,25 @@ export default function KybReviewListView({
   description,
   defaultFilter = "all",
 }: Props) {
-  const { organizations } = useOrganizations();
-
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const filtered = useMemo(() => {
-    return organizations.filter((organization) => {
-      const matchesFilter =
-        defaultFilter === "all" ||
-        organization.kybStatus === defaultFilter;
+  // Both filters go to the API rather than being applied to a fetched page.
+  // Client-side filtering only ever saw the first 100 businesses, so a platform
+  // with more than that silently dropped records from these queues.
+  //
+  // kybStatus is upper case in the database and lower case in the response, so
+  // the filter value has to be converted back on the way out.
+  const { organizations, isLoading, error } = useOrganizations({
+    page: 1,
+    limit: 100,
+    sortBy: "kybSubmittedAt",
+    sortOrder: "desc",
+    ...(defaultFilter !== "all" ? { kybStatus: defaultFilter.toUpperCase() } : {}),
+    ...(search.trim() ? { search: search.trim() } : {}),
+  });
 
-      const query = search.trim().toLowerCase();
-
-      const matchesSearch =
-        query.length === 0 ||
-        organization.name.toLowerCase().includes(query) ||
-        organization.owner.email.toLowerCase().includes(query);
-
-      return matchesFilter && matchesSearch;
-    });
-  }, [organizations, defaultFilter, search]);
+  const filtered = useMemo(() => organizations, [organizations]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -57,6 +56,23 @@ export default function KybReviewListView({
     const startIndex = (page - 1) * PAGE_SIZE;
     return filtered.slice(startIndex, startIndex + PAGE_SIZE);
   }, [filtered, page]);
+
+  if (isLoading) {
+    return (
+      <Card className="flex min-h-[240px] items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading KYB queue…
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="flex min-h-[240px] flex-col items-center justify-center gap-2 p-6 text-center">
+        <p className="text-sm font-medium text-foreground">Unable to load the KYB queue</p>
+        <p className="max-w-md text-xs text-muted-foreground">{error}</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

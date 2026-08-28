@@ -6,7 +6,9 @@ import { useState } from 'react';
 import { usePageHeader } from '@/components/layout/PageHeaderContext';
 import KybStatusBadge from '@/components/shared/KybStatusBadge';
 import { cn } from '@/lib/utils';
-import { useOrganizations } from '../hooks/useOrganizations';
+import { Card } from '@/components/ui/card';
+import { getApiErrorMessage } from '@/lib/axios';
+import { useOrganization, useOrganizations } from '../hooks/useOrganizations';
 
 import OrganizationAgentsTab from './OrganizationAgentsTab';
 import OrganizationKybTab from './OrganizationKybTab';
@@ -46,13 +48,40 @@ export default function OrganizationDetailView({ organizationId, moduleId }: Pro
 
   const [activeTab, setActiveTab] = useState<TabKey>('profile');
 
-  const organization = organizations.find((item) => item.id === organizationId);
+  // GET /admin/businesses/{id}. Reading the row out of the *list* instead —
+  // which is what this did — meant the page only ever had list-projection
+  // fields: no team members, no key officers, no governance, no KYB documents.
+  const detailQuery = useOrganization(organizationId);
+  const organization = detailQuery.data;
+
+  usePageHeader(organization?.name ?? 'Organization', organization?.businessId);
+
+  if (detailQuery.isLoading) {
+    return (
+      <Card className="flex min-h-[240px] items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading organization…
+      </Card>
+    );
+  }
+
+  // A 404 from the API is a genuinely missing business; any other failure is
+  // worth showing rather than disguising as "not found".
+  if (detailQuery.isError) {
+    const status = (detailQuery.error as { response?: { status?: number } } | null)?.response?.status;
+    if (status === 404) notFound();
+    return (
+      <Card className="flex min-h-[240px] flex-col items-center justify-center gap-2 p-6 text-center">
+        <p className="text-sm font-medium text-foreground">Unable to load this organization</p>
+        <p className="max-w-md text-xs text-muted-foreground">
+          {getApiErrorMessage(detailQuery.error, 'Please try again.')}
+        </p>
+      </Card>
+    );
+  }
 
   if (!organization) {
     notFound();
   }
-
-  usePageHeader(organization.name, organization.businessId);
 
   return (
     <div className="space-y-6">

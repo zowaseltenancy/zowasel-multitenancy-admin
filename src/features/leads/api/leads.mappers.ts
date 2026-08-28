@@ -1,5 +1,9 @@
+import { CreateLeadSchema } from "@/schemas/lead.schema";
 import { Lead, LeadIntendedType, LeadSource, LeadStatus } from "@/types/lead";
-import { LeadDto } from "./leads.types";
+import {
+  CreateLeadRequest,
+  LeadDto,
+} from "./leads.types";
 
 function toLeadStatus(dto: LeadDto): LeadStatus {
   if (dto.status === "CONVERTED") return "converted";
@@ -70,3 +74,65 @@ export function mapLead(dto: LeadDto): Lead {
   };
 }
 
+// ── Form -> API ──────────────────────────────────────────────────────────────
+// The add-lead form speaks the UI's four intended types; the API takes three
+// classifications, each with its own required `typeMetadata`. cooperative and
+// buyer both map to CORPORATE — that metadata (CAC number, tax ID, turnover,
+// decision maker) is what an incorporated entity has.
+//
+// `contactName` only has a home on CORPORATE, as decisionMaker.name. The base
+// payload has no contact field and typeMetadata is validated strict, so for
+// merchant and agrodealer leads it is folded into the source string rather than
+// silently dropped.
+
+export function toCreateLeadRequest(values: CreateLeadSchema): CreateLeadRequest {
+  const base = {
+    name: values.businessName.trim(),
+    email: values.email.trim() || undefined,
+    phone: values.phone.trim() || undefined,
+    source: values.source,
+  };
+
+  if (values.intendedType === "merchant") {
+    return {
+      ...base,
+      type: "MERCHANT",
+      typeMetadata: {
+        storeName: values.storeName.trim(),
+        outletGps: { lat: values.outletLat, lng: values.outletLng },
+        posCount: values.posCount,
+        monthlyVolume: values.monthlyVolume,
+      },
+    };
+  }
+
+  if (values.intendedType === "agrodealer") {
+    return {
+      ...base,
+      type: "AGRO_DEALER",
+      typeMetadata: {
+        licenseNo: values.licenseNo.trim(),
+        storageMt: values.storageMt,
+        inputSpecialties: values.inputSpecialties,
+        lgaCoverage: values.lgaCoverage,
+      },
+    };
+  }
+
+  // cooperative | buyer
+  return {
+    ...base,
+    type: "CORPORATE",
+    typeMetadata: {
+      cacNumber: values.cacNumber.trim(),
+      taxId: values.taxId.trim(),
+      annualTurnover: values.annualTurnover,
+      decisionMaker: {
+        name: values.contactName.trim(),
+        ...(values.decisionMakerTitle?.trim() ? { title: values.decisionMakerTitle.trim() } : {}),
+        ...(values.phone.trim() ? { phone: values.phone.trim() } : {}),
+        ...(values.email.trim() ? { email: values.email.trim() } : {}),
+      },
+    },
+  };
+}

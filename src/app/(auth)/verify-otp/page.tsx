@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, RotateCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,18 +13,34 @@ import {
   OTPInput,
 } from "@/components/auth";
 import { Button } from "@/components/ui/button";
+import { authErrorMessage, useForgotPassword } from "@/features/auth/hooks/useAuth";
+import { getResetEmail, setResetEmail, setResetOtp } from "@/lib/auth-session";
 
 export default function VerifyOtpPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Expiration countdown: 10 minutes (600 seconds)
-  const [timeLeft, setTimeLeft] = useState(600);
+  // Expiration countdown. 5 minutes, matching the server's
+  // ADMIN_PASSWORD_RESET_OTP_EXPIRES_MINUTES — a longer local timer would
+  // invite users to submit a code the API has already discarded.
+  const [timeLeft, setTimeLeft] = useState(300);
 
   // Resend cooldown timer: 60 seconds rate-limit
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Which account is being reset. Stashed by /forgot-password rather than read
+  // from the query string, so the address is not sitting in browser history —
+  // and so this page needs no Suspense boundary for useSearchParams.
+  const [email, setEmail] = useState("");
+  useEffect(() => {
+    const stored = getResetEmail();
+    if (stored) setEmail(stored);
+  }, []);
+
+  const forgotPassword = useForgotPassword();
 
   // Live countdown for OTP expiration
   useEffect(() => {
@@ -58,17 +75,34 @@ export default function VerifyOtpPage() {
     if (errorMessage) setErrorMessage(null);
   };
 
-  const handleResend = () => {
-    if (resendCooldown > 0) return;
+  const handleResend = async () => {
+    if (resendCooldown > 0 || forgotPassword.isPending) return;
 
-    setTimeLeft(600);
-    setResendCooldown(60);
-    setOtp(["", "", "", "", "", ""]);
-    setErrorMessage(null);
-    toast.success("A fresh 6-digit verification code has been sent to your email.");
+    if (!email) {
+      setErrorMessage("We lost track of which account this is. Please start again.");
+      toast.error("Please re-enter your email address.");
+      router.push("/forgot-password");
+      return;
+    }
 
-    const firstInput = document.getElementById("otp-0") as HTMLInputElement | null;
-    firstInput?.focus();
+    try {
+      // Same endpoint as the first request — it retires any unused code before
+      // issuing a new one, so only one is ever live per admin.
+      await forgotPassword.mutateAsync({ email });
+      setResetEmail(email);
+      setTimeLeft(300);
+      setResendCooldown(60);
+      setOtp(["", "", "", "", "", ""]);
+      setErrorMessage(null);
+      toast.success("A fresh 6-digit code has been sent. The previous one no longer works.");
+
+      const firstInput = document.getElementById("otp-0") as HTMLInputElement | null;
+      firstInput?.focus();
+    } catch (error) {
+      const message = authErrorMessage(error, "Unable to resend the code. Please try again.");
+      setErrorMessage(message);
+      toast.error(message);
+    }
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -88,21 +122,21 @@ export default function VerifyOtpPage() {
       return;
     }
 
-    // Demo failure condition if entering "000000"
-    if (code === "000000") {
-      setErrorMessage("Invalid security code. Please check your email and try again.");
-      toast.error("Invalid verification code.");
+    if (!email) {
+      setErrorMessage("We lost track of which account this is. Please start again.");
+      toast.error("Please re-enter your email address.");
+      router.push("/forgot-password");
       return;
     }
 
     setErrorMessage(null);
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-      toast.success("Authentication verified successfully!");
-    }, 600);
+    // Deliberately no server round-trip here. The admin reset flow verifies the
+    // code and sets the new password in a single call
+    // (POST /admin/auth/reset-password), so there is nothing to check yet —
+    // an invalid code surfaces on the next screen. Claiming "verified" here
+    // would be a lie the API cannot back up.
+    setResetOtp(code);
+    setIsSuccess(true);
   };
 
   return (
@@ -112,7 +146,7 @@ export default function VerifyOtpPage() {
           title="Verify your account"
           description={
             isSuccess
-              ? "Your security code has been verified. You can now proceed to sign in."
+              ? "Code captured. Set your new password to finish — it is checked as you save."
               : "Enter the 6-digit code sent to your email to continue."
           }
         />
@@ -121,14 +155,14 @@ export default function VerifyOtpPage() {
           <div className="space-y-4 animate-auth-card">
             <div className="p-3.5 rounded-xl bg-[#B8E5B8]/20 border border-[#B8E5B8]/40 text-center text-xs sm:text-sm text-[#438B3E] font-medium flex items-center justify-center gap-2">
               <CheckCircle2 className="size-4 shrink-0" />
-              <span>Authentication verified successfully!</span>
+              <span>Code captured. Next: choose a new password.</span>
             </div>
 
             <Link
-              href="/login"
+              href="/reset-password"
               className="group w-full h-11 rounded-xl bg-[#438B3E] hover:bg-[#367632] text-white font-semibold text-sm sm:text-base shadow-md shadow-[#438B3E]/20 hover:shadow-lg hover:shadow-[#438B3E]/30 active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Proceed to Sign In</span>
+              <span>Set a new password</span>
               <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={2.2} />
             </Link>
           </div>

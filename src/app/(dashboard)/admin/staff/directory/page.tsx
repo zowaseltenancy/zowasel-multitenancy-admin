@@ -1,68 +1,56 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Mail, Phone, Search, Globe2 } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, Mail, Search } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useUsers } from "@/features/users/hooks/useUsers";
-import UserStatusBadge from "@/features/users/components/UserStatusBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 import UserAvatar from "@/components/shared/UserAvatar";
-import { StaffDepartment } from "@/types/user";
+import Pagination from "@/components/shared/Pagination";
+import { statusBadgeClass } from "@/lib/statusTone";
+import { StaffStatus } from "@/features/staff/api/staff.types";
+import { staffDisplayName, useDepartments, useStaff } from "@/features/staff/hooks/useStaff";
 
-const DEPARTMENTS: StaffDepartment[] = [
-  "Executive",
-  "Technology",
-  "Programs",
-  "Fintech",
-  "Sales",
-  "Finance",
-  "Administration",
-  "Compliance",
-  "Regional Operations",
-];
+// Backed by GET /admin/staff and GET /admin/departments.
+//
+// Previously this read the mock user list, filtered to userCategory === "staff"
+// and grouped by a hardcoded department name union ("Executive", "Technology",
+// …). Real departments are records with ids — the seeded set is Sales,
+// Operations, Compliance, Finance, People & Culture — so the filter now sends
+// departmentId and the options come from the API.
+//
+// Three columns from the mock are gone because the API has no source for them:
+// phone and position aren't on the admin record at all, and the geographic
+// "jurisdiction" scope isn't modelled server-side.
 
-function jurisdictionLabel(staff: { geographicScopeLevel?: string; countryName?: string; subRegion?: string; continent?: string }) {
-  if (staff.geographicScopeLevel === "continent") return "All of Africa";
-  if (staff.geographicScopeLevel === "sub_region") return staff.countryName ?? staff.subRegion ?? "—";
-  if (staff.geographicScopeLevel === "country") return staff.countryName ?? "—";
-  return null;
-}
+const PAGE_SIZE = 20;
+
+const STATUS_TONE: Record<StaffStatus, "success" | "warning" | "danger" | "neutral"> = {
+  ACTIVE: "success",
+  INACTIVE: "neutral",
+  SUSPENDED: "danger",
+};
 
 export default function StaffDirectoryPage() {
-  return (
-    <Suspense fallback={null}>
-      <StaffDirectoryContent />
-    </Suspense>
-  );
-}
-
-function StaffDirectoryContent() {
-  const { users } = useUsers();
-  const searchParams = useSearchParams();
-  const initialDepartment = searchParams.get("department") as StaffDepartment | null;
-
   const [search, setSearch] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState<StaffDepartment | "all">(
-    initialDepartment && DEPARTMENTS.includes(initialDepartment) ? initialDepartment : "all"
-  );
+  const [departmentId, setDepartmentId] = useState<string>("all");
+  const [page, setPage] = useState(1);
 
-  const staffMembers = useMemo(() => {
-    return users
-      .filter((user) => user.userCategory === "staff")
-      .filter((staff) => departmentFilter === "all" || staff.department === departmentFilter)
-      .filter((staff) => {
-        const query = search.toLowerCase().trim();
-        return (
-          query === "" ||
-          staff.firstName.toLowerCase().includes(query) ||
-          staff.lastName.toLowerCase().includes(query) ||
-          staff.email.toLowerCase().includes(query) ||
-          (staff.position && staff.position.toLowerCase().includes(query))
-        );
-      });
-  }, [users, search, departmentFilter]);
+  const { departments } = useDepartments();
+  const { staff, meta, isLoading, isFetching, error } = useStaff({
+    page,
+    limit: PAGE_SIZE,
+    // Filtered server-side rather than in the browser, so the result is the
+    // whole directory and not just whatever landed on the current page.
+    ...(search.trim() ? { search: search.trim() } : {}),
+    ...(departmentId !== "all" ? { departmentId } : {}),
+  });
+
+  const resetTo = (fn: () => void) => {
+    fn();
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -77,103 +65,121 @@ function StaffDirectoryContent() {
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search staff by name, email, or role..."
+            placeholder="Search staff by name or email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => resetTo(() => setSearch(event.target.value))}
             className="pl-9"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setDepartmentFilter("all")}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-              departmentFilter === "all"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            All Departments
-          </button>
-          {DEPARTMENTS.map((dept) => (
-            <button
-              key={dept}
-              type="button"
-              onClick={() => setDepartmentFilter(dept)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                departmentFilter === dept
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {dept}
-            </button>
+        <select
+          value={departmentId}
+          onChange={(event) => resetTo(() => setDepartmentId(event.target.value))}
+          className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+        >
+          <option value="all">All departments</option>
+          {departments.map((department) => (
+            <option key={department.id} value={department.id}>
+              {department.name}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
-      {staffMembers.length === 0 ? (
-        <Card className="border shadow-2xs">
-          <CardContent className="p-12 text-center text-sm text-muted-foreground">
-            No staff members match this filter.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {staffMembers.map((staff) => (
-            <Card key={staff.id} className="border shadow-2xs hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center gap-3 pb-3">
-                <UserAvatar
-                  avatarUrl={staff.avatarUrl}
-                  firstName={staff.firstName}
-                  lastName={staff.lastName}
-                  className="h-12 w-12 text-lg"
-                />
-                <div className="space-y-1 overflow-hidden">
-                  <CardTitle className="text-base font-bold truncate">
-                    {staff.firstName} {staff.lastName}
-                  </CardTitle>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                    {staff.position || staff.role}
-                  </span>
-                </div>
-              </CardHeader>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Staff {isLoading ? "" : `(${meta?.total ?? staff.length})`}
+          </CardTitle>
+        </CardHeader>
 
-              <CardContent className="space-y-3 pt-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Department:</span>
-                  <span className="font-semibold text-foreground">{staff.department ?? "Unassigned"}</span>
-                </div>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-sm font-medium text-foreground">Unable to load staff</p>
+              <p className="max-w-md text-xs text-muted-foreground">{error}</p>
+            </div>
+          ) : staff.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              No staff match the current filters.
+            </p>
+          ) : (
+            <div className={`space-y-4 ${isFetching ? "opacity-60 transition-opacity" : ""}`}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="p-3 font-medium">Name</th>
+                      <th className="p-3 font-medium">Department</th>
+                      <th className="p-3 font-medium">System Role</th>
+                      <th className="p-3 font-medium">Manager</th>
+                      <th className="p-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {staff.map((member) => (
+                      <tr key={member.id} className="hover:bg-muted/30">
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <UserAvatar
+                              firstName={member.firstName ?? member.email}
+                              lastName={member.lastName ?? ""}
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground">{staffDisplayName(member)}</p>
+                              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                {member.email}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3 text-muted-foreground">
+                          {member.department?.name ?? "Unassigned"}
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-flex items-center rounded border border-border bg-muted/50 px-2 py-0.5 text-xs font-semibold">
+                            {member.role.replace("_", " ").toLowerCase()}
+                          </span>
+                        </td>
+                        <td className="p-3 text-muted-foreground">
+                          {member.manager
+                            ? [member.manager.firstName, member.manager.lastName].filter(Boolean).join(" ") || "—"
+                            : "—"}
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(
+                              STATUS_TONE[member.status],
+                            )}`}
+                          >
+                            {member.status.toLowerCase()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                {jurisdictionLabel(staff) && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Globe2 className="h-3 w-3" /> Jurisdiction:
-                    </span>
-                    <span className="font-semibold text-foreground">{jurisdictionLabel(staff)}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{staff.email}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5 shrink-0" />
-                  <span>{staff.phone}</span>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t text-[11px]">
-                  <span className="text-muted-foreground">Account Status:</span>
-                  <UserStatusBadge status={staff.status} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              <Pagination
+                page={page}
+                pageCount={meta?.totalPages ?? 1}
+                onPageChange={setPage}
+                pageSize={PAGE_SIZE}
+                totalItems={meta?.total ?? staff.length}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

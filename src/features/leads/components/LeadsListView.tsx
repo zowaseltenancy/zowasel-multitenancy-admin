@@ -32,7 +32,7 @@ interface Props {
 }
 
 export default function LeadsListView({ initialStatus = "all" }: Props) {
-  const { leads, addLead, markLost, removeLead } = useLeads();
+  const { leads, addLead, markLost, removeLead, isCreating } = useLeads();
   const { convert } = useLeadConversion();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">(initialStatus);
@@ -107,9 +107,12 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
       <AddLeadDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        onCreate={(lead) => {
-          addLead(lead);
-          toast.success(`${lead.businessName} added to the pipeline.`);
+        isSubmitting={isCreating}
+        onCreate={(values) => {
+          // POSTs to /admin/leads; the dialog closes only once the server has
+          // accepted it, and the toast comes from the mutation rather than
+          // being fired optimistically.
+          addLead(values, { onSuccess: () => setAddOpen(false) });
         }}
       />
 

@@ -2,6 +2,7 @@ import apiClient from "@/lib/axios";
 import { ApiResponse } from "@/lib/api-response";
 import {
   ConvertLeadRequest,
+  CreateLeadRequest,
   LeadDto,
   LeadsListResult,
   ListLeadsQuery,
@@ -24,6 +25,18 @@ export const leadsApi = {
       items: data.data,
       meta: data.meta ?? { page: params.page ?? 1, limit: params.limit ?? data.data.length, total: data.data.length, totalPages: 1 },
     };
+  },
+
+  /** POST /admin/leads. Takes the classification-specific payload. */
+  async create(payload: CreateLeadRequest): Promise<LeadDto> {
+    const { data } = await apiClient.post<ApiResponse<LeadDto>>("/admin/leads", payload);
+    return data.data;
+  },
+
+  /** GET /admin/leads/{id}. Row-scoped server-side by the caller's read scope. */
+  async detail(id: string): Promise<LeadDto> {
+    const { data } = await apiClient.get<ApiResponse<LeadDto>>(`/admin/leads/${id}`);
+    return data.data;
   },
 
   async updateStage(id: string, payload: UpdateLeadStageRequest) {
