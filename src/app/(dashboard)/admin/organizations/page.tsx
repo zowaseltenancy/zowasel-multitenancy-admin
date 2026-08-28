@@ -2,45 +2,48 @@
 
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowRight,
   Building2,
   CheckCircle2,
   Clock3,
+  FileClock,
   XCircle,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useOrganizations } from "@/features/organization/hooks/useOrganizations";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganizationStats } from "@/features/organization/hooks/useOrganizations";
 
 export default function OrganizationsOverviewPage() {
-  const { organizations } = useOrganizations();
+  // GET /admin/businesses/stats rather than counting the fetched list. The
+  // list is one page (100 rows), so deriving totals from it under-reports as
+  // soon as the platform outgrows a page — and it has no way to count a bucket
+  // that happens to fall outside that page.
+  const { stats: summary, isLoading, error } = useOrganizationStats();
 
-  const approved = organizations.filter(
-    (organization) => organization.kybStatus === "approved"
-  ).length;
-
-  const pending = organizations.filter(
-    (organization) => organization.kybStatus === "pending"
-  ).length;
-
-  const rejected = organizations.filter(
-    (organization) => organization.kybStatus === "rejected"
-  ).length;
+  const total = summary?.total ?? 0;
+  const approved = summary?.kyb.APPROVED ?? 0;
+  const pending = summary?.kyb.PENDING ?? 0;
+  const rejected = summary?.kyb.REJECTED ?? 0;
+  // Businesses that have never started KYB — the largest bucket in practice,
+  // and previously invisible on this page.
+  const notSubmitted = summary?.kyb.NOT_SUBMITTED ?? 0;
 
   const stats = [
     {
       label: "Total Org.",
-      value: organizations.length,
+      value: total,
       icon: Building2,
       cardBg: "bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20",
       iconClassName: "bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400",
     },
     {
-      label: "Approved",
-      value: approved,
-      icon: CheckCircle2,
-      cardBg: "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20",
-      iconClassName: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
+      label: "Awaiting KYB Submission",
+      value: notSubmitted,
+      icon: FileClock,
+      cardBg: "bg-slate-500/5 dark:bg-slate-500/10 border-slate-500/20",
+      iconClassName: "bg-slate-500/15 text-slate-600 border-slate-500/30 dark:text-slate-300",
     },
     {
       label: "Pending",
@@ -48,6 +51,13 @@ export default function OrganizationsOverviewPage() {
       icon: Clock3,
       cardBg: "bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20",
       iconClassName: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400",
+    },
+    {
+      label: "Approved",
+      value: approved,
+      icon: CheckCircle2,
+      cardBg: "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20",
+      iconClassName: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400",
     },
     {
       label: "Rejected",
@@ -83,8 +93,20 @@ export default function OrganizationsOverviewPage() {
         </p>
       </div>
 
+      {error ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertCircle className="size-5 shrink-0 text-destructive" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Unable to load organization stats</p>
+              <p className="text-xs text-muted-foreground">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Snapshot Cards with Status Color Background Tints */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
@@ -100,9 +122,13 @@ export default function OrganizationsOverviewPage() {
                     {stat.label}
                   </p>
 
-                  <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground mt-0.5 truncate tabular-nums">
-                    {stat.value.toLocaleString()}
-                  </h3>
+                  {isLoading ? (
+                    <Skeleton className="mt-1 h-7 w-14" />
+                  ) : (
+                    <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground mt-0.5 truncate tabular-nums">
+                      {stat.value.toLocaleString()}
+                    </h3>
+                  )}
                 </div>
               </CardContent>
             </Card>

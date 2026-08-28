@@ -1,6 +1,3 @@
-import { notFound } from "next/navigation";
-
-import { organizationService } from "@/features/organization/services/organization.service";
 import KybDetailView from "@/features/organization/components/KybDetailView";
 
 interface Props {
@@ -9,23 +6,11 @@ interface Props {
   }>;
 }
 
-export default async function KybDetailPage({
-  params,
-}: Props) {
+// Existence is the client view's call — it queries GET /admin/businesses/{id}.
+// This previously checked the id against the mock array and 404'd every real
+// UUID before the view could render.
+export default async function KybDetailPage({ params }: Props) {
   const { organizationId } = await params;
 
-  const organization =
-    organizationService.getOrganizationById(
-      organizationId
-    );
-
-  if (!organization) {
-    notFound();
-  }
-
-  return (
-    <KybDetailView
-      organizationId={organizationId}
-    />
-  );
+  return <KybDetailView organizationId={organizationId} />;
 }

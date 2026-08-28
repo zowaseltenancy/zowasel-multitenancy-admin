@@ -15,6 +15,7 @@ import {
 } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { authErrorMessage, useLogin } from "@/features/auth/hooks/useAuth";
 import { setStoredAdmin } from "@/lib/auth-session";
 
 export default function LoginPage() {
@@ -22,9 +23,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  const login = useLogin();
+  // Driven by the mutation rather than a separate flag, so the button can never
+  // disagree with whether a request is actually in flight.
+  const isLoading = login.isPending;
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -42,7 +47,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isLoading) return;
 
@@ -67,34 +72,25 @@ export default function LoginPage() {
 
     setFieldErrors({});
     setErrorMessage(null);
-    setIsLoading(true);
 
-    // Simulated Authentication Verification (Ready for API / SSO integration)
-    setTimeout(() => {
-      // Demo fail-trigger if user types "wrong", "fail", or "error" as password
-      if (password.toLowerCase() === "wrong" || password.toLowerCase() === "fail" || password.toLowerCase() === "error") {
-        setIsLoading(false);
-        setErrorMessage("Invalid email or password. Please verify your credentials and try again.");
-        setFieldErrors({
-          email: "Invalid credentials",
-          password: "Incorrect password",
-        });
-        toast.error("Invalid email or password.");
-        return;
-      }
-
-      setStoredAdmin({
-        id: "admin-1",
-        email: email.trim() || "admin@zowasel.com",
-        firstName: "Busayo",
-        lastName: "Shodunke",
-        role: "SUPER_ADMIN",
-      });
-
-      setIsLoading(false);
+    try {
+      // POST /admin/auth/login — stores the access token and the admin record
+      // on success (see useLogin -> persistLogin). Only then is it safe to
+      // navigate; the dashboard's requests all need that token.
+      await login.mutateAsync({ email: email.trim(), password });
       toast.success("Signed in successfully!");
       router.push("/admin");
-    }, 650);
+    } catch (error) {
+      const message = authErrorMessage(
+        error,
+        "Invalid email or password. Please verify your credentials and try again.",
+      );
+      setErrorMessage(message);
+      // The API deliberately does not say which half was wrong, so neither do
+      // we — both fields are marked without claiming the password specifically.
+      setFieldErrors({ email: "Invalid credentials", password: "Invalid credentials" });
+      toast.error(message);
+    }
   };
 
   return (

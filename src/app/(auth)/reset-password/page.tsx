@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,14 +14,35 @@ import {
 } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import { getPasswordStrength, validatePasswordMatch } from "@/lib/password";
+import { authErrorMessage, useResetPassword } from "@/features/auth/hooks/useAuth";
+import { clearResetState, getResetEmail, getResetOtp } from "@/lib/auth-session";
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ newPassword?: string; confirmPassword?: string }>({});
+
+  const router = useRouter();
+  const resetPassword = useResetPassword();
+  const isLoading = resetPassword.isPending;
+
+  // Carried from /forgot-password and /verify-otp. Read in an effect because
+  // localStorage does not exist during the server render.
+  const [credentials, setCredentials] = useState<{ email: string; otp: string } | null>(null);
+  useEffect(() => {
+    const email = getResetEmail();
+    const otp = getResetOtp();
+    if (email && otp) {
+      setCredentials({ email, otp });
+      return;
+    }
+    // Landing here directly has nothing to spend — send them back rather than
+    // showing a form that cannot succeed.
+    toast.error("Request a reset code before setting a new password.");
+    router.replace("/forgot-password");
+  }, [router]);
 
   const strength = getPasswordStrength(newPassword);
 
@@ -45,7 +67,7 @@ export default function ResetPasswordPage() {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isLoading) return;
 
@@ -72,13 +94,36 @@ export default function ResetPasswordPage() {
 
     setErrors({});
     setErrorMessage(null);
-    setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
+    if (!credentials) {
+      toast.error("Request a reset code before setting a new password.");
+      router.replace("/forgot-password");
+      return;
+    }
+
+    try {
+      // This is where the OTP is actually checked — the admin flow verifies the
+      // code and sets the password in one call. A wrong, expired, already-used
+      // or mismatched code all come back as the same 401, by design.
+      await resetPassword.mutateAsync({
+        email: credentials.email,
+        otp: credentials.otp,
+        newPassword,
+        confirmPassword,
+      });
+      // The code is single-use and every session was just revoked server-side,
+      // so nothing here is worth keeping.
+      clearResetState();
       setIsSuccess(true);
-      toast.success("Password has been reset successfully!");
-    }, 600);
+      toast.success("Password reset. Sign in with your new password.");
+    } catch (error) {
+      const message = authErrorMessage(
+        error,
+        "That reset code is invalid or has expired. Request a new one.",
+      );
+      setErrorMessage(message);
+      toast.error(message);
+    }
   };
 
   return (
@@ -88,7 +133,7 @@ export default function ResetPasswordPage() {
           title="Reset your password"
           description={
             isSuccess
-              ? "Your password has been successfully updated. You can now sign in with your new credentials."
+              ? "Your password has been updated, and every other session was signed out. Sign in with your new password."
               : "Create a strong new password to secure your administrator account."
           }
         />

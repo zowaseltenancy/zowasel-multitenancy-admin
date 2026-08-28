@@ -1,6 +1,4 @@
-import { notFound } from "next/navigation";
 import LeadDetailView from "@/features/leads/components/LeadDetailView";
-import { mockLeads } from "@/features/leads/data/mockLeads";
 
 interface Props {
   params: Promise<{
@@ -8,13 +6,11 @@ interface Props {
   }>;
 }
 
+// Same reasoning as the organization detail route: this checked the id against
+// mockLeads and 404'd every real UUID. Existence is the client view's call now,
+// since it is the thing that talks to the API.
 export default async function LeadDetailPage({ params }: Props) {
   const { leadId } = await params;
-  const lead = mockLeads.find((l) => l.id === leadId);
-
-  if (!lead) {
-    notFound();
-  }
 
   return <LeadDetailView leadId={leadId} />;
 }

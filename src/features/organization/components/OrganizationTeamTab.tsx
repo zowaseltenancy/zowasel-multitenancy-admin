@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Organization } from '@/types/organization';
 import { statusBadgeClass, statusDotClass } from '@/lib/statusTone';
 import GenderBadge from '@/components/shared/GenderBadge';
+import TeamMembersCard from './TeamMembersCard';
 
 interface Props {
   organization: Organization;
@@ -22,6 +23,7 @@ export default function OrganizationTeamTab({
   const [positionFilter, setPositionFilter] = useState<string>('all');
 
   const keyOfficers = organization.keyOfficers ?? [];
+  const teamMembers = organization.teamMembers ?? [];
 
   const availablePositions = useMemo(() => {
     const positions = keyOfficers.map((officer) => officer.position);
@@ -38,6 +40,9 @@ export default function OrganizationTeamTab({
 
   return (
     <div className="space-y-6">
+      {/* The accounts with a login on this business. */}
+      <TeamMembersCard members={teamMembers} />
+
       {/* Account Owner & Agent Link */}
       <Card>
         <CardHeader>

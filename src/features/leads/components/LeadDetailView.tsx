@@ -23,7 +23,8 @@ import { usePageHeader } from "@/components/layout/PageHeaderContext";
 import LeadStatusBadge from "./LeadStatusBadge";
 import ConvertLeadDialog from "./ConvertLeadDialog";
 import RemoveLeadDialog from "./RemoveLeadDialog";
-import { useLeads } from "../hooks/useLeads";
+import { getApiErrorMessage } from "@/lib/axios";
+import { useLead, useLeads } from "../hooks/useLeads";
 import { useLeadConversion } from "../hooks/useLeadConversion";
 import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
 
@@ -45,22 +46,46 @@ function Field({ icon: Icon, label, value }: { icon: typeof Building2; label: st
 
 export default function LeadDetailView({ leadId }: Props) {
   const router = useRouter();
-  const { leads, markLost, removeLead } = useLeads();
+  const { markLost, removeLead } = useLeads();
   const { convert } = useLeadConversion();
   const [convertOpen, setConvertOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const removingRef = useRef(false);
 
-  const lead = leads.find((l) => l.id === leadId);
+  // GET /admin/leads/{id} rather than searching the list — the list only holds
+  // one page, so a lead outside it used to look like it did not exist.
+  const leadQuery = useLead(leadId);
+  const lead = leadQuery.data;
 
   usePageHeader(lead?.businessName ?? "Lead", lead ? LEAD_INTENDED_TYPE_LABELS[lead.intendedType] : undefined);
 
+  if (leadQuery.isLoading) {
+    return (
+      <Card className="flex min-h-[240px] items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading lead…
+      </Card>
+    );
+  }
+
   if (!lead) {
-    // Removing this lead clears it from state before the redirect lands —
-    // render nothing instead of a flash of the 404 page while navigating away.
+    // Removing this lead clears it before the redirect lands — render nothing
+    // instead of a flash of the 404 page while navigating away.
     // eslint-disable-next-line react-hooks/refs
     if (removingRef.current) {
       return null;
+    }
+    // Only a real 404 from the API means the lead is gone; any other failure is
+    // worth surfacing rather than disguising as "not found".
+    const status = (leadQuery.error as { response?: { status?: number } } | null)?.response?.status;
+    if (leadQuery.isError && status !== 404) {
+      return (
+        <Card className="flex min-h-[240px] flex-col items-center justify-center gap-2 p-6 text-center">
+          <p className="text-sm font-medium text-foreground">Unable to load this lead</p>
+          <p className="max-w-md text-xs text-muted-foreground">
+            {getApiErrorMessage(leadQuery.error, 'Please try again.')}
+          </p>
+        </Card>
+      );
     }
     notFound();
   }

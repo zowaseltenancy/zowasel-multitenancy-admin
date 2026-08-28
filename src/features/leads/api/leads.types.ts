@@ -56,3 +56,33 @@ export interface ConvertLeadRequest {
   tenantId: string;
   note?: string;
 }
+
+// ── Create ───────────────────────────────────────────────────────────────────
+// Discriminated on `type`: the server validates typeMetadata `.strict()` per
+// classification, so the wrong shape is a 422 rather than a partial save.
+
+export interface CorporateLeadMetadata {
+  cacNumber: string;
+  taxId: string;
+  annualTurnover: number;
+  decisionMaker: { name: string; title?: string; phone?: string; email?: string };
+}
+
+export interface MerchantLeadMetadata {
+  storeName: string;
+  outletGps: { lat: number; lng: number };
+  posCount: number;
+  monthlyVolume: number;
+}
+
+export interface AgroDealerLeadMetadata {
+  licenseNo: string;
+  storageMt: number;
+  inputSpecialties: string[];
+  lgaCoverage: string[];
+}
+
+export type CreateLeadRequest =
+  | { name: string; email?: string; phone?: string; source?: string; assignedToId?: string; departmentId?: string; type: "CORPORATE"; typeMetadata: CorporateLeadMetadata }
+  | { name: string; email?: string; phone?: string; source?: string; assignedToId?: string; departmentId?: string; type: "MERCHANT"; typeMetadata: MerchantLeadMetadata }
+  | { name: string; email?: string; phone?: string; source?: string; assignedToId?: string; departmentId?: string; type: "AGRO_DEALER"; typeMetadata: AgroDealerLeadMetadata };
