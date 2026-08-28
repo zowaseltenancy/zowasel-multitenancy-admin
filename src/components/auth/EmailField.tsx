@@ -35,7 +35,7 @@ export default function EmailField({
     <div className={cn("space-y-1.5", className)}>
       <label
         htmlFor={id}
-        className="block text-xs font-semibold text-foreground select-none"
+        className="block text-xs font-semibold text-[#262C3F] select-none"
       >
         {label}
       </label>
@@ -58,7 +58,7 @@ export default function EmailField({
           required={required}
           aria-invalid={!!error}
           className={cn(
-            "h-10.5 w-full rounded-xl border bg-white pl-10 pr-4 text-xs sm:text-sm font-medium text-foreground transition-all duration-200 placeholder:text-[#75787B]/70 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs",
+            "h-10.5 w-full rounded-xl border bg-white pl-10 pr-4 text-xs sm:text-sm font-medium text-[#262C3F] transition-all duration-200 placeholder:text-[#75787B]/70 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs",
             error
               ? "border-destructive focus-visible:border-destructive focus-visible:ring-4 focus-visible:ring-destructive/15"
               : "border-[#DCE8DC] focus-visible:border-[#438B3E] focus-visible:ring-4 focus-visible:ring-[#438B3E]/15"

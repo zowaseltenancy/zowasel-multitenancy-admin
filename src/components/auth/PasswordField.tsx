@@ -42,7 +42,7 @@ export default function PasswordField({
     <div className={cn("space-y-1.5", className)}>
       <label
         htmlFor={id}
-        className="block text-xs font-semibold text-foreground select-none"
+        className="block text-xs font-semibold text-[#262C3F] select-none"
       >
         {label}
       </label>
@@ -65,7 +65,7 @@ export default function PasswordField({
           required={required}
           aria-invalid={!!error}
           className={cn(
-            "h-10.5 w-full rounded-xl border bg-white pl-10 pr-10 text-xs sm:text-sm font-medium text-foreground transition-all duration-200 placeholder:text-[#75787B]/70 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs",
+            "h-10.5 w-full rounded-xl border bg-white pl-10 pr-10 text-xs sm:text-sm font-medium text-[#262C3F] transition-all duration-200 placeholder:text-[#75787B]/70 disabled:cursor-not-allowed disabled:opacity-60 shadow-xs",
             error
               ? "border-destructive focus-visible:border-destructive focus-visible:ring-4 focus-visible:ring-destructive/15"
               : "border-[#DCE8DC] focus-visible:border-[#438B3E] focus-visible:ring-4 focus-visible:ring-[#438B3E]/15"
@@ -78,7 +78,7 @@ export default function PasswordField({
           size="icon"
           aria-label={showPassword ? "Hide password" : "Show password"}
           onClick={() => setShowPassword((prev) => !prev)}
-          className="absolute right-1 top-1/2 -translate-y-1/2 size-8 rounded-lg text-[#75787B] hover:text-foreground hover:bg-black/5 transition-colors duration-150 cursor-pointer"
+          className="absolute right-1 top-1/2 -translate-y-1/2 size-8 rounded-lg text-[#75787B] hover:text-[#262C3F] hover:bg-black/5 transition-colors duration-150 cursor-pointer"
         >
           {showPassword ? (
             <EyeOff className="size-4 transition-transform duration-150" strokeWidth={2} />

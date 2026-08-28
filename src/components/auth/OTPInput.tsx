@@ -89,7 +89,7 @@ export default function OTPInput({
           aria-label={`Verification digit ${index + 1}`}
           aria-invalid={hasError}
           className={cn(
-            "h-11 sm:h-12 w-11 sm:w-12 text-center text-lg sm:text-xl font-bold rounded-xl border bg-white text-foreground transition-all duration-200 shadow-xs tabular-nums disabled:cursor-not-allowed disabled:opacity-60",
+            "h-11 sm:h-12 w-11 sm:w-12 text-center text-lg sm:text-xl font-bold rounded-xl border bg-white text-[#262C3F] transition-all duration-200 shadow-xs tabular-nums disabled:cursor-not-allowed disabled:opacity-60",
             hasError
               ? "border-destructive focus-visible:border-destructive focus-visible:ring-4 focus-visible:ring-destructive/15"
               : "border-[#DCE8DC] focus-visible:border-[#438B3E] focus-visible:ring-4 focus-visible:ring-[#438B3E]/15"

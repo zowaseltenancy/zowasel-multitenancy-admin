@@ -28,7 +28,7 @@ export default function AuthHeader({
         </div>
       )}
 
-      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-tight">
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#262C3F] leading-tight">
         {title}
       </h1>
 

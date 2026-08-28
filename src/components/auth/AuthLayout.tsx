@@ -81,7 +81,7 @@ const featureItemVariants = {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <main className="min-h-screen lg:h-screen lg:max-h-screen w-full flex flex-col lg:flex-row bg-[#FAF8F5] text-foreground antialiased selection:bg-[#438B3E]/20 selection:text-[#438B3E] overflow-y-auto lg:overflow-hidden">
+    <main className="min-h-screen lg:h-screen lg:max-h-screen w-full flex flex-col lg:flex-row bg-[#FAF8F5] text-[#262C3F] antialiased selection:bg-[#438B3E]/20 selection:text-[#438B3E] overflow-y-auto lg:overflow-hidden">
       {/* =========================================================================
           LEFT BRAND PANEL (~45% width on desktop)
           Dominant Background: PANTONE 7741 C (#2E6830)
@@ -323,7 +323,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
               className="h-7 w-auto object-contain"
             />
             <div>
-              <span className="text-sm font-bold tracking-tight text-foreground uppercase block leading-none">
+              <span className="text-sm font-bold tracking-tight text-[#262C3F] uppercase block leading-none">
                 ZOWASEL
               </span>
               <span className="text-[10px] font-semibold tracking-wider text-[#438B3E] uppercase block">

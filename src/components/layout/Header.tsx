@@ -21,7 +21,6 @@ import ThemeToggle from "@/components/shared/ThemeToggle";
 import Breadcrumbs from "./Breadcrumbs";
 import UserMenu from "./UserMenu";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
-import { Button } from "@/components/ui/button";
 
 export default function Header({ onToggle }: { onToggle: () => void }) {
   const router = useRouter();
@@ -223,6 +222,9 @@ export default function Header({ onToggle }: { onToggle: () => void }) {
         </div>
 
         <ThemeToggle />
+        
+        <div className="h-6 w-px bg-border/60 mx-0.5" />
+
         <UserMenu />
       </div>
     </header>

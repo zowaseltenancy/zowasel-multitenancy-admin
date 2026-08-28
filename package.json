@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3003",
+    "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3003",
-    "lint": "eslint"
+    "start": "next start -p 3000",
+    "lint": "eslint",
+    "clean": "rm -rf .next"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -28,6 +29,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.81.0",
+    "react-webcam": "^7.2.0",
     "recharts": "^3.10.0",
     "shadcn": "^4.13.0",
     "sonner": "^2.0.7",
@@ -43,6 +45,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-webcam": "^1.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "playwright": "^1.62.0",

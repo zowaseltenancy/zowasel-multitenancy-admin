@@ -200,17 +200,36 @@ export const navigation: NavigationItem[] = [
   },
 
   {
-    label: "Zowasel Staff",
+    label: "Staff Management",
     href: "/admin/staff",
     icon: UserCheck,
     children: [
       {
+        label: "Onboard Staff",
+        href: "/admin/staff/onboarding",
+      },
+      {
         label: "Staff Directory",
         href: "/admin/staff/directory",
       },
+      {
+        label: "Leave Requests",
+        href: "/admin/staff/leave",
+      },
+      {
+        label: "Roles & Permissions",
+        href: "/admin/staff/roles"
+      },
+      {
+        label: "Departments",
+        href: "/admin/staff/departments",
+        icon: Building2,
+        children: [
+          { label: "Overview", href: "/admin/staff/departments" },
+        ],
+      },
     ],
   },
-
   {
     label: "Notifications",
     href: "/admin/notifications",
@@ -234,9 +253,8 @@ export const navigation: NavigationItem[] = [
       },
     ],
   },
-
   {
-    label: "Marketing Pro",
+    label: "Broadcasts",
     href: "/admin/marketing",
     icon: Megaphone,
     children: [

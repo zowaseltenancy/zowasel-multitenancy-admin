@@ -1,145 +1,210 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut, ShieldCheck } from "lucide-react";
+import {
+  LogOut,
+  Settings,
+  ShieldCheck,
+  ChevronDown,
+  Mail,
+  User,
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { useAdminMe, useLogout } from "@/features/auth/hooks/useAuth";
-import { getStoredAdmin } from "@/lib/auth-session";
-
-// The signed-in admin, from GET /admin/me.
-//
-// This was hardcoded to "BS / Busayo / Super Admin" — it showed the same person
-// whoever was actually signed in. `useAdminMe` already existed and nothing
-// called it, the same way `useLogin` was orphaned before the login page was
-// wired.
-//
-// Also adds sign-out: there was no way to log out anywhere in the UI, which
-// stopped mattering only while login was a mock that stored no session.
-
-function initials(firstName: string | null, lastName: string | null, email: string): string {
-  const letters = [firstName?.[0], lastName?.[0]].filter(Boolean).join("");
-  // Falls back to the email when an invitation hasn't been accepted yet and
-  // neither name is set.
-  return (letters || email.slice(0, 2)).toUpperCase();
-}
-
-function roleLabel(role: string): string {
-  return role
-    .split("_")
-    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-    .join(" ");
-}
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useLogout } from "@/features/auth/hooks/useAuth";
+import { getStoredAdmin, StoredAdmin } from "@/lib/auth-session";
+import { Badge } from "@/components/ui/badge";
 
 export default function UserMenu() {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const { data: me, isLoading } = useAdminMe();
-  const logout = useLogout();
+  const [storedAdmin, setStoredAdminState] = useState<StoredAdmin | null>(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const logoutMutation = useLogout();
 
-  // The login response is cached locally, so the menu can render immediately
-  // and be corrected by /admin/me once it lands — no empty flash on every load.
-  const stored = getStoredAdmin();
-  const profile = me ?? stored;
+  useEffect(() => {
+    setStoredAdminState(getStoredAdmin());
+  }, []);
 
-  const handleSignOut = () => {
-    logout.mutate(undefined, {
-      // onSettled in the hook clears the session either way — a failed logout
-      // call must still sign you out locally rather than trapping you here.
-      onSettled: () => router.replace("/login"),
-    });
+  const admin = storedAdmin;
+
+  const firstName = admin?.firstName || "Busayo";
+  const lastName = admin?.lastName || "";
+  const fullName = `${firstName} ${lastName}`.trim();
+  const email = admin?.email || "admin@zowasel.com";
+
+  const roleFormatMap: Record<string, string> = {
+    SUPER_ADMIN: "Super Admin",
+    ADMIN: "Admin",
+    STAFF: "Staff",
+  };
+  const roleLabel = (admin?.role && roleFormatMap[admin.role]) || "Super Admin";
+
+  const initials =
+    firstName && lastName
+      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+      : firstName
+      ? firstName.slice(0, 2).toUpperCase()
+      : null;
+
+  const handleLogout = async () => {
+    setShowLogoutDialog(false);
+    try {
+      if (getStoredAdmin()) {
+        await logoutMutation.mutateAsync().catch(() => {});
+      }
+    } finally {
+      toast.success("Signed out successfully. See you soon!");
+      router.push("/login");
+    }
   };
 
-  if (isLoading && !profile) {
-    return (
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
-        <div className="hidden space-y-1 md:block">
-          <div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
-          <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) return null;
-
-  const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || profile.email;
-
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-muted/60"
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white shadow-2xs">
-          {initials(profile.firstName, profile.lastName, profile.email)}
-        </div>
-
-        <div className="hidden text-left md:block">
-          <p className="text-sm font-semibold text-foreground">{name}</p>
-          <p className="text-xs text-muted-foreground">{roleLabel(profile.role)}</p>
-        </div>
-
-        <ChevronDown className="hidden size-4 text-muted-foreground md:block" />
-      </button>
-
-      {open && (
-        <>
-          {/* Click-away layer — closes the menu without a document listener. */}
-          <button
-            type="button"
-            className="fixed inset-0 z-40 cursor-default"
-            aria-hidden="true"
-            tabIndex={-1}
-            onClick={() => setOpen(false)}
-          />
-
-          <div
-            role="menu"
-            className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-popover shadow-lg"
-          >
-            <div className="border-b border-border p-3">
-              <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-              <p className="truncate text-xs text-muted-foreground">{profile.email}</p>
-
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px] font-semibold">
-                  <ShieldCheck className="size-3 text-primary" />
-                  {roleLabel(profile.role)}
-                </span>
-                {me?.department ? (
-                  <span className="inline-flex items-center rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[11px]">
-                    {me.department.name}
-                  </span>
-                ) : null}
-              </div>
-
-              {/* A SUPER_ADMIN resolves to the single '*' wildcard rather than
-                  an enumerated list, so show the count only when it is one. */}
-              {me && !me.permissions.includes("*") ? (
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  {me.permissions.length} permission{me.permissions.length === 1 ? "" : "s"}
-                </p>
-              ) : null}
-            </div>
-
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
             <button
               type="button"
-              role="menuitem"
-              onClick={handleSignOut}
-              disabled={logout.isPending}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted/60 disabled:opacity-60"
+              className="flex items-center gap-2.5 rounded-lg p-1.5 transition hover:bg-muted/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer group"
+              aria-label="User account menu"
             >
-              <LogOut className="size-4" />
-              {logout.isPending ? "Signing out…" : "Sign out"}
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white shadow-2xs transition-transform group-hover:scale-105">
+                {initials ? initials : <User className="h-4.5 w-4.5" />}
+                <span
+                  className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
+                  title="Online"
+                />
+              </div>
+
+              <div className="hidden text-left md:block">
+                <p className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors">
+                  {firstName}
+                </p>
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {roleLabel}
+                </p>
+              </div>
+
+              <ChevronDown className="hidden h-4 w-4 text-muted-foreground transition-transform group-hover:text-foreground md:block" />
             </button>
+          }
+        />
+
+        <DropdownMenuContent
+          align="end"
+          className="w-72 min-w-[18rem] p-2 shadow-2xl border border-border/80 bg-popover rounded-2xl animate-in fade-in zoom-in-95 duration-150"
+        >
+          {/* Profile & Email Header with subtle User Icon */}
+          <div className="p-3.5 bg-muted/40 rounded-xl space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary shadow-2xs">
+                <User className="h-4 w-4 stroke-[2.2]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold leading-tight text-foreground truncate">
+                  {fullName}
+                </p>
+                <div className="pt-1 flex items-center gap-1.5">
+                  <Badge
+                    variant="brand"
+                    className="text-[10px] px-1.5 py-0 font-semibold"
+                  >
+                    <ShieldCheck className="h-3 w-3 mr-0.5" />
+                    {roleLabel}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5 font-medium pt-0.5 border-t border-border/40">
+              <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{email}</span>
+            </p>
           </div>
-        </>
-      )}
-    </div>
+
+          <DropdownMenuSeparator className="my-1.5" />
+
+          {/* Account Settings */}
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={() => router.push("/admin/billing/settings")}
+              className="cursor-pointer font-semibold text-xs py-2.5 px-3 flex items-center gap-2.5 rounded-lg transition-colors"
+            >
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              <span>Account Settings</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator className="my-1.5" />
+
+          {/* Sign Out Option */}
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setShowLogoutDialog(true)}
+            className="cursor-pointer font-semibold text-xs py-2.5 px-3 flex items-center gap-2.5 rounded-lg text-rose-600 focus:bg-rose-500/10 focus:text-rose-600 transition-colors"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span>Sign out</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Confirmation Dialog for Sign Out */}
+      <AlertDialog
+        open={showLogoutDialog}
+        onOpenChange={(value) => {
+          if (!value) setShowLogoutDialog(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto sm:mx-0 flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/10 text-rose-600">
+              <LogOut className="h-5 w-5" />
+            </div>
+            <AlertDialogTitle className="text-base font-bold">
+              Sign out of Zowasel Admin?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Are you sure you want to end your current admin session? You will
+              be redirected to the sign-in page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel
+              onClick={() => setShowLogoutDialog(false)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-destructive text-white hover:bg-destructive/90 cursor-pointer"
+            >
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

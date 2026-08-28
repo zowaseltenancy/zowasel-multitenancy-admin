@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authErrorMessage, useLogin } from "@/features/auth/hooks/useAuth";
+import { setStoredAdmin } from "@/lib/auth-session";
 
 export default function LoginPage() {
   const router = useRouter();
