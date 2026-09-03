@@ -223,10 +223,6 @@ export const navigation: NavigationItem[] = [
       {
         label: "Departments",
         href: "/admin/staff/departments",
-        icon: Building2,
-        children: [
-          { label: "Overview", href: "/admin/staff/departments" },
-        ],
       },
     ],
   },

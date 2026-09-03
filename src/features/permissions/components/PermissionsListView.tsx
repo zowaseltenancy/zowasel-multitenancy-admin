@@ -78,9 +78,12 @@ export default function PermissionsListView() {
   const handleSubmitRoleForm = (values: RoleFormValues) => {
     if (roleToEdit) {
       updateRoleInfo(roleToEdit.id, values);
+      toast.success(`Role "${values.name}" updated successfully.`);
     } else {
       createRole(values);
+      toast.success(`New role "${values.name}" created and added to the RBAC Access Matrix.`);
     }
+    setIsDialogOpen(false);
   };
 
   const handleDeleteRoleConfirm = () => {

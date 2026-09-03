@@ -4,14 +4,22 @@ import { useRouter } from 'next/navigation';
 import { StaffOnboardingForm } from '@/components/staff/StaffOnboardingForm';
 import { useStaff } from '@/hooks/useStaff';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StaffFormValues } from '@/lib/validations/staff';
 import { StaffMember } from '@/types/staff';
+
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function StaffOnboardingPage() {
   const router = useRouter();
   const { repo, refresh } = useStaff();
   const [submitting, setSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const roles = repo.getRoles();
   const departments = Array.from(new Set(repo.getAllStaff().map(s => s.department)));
@@ -23,7 +31,7 @@ export default function StaffOnboardingPage() {
     email: data.personalInfo.email,
     phone: data.personalInfo.phone,
     dateOfBirth: data.personalInfo.dateOfBirth,
-    gender: data.personalInfo.gender,
+    gender: data.personalInfo.gender as any,
     maritalStatus: data.personalInfo.maritalStatus,
     nationality: data.personalInfo.nationality,
     department: data.employment.department,
@@ -45,7 +53,6 @@ export default function StaffOnboardingPage() {
     setSubmitting(true);
     try {
       const newStaff = flattenFormData(data) as StaffMember;
-      // add unique ID and status
       newStaff.id = `staff-${Date.now()}`;
       newStaff.status = 'active';
       newStaff.lastActive = new Date().toISOString();
@@ -60,12 +67,27 @@ export default function StaffOnboardingPage() {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Onboard New Staff</h1>
-        <p className="text-muted-foreground">Fill in all required information to add a new team member.</p>
+  if (!mounted) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00A651]" />
       </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-3">
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/admin/staff/directory')}
+          className="-ml-2 text-xs text-slate-600 dark:text-slate-300 hover:text-foreground gap-1.5 font-medium h-7 px-2"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to Staff Directory
+        </Button>
+      </div>
+
       <StaffOnboardingForm
         roles={roles}
         departments={departments}

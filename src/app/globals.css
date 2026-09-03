@@ -255,3 +255,14 @@ html.dark {
 .theme-transition *:after {
   transition: background-color 250ms ease, border-color 250ms ease, color 250ms ease, fill 250ms ease, stroke 250ms ease, box-shadow 250ms ease !important;
 }
+
+/* Hide scrollbars and scroll buttons while preserving smooth scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

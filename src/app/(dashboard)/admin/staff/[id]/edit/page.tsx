@@ -1,11 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { StaffOnboardingForm } from '@/components/staff/StaffOnboardingForm';
 import { useStaff } from '@/hooks/useStaff';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { StaffFormValues } from '@/lib/validations/staff';
 
 export default function EditStaffPage() {
@@ -93,8 +94,24 @@ export default function EditStaffPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Edit Staff</h1>
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/admin/staff/${params.id}`)}
+            className="mb-2 -ml-2 text-muted-foreground hover:text-foreground gap-1.5"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Staff Profile
+          </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Edit Staff Member</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Update employee personal details, department placement, emergency contacts, or background records.
+          </p>
+        </div>
+      </div>
+
       <StaffOnboardingForm
         defaultValues={defaultValues}
         roles={roles}

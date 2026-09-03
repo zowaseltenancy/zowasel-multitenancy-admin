@@ -1,6 +1,26 @@
 import { Permission, PermissionCategory, PermissionCategoryGroup } from "@/types/permissions";
 
 export const PERMISSION_CATEGORIES: Record<PermissionCategory, { label: string; description: string }> = {
+  staff: {
+    label: "Staff Directory & Team",
+    description: "Manage staff directory, onboarding, profiles, and team assignments",
+  },
+  departments: {
+    label: "Departments & Hierarchy",
+    description: "Manage department structure, hierarchy, and department head assignments",
+  },
+  leave: {
+    label: "Leave & Absence Management",
+    description: "Review leave requests, approval queues, and department leave calendars",
+  },
+  leads: {
+    label: "Leads & CRM Pipeline",
+    description: "Access and manage sales leads across company, department, or assigned scopes",
+  },
+  businesses: {
+    label: "Business Accounts & Tenants",
+    description: "Manage business accounts, verification, suspensions, and unlocking",
+  },
   organizations: {
     label: "Organization Management",
     description: "Manage tenant business accounts, details, and team members",
@@ -25,6 +45,10 @@ export const PERMISSION_CATEGORIES: Record<PermissionCategory, { label: string; 
     label: "Roles & Security",
     description: "Configure system roles, permission scopes, and admin access",
   },
+  permissions: {
+    label: "Permission Catalog",
+    description: "View master catalogue of platform capabilities and granular scopes",
+  },
   system: {
     label: "System Settings",
     description: "Access platform-wide configuration, audit logs, and webhooks",
@@ -32,7 +56,43 @@ export const PERMISSION_CATEGORIES: Record<PermissionCategory, { label: string; 
 };
 
 export const ALL_PERMISSIONS: Permission[] = [
-  // Organizations
+  // Staff (SSO Backend Track 4.2)
+  { id: "p-staff-read", code: "staff:read", name: "View Staff Directory", description: "View staff list, profiles, identity, and assigned roles", category: "staff", action: "read" },
+  { id: "p-staff-write", code: "staff:write", name: "Manage Staff Accounts", description: "Onboard, edit profile, and manage staff members", category: "staff", action: "update" },
+
+  // Departments (SSO Backend Track 4.1 & 4.2)
+  { id: "p-dept-read", code: "departments:read", name: "View Departments", description: "View departments, hierarchy, and department heads", category: "departments", action: "read" },
+
+  // Leave & Absence (SSO Backend Track 4.3)
+  { id: "p-leave-cal", code: "leave:read_calendar", name: "View Leave Calendar", description: "See team and department-wide leave schedule calendar", category: "leave", action: "read" },
+  { id: "p-leave-rev", code: "leave:review", name: "Review & Authorize Leave", description: "Approve or reject leave requests in approval inbox", category: "leave", action: "approve", isSensitive: true },
+
+  // Leads CRM (SSO Backend Track 4.2)
+  { id: "p-leads-all", code: "leads:read_all", name: "View All Company Leads", description: "Full organization-wide visibility of the lead pipeline", category: "leads", action: "read" },
+  { id: "p-leads-dept", code: "leads:read_department", name: "View Department Leads", description: "View and work lead pipeline for own department", category: "leads", action: "read" },
+  { id: "p-leads-assigned", code: "leads:read_assigned", name: "View Assigned Leads", description: "View and work only leads assigned directly to user", category: "leads", action: "read" },
+  { id: "p-leads-write", code: "leads:write", name: "Manage & Update Leads", description: "Create, update, and advance lead stage in CRM pipeline", category: "leads", action: "update" },
+
+  // Businesses & Organizations (SSO Backend Track 4.2)
+  { id: "p-biz-write", code: "businesses:write", name: "Manage Business Accounts", description: "Manage business accounts — suspension, verification, unlocking", category: "businesses", action: "update", isSensitive: true },
+  { id: "p-org-read-sso", code: "organisations:read", name: "View Registered Organisations", description: "Read-only access to tenant business organizations", category: "businesses", action: "read" },
+
+  // Roles & Security (SSO Backend Track 4.2)
+  { id: "p-roles-read", code: "roles:read", name: "View Roles & Scopes", description: "Read-only access to defined roles and attached permissions", category: "roles", action: "read" },
+  { id: "p-roles-create", code: "roles:create", name: "Create Custom Roles", description: "Define new custom department roles and templates", category: "roles", action: "create" },
+  { id: "p-roles-update", code: "roles:update", name: "Edit Role Permissions", description: "Attach or overwrite permission key arrays on roles", category: "roles", action: "update", isSensitive: true },
+  { id: "p-roles-delete", code: "roles:delete", name: "Delete Custom Roles", description: "Retire or remove custom roles", category: "roles", action: "delete", isSensitive: true },
+
+  // Permissions Catalog (SSO Backend Track 4.2)
+  { id: "p-perms-read", code: "permissions:read", name: "View Permission Catalog", description: "Inspect master catalogue of system permission keys", category: "permissions", action: "read" },
+
+  // Users (SSO Backend Track 4.2)
+  { id: "p-users-write", code: "users:write", name: "Manage User Accounts", description: "Update user accounts, status, password resets, and locks", category: "users", action: "update", isSensitive: true },
+  { id: "p16", code: "users:read", name: "View User Profiles", description: "View internal admins, buyers, farmers & merchants", category: "users", action: "read" },
+  { id: "p17", code: "users:create", name: "Invite Admin Users", description: "Invite new internal team members to admin panel", category: "users", action: "create" },
+  { id: "p19", code: "users:delete", name: "Revoke User Access", description: "Deactivate or delete user accounts", category: "users", action: "delete", isSensitive: true },
+
+  // Organizations Platform
   { id: "p1", code: "organizations:read", name: "View Organizations", description: "View tenant business profiles & list views", category: "organizations", action: "read" },
   { id: "p2", code: "organizations:create", name: "Create Organization", description: "Manually provision new business tenants", category: "organizations", action: "create" },
   { id: "p3", code: "organizations:update", name: "Edit Organization", description: "Update tenant business details & metadata", category: "organizations", action: "update" },
@@ -54,18 +114,6 @@ export const ALL_PERMISSIONS: Permission[] = [
   { id: "p13", code: "billing:update", name: "Configure Payment Providers", description: "Add or edit gateway credentials (Paystack, Stripe, etc.)", category: "billing", action: "update", isSensitive: true },
   { id: "p14", code: "billing:approve", name: "Manage Disputes & Refunds", description: "Approve transaction disputes or issue manual refunds", category: "billing", action: "approve", isSensitive: true },
   { id: "p15", code: "billing:export", name: "Export Financial Reports", description: "Download revenue, tax & settlement data", category: "billing", action: "export" },
-
-  // Users
-  { id: "p16", code: "users:read", name: "View User Profiles", description: "View internal admins, buyers, farmers & merchants", category: "users", action: "read" },
-  { id: "p17", code: "users:create", name: "Invite Admin Users", description: "Invite new internal team members to admin panel", category: "users", action: "create" },
-  { id: "p18", code: "users:update", name: "Update User Access", description: "Change user statuses, emails & account attributes", category: "users", action: "update" },
-  { id: "p19", code: "users:delete", name: "Revoke User Access", description: "Deactivate or delete user accounts", category: "users", action: "delete", isSensitive: true },
-
-  // Roles & Security
-  { id: "p20", code: "roles:read", name: "View Roles & Scopes", description: "Inspect defined system roles and assigned scopes", category: "roles", action: "read" },
-  { id: "p21", code: "roles:create", name: "Create Custom Roles", description: "Build new role templates with specific permission sets", category: "roles", action: "create" },
-  { id: "p22", code: "roles:update", name: "Edit Role Permissions", description: "Modify assigned permission scopes for existing roles", category: "roles", action: "update", isSensitive: true },
-  { id: "p23", code: "roles:delete", name: "Delete Custom Roles", description: "Remove custom role configurations", category: "roles", action: "delete", isSensitive: true },
 
   // System
   { id: "p24", code: "system:read", name: "View System Logs", description: "Inspect platform audit logs & webhook deliveries", category: "system", action: "read" },

@@ -5,23 +5,24 @@ import { StaffRepository } from '@/lib/staffRepository';
 interface StaffContextValue {
   repo: StaffRepository;
   refresh: () => void;
+  version: number;
 }
 
 const StaffContext = createContext<StaffContextValue | null>(null);
 
 export const StaffProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const repoRef = useRef(new StaffRepository());
-  const [, forceRender] = useState(0);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     repoRef.current.init();
-    forceRender(n => n + 1);
+    setVersion((v) => v + 1);
   }, []);
 
-  const refresh = useCallback(() => forceRender(n => n + 1), []);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   return (
-    <StaffContext.Provider value={{ repo: repoRef.current, refresh }}>
+    <StaffContext.Provider value={{ repo: repoRef.current, refresh, version }}>
       {children}
     </StaffContext.Provider>
   );

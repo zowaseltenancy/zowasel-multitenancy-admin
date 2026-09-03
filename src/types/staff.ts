@@ -6,6 +6,10 @@ export interface StaffMember {
   phone: string;
   department: string;
   roleId: string;
+  systemRole?: 'super_admin' | 'admin' | 'staff';
+  roleIds?: string[];
+  roles?: { id: string; name: string }[];
+  permissions?: string[];
   status: 'active' | 'inactive';
   avatarUrl?: string;
   dateJoined?: string;
@@ -18,7 +22,7 @@ export interface StaffMember {
   nationality?: string;
   employeeId?: string;
   managerId?: string;
-  employmentType?: 'full-time' | 'part-time' | 'contract';
+  employmentType?: 'full-time' | 'part-time' | 'contract' | 'intern';
   workLocation?: string;
 
   address?: {
@@ -31,9 +35,9 @@ export interface StaffMember {
   };
 
   nextOfKin?: {
-    fullName: string;
-    relationship: string;
-    phone: string;
+    fullName?: string;
+    relationship?: string;
+    phone?: string;
     email?: string;
     address?: string;
   };
@@ -61,7 +65,73 @@ export interface StaffMember {
     taxId?: string;
   };
 
-  documents?: string[];   // file URLs or names
+  // Extended profile attributes (condex.docx)
+  bio?: string;
+  departmentRoleIds?: string[];
+  projects?: StaffProject[];
+  complianceDocuments?: StaffDocument[];
+  performance?: StaffPerformance;
+  activities?: StaffActivity[];
+
+  documents?: string[];   // legacy file URLs or names
+}
+
+export interface StaffProject {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'completed' | 'on-hold' | 'planning';
+  startDate: string;
+  endDate?: string;
+  role?: string;
+  progress?: number;
+}
+
+export interface StaffDocument {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  uploadedAt: string;
+  verificationStatus: 'verified' | 'pending' | 'rejected';
+  url?: string;
+}
+
+export interface StaffActivity {
+  id: string;
+  type: 'profile_updated' | 'document_uploaded' | 'password_reset' | 'status_change' | 'review_completed' | 'role_assigned' | 'general';
+  title: string;
+  description: string;
+  actor: string;
+  timestamp: string;
+  metadata?: Record<string, any>;
+}
+
+export interface StaffPerformance {
+  overallScore: number;
+  status: string;
+  goals: {
+    id: string;
+    title: string;
+    target: string;
+    progress: number;
+    status: 'in-progress' | 'achieved' | 'behind';
+  }[];
+  kpis: {
+    id: string;
+    name: string;
+    target: string;
+    current: string;
+    achievementRate: number;
+  }[];
+  reviews: {
+    id: string;
+    period: string;
+    reviewer: string;
+    date: string;
+    rating: number;
+    feedback: string;
+  }[];
 }
 
 export interface StaffRole {
@@ -70,16 +140,121 @@ export interface StaffRole {
   description: string;
   permissions: string[];
   isSystemRole: boolean;
+  departmentId?: string | null;
+  department?: { id: string; name: string } | null;
+  assignedAdminCount?: number;
+  userCount?: number;
+  isArchived?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type LeaveType =
+  | 'ANNUAL'
+  | 'SICK'
+  | 'MATERNITY'
+  | 'PATERNITY'
+  | 'COMPASSIONATE'
+  | 'UNPAID'
+  | 'Annual'
+  | 'Sick'
+  | 'Casual'
+  | 'Maternity/Paternity'
+  | 'Bereavement'
+  | 'Unpaid';
+
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'pending' | 'approved' | 'rejected';
+
+export interface LeaveBalance {
+  type: 'ANNUAL' | 'SICK' | 'MATERNITY' | 'PATERNITY' | 'COMPASSIONATE' | 'UNPAID';
+  year: number;
+  entitledDays: number;
+  usedDays: number;
+  pendingDays: number;
+  availableDays: number;
+}
+
+export interface CreateLeaveRequestDto {
+  type: 'ANNUAL' | 'SICK' | 'MATERNITY' | 'PATERNITY' | 'COMPASSIONATE' | 'UNPAID' | LeaveType;
+  startDate: string;
+  endDate: string;
+  reason: string;
+}
+
+export interface ReviewLeaveDto {
+  decision: 'APPROVED' | 'REJECTED';
+  note?: string;
+}
+
+export interface ApiLeaveApplicant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface ApiLeaveReviewer {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ApiLeaveRequest {
+  id: string;
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | LeaveStatus;
+  applicant: ApiLeaveApplicant;
+  reviewedBy: ApiLeaveReviewer | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeaveCalendarEvent {
+  id: string;
+  type: LeaveType;
+  status: 'APPROVED' | 'PENDING';
+  startDate: string;
+  endDate: string;
+  days: number;
+  admin: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    department: {
+      id: string;
+      name: string;
+    } | null;
+  };
 }
 
 export interface LeaveRequest {
   id: string;
   staffId: string;
+  employeeName?: string;
+  department?: string;
+  type: LeaveType;
   startDate: string;
   endDate: string;
+  workingDays: number;
+  days?: number;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: LeaveStatus;
   approvedBy?: string;
+  rejectionReason?: string;
+  reviewNote?: string;
+  reviewedAt?: string;
+  attachment?: string;
+  deducted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,16 +267,24 @@ export interface Department {
   headId: string | null;        // staff member id
   headName?: string;            // denormalized for display
   staffCount?: number;          // denormalized
+  isArchived?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// Department-specific Role
+// Department-specific Role (Aligned with backend Custom Role & Permission Matrix API)
 export interface DepartmentRole {
   id: string;
   departmentId: string;
-  name: string;                 // e.g. "Lead Developer"
-  permissions: Record<string, PermissionSet>; // key = module, e.g. "finance", "kyb"
+  name: string;
+  description?: string;
+  permissions: string[] | Record<string, PermissionSet>;
+  isSystemRole?: boolean;
+  assignedAdminCount?: number;
+  userCount?: number;
+  isArchived?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PermissionSet {

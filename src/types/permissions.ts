@@ -1,10 +1,16 @@
 export type PermissionCategory =
+  | "staff"
+  | "departments"
+  | "leave"
+  | "leads"
+  | "businesses"
   | "organizations"
   | "kyb"
   | "modules"
   | "billing"
   | "users"
   | "roles"
+  | "permissions"
   | "system";
 
 export type PermissionAction = "read" | "create" | "update" | "delete" | "approve" | "export";
