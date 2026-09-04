@@ -2,42 +2,44 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useStaff } from '@/hooks/useStaff';
+import { useStaffMember } from '@/features/staff/hooks/useStaff';
 import { StaffProfileView } from '@/components/staff/StaffProfileView';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { StaffMember, DepartmentRole } from '@/types/staff';
+import { resolveStaffMember } from '@/components/staff/profile/resolveStaffMember';
 
 export default function StaffProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const staffId = (params?.id as string) || '';
+
   const { repo, refresh } = useStaff();
-  const [staff, setStaff] = useState<StaffMember | null>(null);
-  const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [departmentRoles, setDepartmentRoles] = useState<DepartmentRole[]>([]);
+
+  // Optional live query against auth-service /admin/staff/:id
+  const liveQuery = useStaffMember(staffId);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-    const data = repo.getStaffById(params.id as string);
-    if (data) {
-      setStaff(data);
-      const allDeptRoles = repo.getDepartmentRoles() || [];
-      const assignedRoleIds = data.departmentRoleIds || [];
-      const assignedRoles = allDeptRoles.filter((r) => assignedRoleIds.includes(r.id));
-      setDepartmentRoles(assignedRoles);
-    } else {
-      router.push('/admin/staff/directory');
-    }
-    setLoading(false);
-  }, [params.id, mounted]);
+  const roles = useMemo(() => repo.getRoles(), [repo]);
 
-  const roles = repo.getRoles();
+  // Resolve staff member either from live backend (if available) or local repository
+  const resolvedStaff: StaffMember | null = useMemo(() => {
+    const local = staffId && repo ? repo.getStaffById(staffId) : null;
+    return resolveStaffMember(liveQuery.data, local, roles);
+  }, [liveQuery.data, staffId, repo, roles]);
 
-  if (!mounted || loading || !staff) {
+  const departmentRoles: DepartmentRole[] = useMemo(() => {
+    if (!resolvedStaff) return [];
+    const allDeptRoles = repo.getDepartmentRoles() || [];
+    const assignedRoleIds = resolvedStaff.departmentRoleIds || [];
+    return allDeptRoles.filter((r) => assignedRoleIds.includes(r.id));
+  }, [repo, resolvedStaff]);
+
+  if (!mounted || (liveQuery.isLoading && !resolvedStaff)) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-[#00A651]" />
@@ -45,13 +47,21 @@ export default function StaffProfilePage() {
     );
   }
 
+  if (!resolvedStaff) {
+    router.push('/admin/staff/directory');
+    return null;
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto py-2 px-1 sm:px-4">
       <StaffProfileView
-        staff={staff}
+        staff={resolvedStaff}
         roles={roles}
         departmentRoles={departmentRoles}
-        onRefresh={refresh}
+        onRefresh={() => {
+          liveQuery.refetch?.();
+          refresh();
+        }}
       />
     </div>
   );

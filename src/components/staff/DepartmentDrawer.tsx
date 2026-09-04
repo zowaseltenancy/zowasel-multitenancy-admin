@@ -10,20 +10,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useStaff } from '@/hooks/useStaff';
 import { toast } from 'sonner';
 import { Department } from '@/types/staff';
-import { Building2, User, UserCheck, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Building2, UserCheck, Loader2 } from 'lucide-react';
+import { DepartmentDrawerFields } from './department/DepartmentDrawerFields';
+import { DepartmentArchiveSection } from './department/DepartmentArchiveSection';
 
 interface Props {
   open: boolean;
@@ -58,7 +50,6 @@ export function DepartmentDrawer({ open, onOpenChange, department, onSuccess }: 
     setSubmitting(true);
     try {
       const selectedHead = headId && headId !== 'none' ? headId : null;
-
       if (department) {
         repo.updateDepartment(department.id, {
           name: name.trim(),
@@ -102,97 +93,39 @@ export function DepartmentDrawer({ open, onOpenChange, department, onSuccess }: 
             <Building2 className="h-5 w-5 text-primary" />
             {department ? 'Edit Department' : 'Create New Department'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs">
             {department
               ? 'Update department details, description scope, or reassign the head of unit.'
               : 'Define a new corporate unit, set its functional scope, and appoint its leader.'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="dept-name">Department Name <span className="text-destructive">*</span></Label>
-            <Input
-              id="dept-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Field Agents, Technology, Finance"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="dept-desc">Functional Description <span className="text-destructive">*</span></Label>
-            <Textarea
-              id="dept-desc"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the department's core responsibilities and focus..."
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="dept-head">Department Head / Unit Lead</Label>
-            <Select value={headId} onValueChange={setHeadId}>
-              <SelectTrigger id="dept-head">
-                <SelectValue placeholder="Select an appointed leader..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  <span className="text-muted-foreground italic">No Head Appointed (Unassigned)</span>
-                </SelectItem>
-                {staffList.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.firstName} {s.lastName} — ({s.department || 'Staff'})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-[11px] text-muted-foreground">
-              Department heads can review departmental requests and manage unit roles.
-            </p>
-          </div>
+        <div className="space-y-4 py-2 text-xs">
+          <DepartmentDrawerFields
+            name={name}
+            onNameChange={setName}
+            description={description}
+            onDescriptionChange={setDescription}
+            headId={headId}
+            onHeadIdChange={setHeadId}
+            staffList={staffList}
+          />
 
           {department && (
-            <div className="pt-3 border-t">
-              {confirmDelete ? (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2">
-                  <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
-                    <AlertCircle className="h-4 w-4" /> Are you sure you want to archive this department?
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    This unit will be soft-deleted. Staff records linked to this department will be preserved.
-                  </p>
-                  <div className="flex gap-2 pt-1">
-                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={handleDelete}>
-                      Yes, Archive Unit
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setConfirmDelete(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-start gap-2"
-                  onClick={() => setConfirmDelete(true)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Archive Department
-                </Button>
-              )}
-            </div>
+            <DepartmentArchiveSection
+              confirmDelete={confirmDelete}
+              onConfirmDeleteChange={setConfirmDelete}
+              onDelete={handleDelete}
+            />
           )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-8.5 text-xs">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+          <Button onClick={handleSubmit} disabled={submitting} size="sm" className="h-8.5 text-xs gap-1.5">
+            {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
             {department ? 'Save Changes' : 'Create Department'}
           </Button>
         </DialogFooter>

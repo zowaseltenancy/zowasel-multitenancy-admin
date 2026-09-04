@@ -3,24 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Edit3,
-  KeyRound,
-  MoreHorizontal,
-  ShieldCheck,
-  Building2,
-  CalendarPlus,
-  Mail,
-  UserX,
-  UserCheck,
-  ChevronRight,
+  Edit3, KeyRound, MoreHorizontal, ShieldCheck, Building2,
+  CalendarPlus, Mail, UserX, UserCheck, ChevronRight,
 } from 'lucide-react';
 import { StaffMember } from '@/types/staff';
 
@@ -28,9 +16,9 @@ interface ProfileHeaderProps {
   staff: StaffMember;
   onEditProfile: () => void;
   onResetPassword: () => void;
-  onChangeRole: () => void;
+  onChangeRole?: () => void;
   onReassignDept: () => void;
-  onRequestLeave: () => void;
+  onRequestLeave?: () => void;
   onSendMessage: () => void;
   onToggleStatus: () => void;
 }
@@ -114,15 +102,19 @@ export function ProfileHeader({
               <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Staff Actions
               </DropdownMenuLabel>
-              <DropdownMenuItem onClick={onChangeRole} className="gap-2 cursor-pointer text-xs">
-                <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" /> Change Role
-              </DropdownMenuItem>
+              {onChangeRole && (
+                <DropdownMenuItem onClick={onChangeRole} className="gap-2 cursor-pointer text-xs">
+                  <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" /> Change Role
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onReassignDept} className="gap-2 cursor-pointer text-xs">
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" /> Reassign Department
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onRequestLeave} className="gap-2 cursor-pointer text-xs">
-                <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" /> Request Leave
-              </DropdownMenuItem>
+              {onRequestLeave && (
+                <DropdownMenuItem onClick={onRequestLeave} className="gap-2 cursor-pointer text-xs">
+                  <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" /> Request Leave
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onSendMessage} className="gap-2 cursor-pointer text-xs">
                 <Mail className="h-3.5 w-3.5 text-muted-foreground" /> Send Message
               </DropdownMenuItem>

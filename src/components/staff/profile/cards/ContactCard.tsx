@@ -1,17 +1,15 @@
 'use client';
 
-import { Mail, Phone, MapPin, Send, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Mail, Phone, MapPin, Copy, Check } from 'lucide-react';
 import { StaffMember } from '@/types/staff';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface ContactCardProps {
   staff: StaffMember;
-  onSendMessage: () => void;
 }
 
-export function ContactCard({ staff, onSendMessage }: ContactCardProps) {
+export function ContactCard({ staff }: ContactCardProps) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const handleCopy = (text: string, label: string) => {
@@ -89,16 +87,6 @@ export function ContactCard({ staff, onSendMessage }: ContactCardProps) {
           </p>
         </div>
       </div>
-
-      {/* Action Button: Send Message */}
-      <Button
-        type="button"
-        size="sm"
-        onClick={onSendMessage}
-        className="w-full h-8.5 bg-[#00A651] hover:bg-[#008C44] text-white font-semibold text-xs gap-1.5 shadow-xs cursor-pointer"
-      >
-        <Send className="h-3.5 w-3.5" /> Send Message
-      </Button>
     </div>
   );
 }

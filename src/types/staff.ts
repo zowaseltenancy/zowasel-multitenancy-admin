@@ -4,16 +4,27 @@ export interface StaffMember {
   lastName: string;
   email: string;
   phone: string;
+  mobilenumber?: string;
+  country?: string;
+  employmenttype?: string;
   department: string;
+  departmentId?: string;
+  departmentObj?: { id: string; name: string } | null;
   roleId: string;
-  systemRole?: 'super_admin' | 'admin' | 'staff';
+  systemRole?: 'super_admin' | 'admin' | 'staff' | string;
   roleIds?: string[];
-  roles?: { id: string; name: string }[];
+  roles?: { id: string; name: string; description?: string }[];
   permissions?: string[];
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'suspended' | 'invited' | string;
+  statusHistory?: Array<{ status: string; at: string; reason?: string }>;
+  manager?: { id: string; firstName: string | null; lastName: string | null; email?: string } | null;
   avatarUrl?: string;
   dateJoined?: string;
   lastActive?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  tempdelete?: number;
+  deletedby?: string;
 
   // New fields for biodata
   dateOfBirth?: string;

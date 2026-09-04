@@ -13,12 +13,19 @@ export interface StaffDto {
   firstName: string | null;
   lastName: string | null;
   role: StaffSystemRole;
+  systemRole?: string;
   status: StaffStatus;
   isActive: boolean;
   department: { id: string; name: string } | null;
   manager: { id: string; firstName: string | null; lastName: string | null } | null;
   roles: Array<{ id: string; name: string }>;
   permissions: string[];
+  mobilenumber?: string | null;
+  employmenttype?: string | null;
+  country?: string | null;
+  statusHistory?: Array<{ status: string; at: string; reason?: string }>;
+  tempdelete?: number;
+  deletedby?: string;
   createdAt: string;
   updatedAt: string;
 }

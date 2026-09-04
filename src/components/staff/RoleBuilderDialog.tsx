@@ -12,13 +12,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useStaff } from '@/hooks/useStaff';
-import { PERMISSION_GROUPS } from '@/constants/permissions';
 import { DepartmentRole } from '@/types/staff';
-import { ShieldCheck, Layers } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { RoleBuilderPermissionsList } from './roles/RoleBuilderPermissionsList';
 
 interface Props {
   open: boolean;
@@ -61,7 +59,6 @@ export function RoleBuilderDialog({
   const handleSave = () => {
     if (!name.trim()) return toast.error('Role name required');
 
-    // Backend Contract: POST /api/v1/admin/roles + PUT /api/v1/admin/roles/:id/permissions
     const newRole: DepartmentRole = {
       id: existingRole?.id || `role-dept-${Date.now()}`,
       departmentId,
@@ -71,22 +68,18 @@ export function RoleBuilderDialog({
       isSystemRole: false,
     };
 
-    // Save to unified roles repo so it appears on RBAC Access Matrix
+    const rolePayload = {
+      name: newRole.name,
+      description: newRole.description || '',
+      permissions: selectedPermissions,
+      departmentId,
+      isSystemRole: false,
+    };
+
     if (existingRole) {
-      repo.updateRole(existingRole.id, {
-        name: newRole.name,
-        description: newRole.description,
-        permissions: selectedPermissions,
-        departmentId,
-      });
+      repo.updateRole(existingRole.id, rolePayload);
     } else {
-      repo.addRole({
-        name: newRole.name,
-        description: newRole.description || '',
-        permissions: selectedPermissions,
-        departmentId,
-        isSystemRole: false,
-      });
+      repo.addRole(rolePayload);
     }
 
     onSave(newRole);
@@ -140,61 +133,10 @@ export function RoleBuilderDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold text-foreground">
-                Granted Capabilities ({selectedPermissions.length} selected)
-              </Label>
-              <span className="text-[10.5px] font-mono text-muted-foreground">
-                Flat Permission Array
-              </span>
-            </div>
-
-            <div className="border border-border/60 rounded-xl overflow-hidden divide-y divide-border/60 max-h-72 overflow-y-auto bg-card">
-              {PERMISSION_GROUPS.map((group) => (
-                <div key={group.category} className="p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-[#00A651]" />
-                      {group.label}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {group.permissions.length} scopes
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {group.permissions.map((p) => {
-                      const isChecked = selectedPermissions.includes(p.code);
-                      return (
-                        <label
-                          key={p.code}
-                          className={`flex items-start gap-2 p-1.5 rounded-lg cursor-pointer transition-colors border ${
-                            isChecked
-                              ? 'bg-[#00A651]/10 border-[#00A651]/30'
-                              : 'hover:bg-muted/30 border-transparent'
-                          }`}
-                        >
-                          <Checkbox
-                            checked={isChecked}
-                            onCheckedChange={() => togglePermission(p.code)}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1">
-                            <span className="font-semibold text-[11.5px] text-foreground block leading-tight">
-                              {p.name}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground font-mono block">
-                              {p.code}
-                            </span>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <RoleBuilderPermissionsList
+            selectedPermissions={selectedPermissions}
+            onTogglePermission={togglePermission}
+          />
 
           <Button
             type="button"
