@@ -31,7 +31,7 @@ export function EmploymentOverviewCard({ staff, roleName, onViewFullDetails }: E
     <div className="border border-border/60 rounded-2xl bg-card p-5 shadow-2xs space-y-4">
       <div className="flex items-center justify-between pb-1 border-b border-border/40">
         <div className="flex items-center gap-2">
-          <Briefcase className="h-4 w-4 text-[#00A651]" />
+          <Briefcase className="h-4 w-4 text-[#44883C]" />
           <h3 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
             Employment Overview
           </h3>
@@ -40,9 +40,9 @@ export function EmploymentOverviewCard({ staff, roleName, onViewFullDetails }: E
         <button
           type="button"
           onClick={onViewFullDetails}
-          className="text-xs font-semibold text-[#008C44] dark:text-[#00C862] hover:underline flex items-center gap-1 cursor-pointer"
+          className="text-xs font-semibold text-[#44883C] dark:text-[#5cb850] hover:underline flex items-center gap-1 cursor-pointer"
         >
-          View full employment details <ArrowRight className="h-3 w-3" />
+          View department & team <ArrowRight className="h-3 w-3" />
         </button>
       </div>
 

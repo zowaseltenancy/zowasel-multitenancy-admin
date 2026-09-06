@@ -5,9 +5,7 @@ import {
   Eye,
   Pencil,
   MoreHorizontal,
-  ShieldCheck,
   Building2,
-  Mail,
   UserX,
   UserCheck,
 } from 'lucide-react';
@@ -32,9 +30,9 @@ interface DirectoryRowActionsProps {
   staff: StaffMember;
   onViewProfile: (e: React.MouseEvent) => void;
   onEditStaff: (e: React.MouseEvent) => void;
-  onOpenRoleDialog: (e: React.MouseEvent, staff: StaffMember) => void;
+  onOpenRoleDialog?: (e: React.MouseEvent, staff: StaffMember) => void;
   onOpenDeptDialog: (e: React.MouseEvent, staff: StaffMember) => void;
-  onOpenMessageDialog: (e: React.MouseEvent, staff: StaffMember) => void;
+  onOpenMessageDialog?: (e: React.MouseEvent, staff: StaffMember) => void;
   onStatusToggle: (e: React.MouseEvent, staff: StaffMember) => void;
 }
 
@@ -58,7 +56,7 @@ export function DirectoryRowActions({
                 variant="ghost"
                 size="sm"
                 onClick={onViewProfile}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-[#00A651] hover:bg-[#00A651]/10 cursor-pointer"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-[#44883C] hover:bg-[#44883C]/10 cursor-pointer"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -110,14 +108,8 @@ export function DirectoryRowActions({
           <DropdownMenuItem onClick={onEditStaff} className="gap-2 text-xs cursor-pointer">
             <Pencil className="h-3.5 w-3.5 text-muted-foreground" /> Edit Details
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => onOpenRoleDialog(e, staff)} className="gap-2 text-xs cursor-pointer">
-            <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" /> Change Role
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={(e) => onOpenDeptDialog(e, staff)} className="gap-2 text-xs cursor-pointer">
             <Building2 className="h-3.5 w-3.5 text-muted-foreground" /> Reassign Dept
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => onOpenMessageDialog(e, staff)} className="gap-2 text-xs cursor-pointer">
-            <Mail className="h-3.5 w-3.5 text-muted-foreground" /> Send Message
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -125,7 +117,7 @@ export function DirectoryRowActions({
             className={`gap-2 text-xs cursor-pointer ${
               staff.status === 'active'
                 ? 'text-amber-600 dark:text-amber-400'
-                : 'text-[#00A651]'
+                : 'text-[#44883C]'
             }`}
           >
             {staff.status === 'active' ? (

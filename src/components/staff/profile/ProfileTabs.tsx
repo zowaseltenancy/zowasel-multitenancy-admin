@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   LayoutDashboard,
   Building2,
@@ -36,14 +37,14 @@ export function ProfileTabs({ activeTab, onTabChange }: ProfileTabsProps) {
               onClick={() => onTabChange(tab.key)}
               className={`group relative flex items-center gap-2 py-3 px-3.5 sm:px-4 text-xs sm:text-sm font-medium transition-all cursor-pointer border-b-2 -mb-px ${
                 isActive
-                  ? 'text-[#00A651] dark:text-[#00C862] border-[#00A651] font-semibold'
+                  ? 'text-[#44883C] dark:text-[#5cb850] border-[#44883C] font-semibold'
                   : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
               }`}
             >
               <Icon
                 className={`h-4 w-4 transition-colors ${
                   isActive
-                    ? 'text-[#00A651]'
+                    ? 'text-[#44883C] dark:text-[#5cb850]'
                     : 'text-muted-foreground group-hover:text-foreground'
                 }`}
               />

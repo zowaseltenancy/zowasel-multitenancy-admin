@@ -11,17 +11,26 @@ import { useOnboardingChecklist } from './useOnboardingChecklist';
 import { usePhoneCountryCodes } from './usePhoneCountryCodes';
 
 interface UseStaffOnboardingFormOptions {
+  initialStep?: number;
   defaultValues?: Partial<StaffFormValues>;
   roles: { id: string; name: string }[];
   onSubmit: (data: StaffFormValues) => Promise<void>;
 }
 
 export function useStaffOnboardingForm({
+  initialStep = 0,
   defaultValues,
   roles,
   onSubmit,
 }: UseStaffOnboardingFormOptions) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
+
+  useEffect(() => {
+    if (typeof initialStep === 'number' && initialStep >= 0 && initialStep < ONBOARDING_STAGES.length) {
+      setStep(initialStep);
+    }
+  }, [initialStep]);
+
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string>('Just now');
   const webcamRef = useRef<Webcam>(null);

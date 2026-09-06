@@ -63,13 +63,13 @@ export function DirectoryTableRow({
             )}
             <span
               className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card ${
-                staff.status === 'active' ? 'bg-[#00A651]' : 'bg-amber-500'
+                staff.status === 'active' ? 'bg-[#44883C]' : 'bg-amber-500'
               }`}
             />
           </div>
 
           <div className="min-w-0">
-            <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 group-hover:text-[#008C44] dark:group-hover:text-[#00C862] transition-colors truncate">
+            <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 group-hover:text-[#44883C] dark:group-hover:text-[#5cb850] transition-colors truncate">
               {staff.firstName} {staff.lastName}
             </p>
             <p className="text-[11px] text-muted-foreground font-mono truncate">
@@ -89,7 +89,7 @@ export function DirectoryTableRow({
         >
           <span>{employeeId}</span>
           {copiedId === employeeId ? (
-            <Check className="h-3 w-3 text-[#00A651]" />
+            <Check className="h-3 w-3 text-[#44883C]" />
           ) : (
             <Copy className="h-3 w-3 opacity-40 group-hover:opacity-80" />
           )}
@@ -117,13 +117,13 @@ export function DirectoryTableRow({
           variant="outline"
           className={`text-[10.5px] font-semibold px-2 py-0.5 ${
             staff.status === 'active'
-              ? 'text-[#008C44] dark:text-[#00C862] border-[#00A651]/30 bg-[#00A651]/10'
+              ? 'text-[#44883C] dark:text-[#5cb850] border-[#44883C]/30 bg-[#44883C]/10'
               : 'text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10'
           }`}
         >
           <span
             className={`h-1.5 w-1.5 rounded-full mr-1.5 ${
-              staff.status === 'active' ? 'bg-[#00A651]' : 'bg-amber-500'
+              staff.status === 'active' ? 'bg-[#44883C]' : 'bg-amber-500'
             }`}
           />
           {staff.status === 'active' ? 'Active' : 'Inactive'}

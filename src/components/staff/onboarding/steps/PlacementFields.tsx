@@ -35,13 +35,15 @@ export function PlacementFields({
 }: PlacementFieldsProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 pb-2 border-b border-border/60">
-        <Briefcase className="h-4 w-4 text-[#44883C]" />
-        <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+      <div className="flex items-center gap-2 pb-2.5 border-b border-border/60">
+        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+          <Briefcase className="h-3.5 w-3.5" />
+        </div>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
           Corporate Placement & Designation
         </h3>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 sm:gap-x-10 gap-y-6 sm:gap-y-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-6 sm:gap-y-7">
         <PlacementDeptRoleFields
           watch={watch}
           setValue={setValue}
@@ -50,13 +52,15 @@ export function PlacementFields({
           roles={roles}
         />
 
-        <div className="space-y-2">
-          <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">Employment Type *</Label>
+        <div className="space-y-2.5">
+          <Label className="text-xs font-semibold text-foreground flex items-center">
+            Employment Type <span className="text-destructive font-bold ml-0.5">*</span>
+          </Label>
           <Select
             value={watch('employment.employmentType')}
             onValueChange={(val) => setValue('employment.employmentType', val as any, { shouldValidate: true, shouldDirty: true })}
           >
-            <SelectTrigger id="employmentTypeSelect" className="h-11 text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100">
+            <SelectTrigger id="employmentTypeSelect" className="h-11 text-sm rounded-xl bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]">
               <SelectValue placeholder="Select employment type" />
             </SelectTrigger>
             <SelectContent>
@@ -71,27 +75,27 @@ export function PlacementFields({
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="dateOfJoining" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
-            Date of Joining *
+        <div className="space-y-2.5">
+          <Label htmlFor="dateOfJoining" className="text-xs font-semibold text-foreground flex items-center">
+            Date of Joining <span className="text-destructive font-bold ml-0.5">*</span>
           </Label>
           <Input
             id="dateOfJoining"
             type="date"
             {...register('employment.dateOfJoining')}
-            className="h-11 text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100"
+            className="h-11 text-sm rounded-xl bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
           />
           {errors.employment?.dateOfJoining && (
             <p className="text-[11px] text-destructive">{errors.employment.dateOfJoining.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="employeeId" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
+            <Label htmlFor="employeeId" className="text-xs font-semibold text-foreground block">
               Staff ID
             </Label>
-            <span className="text-[9.5px] font-medium text-[#44883C] bg-[#44883C]/10 px-1.5 py-0.5 rounded-md border border-[#44883C]/20">
+            <span className="text-[10px] font-semibold text-[#44883C] dark:text-[#5cb850] bg-[#44883C]/10 px-2 py-0.5 rounded-full border border-[#44883C]/20">
               Auto-generated
             </span>
           </div>
@@ -100,7 +104,7 @@ export function PlacementFields({
               id="employeeId"
               placeholder="STA-2026-0000"
               {...register('employment.employeeId')}
-              className="h-11 text-sm font-mono font-medium rounded-xl bg-background text-slate-900 dark:text-slate-100 pr-10"
+              className="h-11 text-sm font-mono font-medium rounded-xl bg-background text-foreground pr-10 focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
             />
             <button
               type="button"
@@ -113,7 +117,7 @@ export function PlacementFields({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/50 text-xs text-muted-foreground self-end h-11">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/25 border border-border/50 text-xs text-muted-foreground self-end h-11">
           <ShieldCheck className="h-4 w-4 text-[#44883C] shrink-0" />
           <span className="text-[11px] leading-tight">Staff ID is generated automatically according to corporate numbering.</span>
         </div>

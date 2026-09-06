@@ -75,7 +75,7 @@ export function ProfileHeader({
             type="button"
             size="sm"
             onClick={onEditProfile}
-            className="h-8 sm:h-9 px-3.5 bg-[#00A651] hover:bg-[#008C44] text-white font-medium shadow-xs gap-1.5 cursor-pointer text-xs sm:text-sm"
+            className="h-8 sm:h-9 px-3.5 bg-[#44883C] hover:bg-[#3b7434] text-white font-medium shadow-xs gap-1.5 cursor-pointer text-xs sm:text-sm"
           >
             <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Edit Profile
           </Button>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import {
+  Users,
   UserCheck,
   CalendarClock,
   UserPlus,
@@ -61,38 +62,38 @@ export function StaffDashboardSummary({
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border border-blue-200/80 dark:border-blue-900/60 bg-gradient-to-br from-blue-50/70 via-card to-card dark:from-blue-950/30 dark:via-card dark:to-card shadow-2xs hover:shadow-xs transition-all">
+        <Card className="border border-cyan-500/20 bg-cyan-500/5 dark:bg-cyan-500/10 shadow-2xs hover:shadow-xs transition-all">
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs shrink-0">
-              <UserCheck className="h-5 w-5" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 border border-cyan-500/30 dark:text-cyan-400 shadow-xs shrink-0">
+              <Users className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Total Staff</p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">{totalStaff}</p>
+              <p className="text-xs font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">Total Staff</p>
+              <p className="text-2xl font-extrabold text-foreground font-mono">{totalStaff}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-emerald-200/80 dark:border-emerald-900/60 bg-gradient-to-br from-emerald-50/70 via-card to-card dark:from-emerald-950/30 dark:via-card dark:to-card shadow-2xs hover:shadow-xs transition-all">
+        <Card className="border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-2xs hover:shadow-xs transition-all">
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00A651] text-white shadow-xs shrink-0">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400 shadow-xs shrink-0">
               <UserCheck className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#008C44] dark:text-[#00C862] uppercase tracking-wider">Active Staff</p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">{activeCount}</p>
+              <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Active Staff</p>
+              <p className="text-2xl font-extrabold text-foreground font-mono">{activeCount}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-amber-200/80 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/70 via-card to-card dark:from-amber-950/30 dark:via-card dark:to-card shadow-2xs hover:shadow-xs transition-all">
+        <Card className="border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 shadow-2xs hover:shadow-xs transition-all">
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs shrink-0">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400 shadow-xs shrink-0">
               <CalendarClock className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Pending Leave Requests</p>
-              <p className="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">{pendingLeaveCount}</p>
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Pending Leave Requests</p>
+              <p className="text-2xl font-extrabold text-foreground font-mono">{pendingLeaveCount}</p>
               <Link
                 href="/admin/staff/leave"
                 className="text-xs text-amber-700 dark:text-amber-400 font-medium hover:underline"

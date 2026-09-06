@@ -56,11 +56,11 @@ export function QueueTableRow({
       {/* Employee */}
       <TableCell className="py-3.5">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-xl bg-muted text-foreground font-bold text-xs flex items-center justify-center border shrink-0">
+          <div className="h-8 w-8 rounded-xl bg-[#44883C]/10 text-[#44883C] dark:text-[#5cb850] font-bold text-xs flex items-center justify-center border border-[#44883C]/25 shrink-0 shadow-2xs">
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-xs text-slate-900 dark:text-slate-100 group-hover:text-[#008C44] transition-colors truncate">
+            <p className="font-bold text-xs text-foreground group-hover:text-[#44883C] transition-colors truncate">
               {req.employeeName}
             </p>
             <p className="text-[10.5px] text-muted-foreground font-mono">{req.id}</p>

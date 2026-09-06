@@ -34,7 +34,7 @@ export function StepPersonalInfo({
   onGenderChange,
 }: StepPersonalInfoProps) {
   return (
-    <div className="space-y-8 sm:space-y-9">
+    <div className="space-y-8 sm:space-y-10">
       <ProfilePhotoStudio
         avatarUrl={avatarUrl}
         onAvatarChange={onAvatarChange}
@@ -50,32 +50,34 @@ export function StepPersonalInfo({
       />
 
       {/* Sub-Section 2: Biodata & Demographics */}
-      <div className="space-y-6 pt-6 border-t border-border/60">
-        <div className="flex items-center gap-2 pb-2 border-b border-border/60">
-          <Calendar className="h-4 w-4 text-[#44883C]" />
-          <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+      <div className="space-y-6 pt-7 border-t border-border/60">
+        <div className="flex items-center gap-2 pb-2.5 border-b border-border/60">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+            <Calendar className="h-3.5 w-3.5" />
+          </div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
             Biodata & Demographics
           </h3>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 sm:gap-x-10 gap-y-6 sm:gap-y-8">
-          <div className="space-y-2">
-            <Label htmlFor="dob" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
-              Date of Birth *
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-6 sm:gap-y-7">
+          <div className="space-y-2.5">
+            <Label htmlFor="dob" className="text-xs font-semibold text-foreground flex items-center">
+              Date of Birth <span className="text-destructive font-bold ml-0.5">*</span>
             </Label>
             <Input
               id="dob"
               type="date"
               {...register('personalInfo.dateOfBirth')}
-              className="h-11 text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100"
+              className="h-11 text-sm rounded-xl bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
             />
             {errors.personalInfo?.dateOfBirth && (
               <p className="text-[11px] text-destructive">{errors.personalInfo.dateOfBirth.message}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="genderInput" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
-              Gender *
+          <div className="space-y-2.5">
+            <Label htmlFor="genderInput" className="text-xs font-semibold text-foreground flex items-center">
+              Gender <span className="text-destructive font-bold ml-0.5">*</span>
             </Label>
             <TypeableDropdown
               id="genderInput"

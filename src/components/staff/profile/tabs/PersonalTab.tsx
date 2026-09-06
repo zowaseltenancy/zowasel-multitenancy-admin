@@ -2,7 +2,6 @@
 
 import { StaffMember } from '@/types/staff';
 import { PersonalDemographicsSection } from './personal/PersonalDemographicsSection';
-import { NextOfKinSection } from './personal/NextOfKinSection';
 import { EducationPayrollSection } from './personal/EducationPayrollSection';
 
 interface PersonalTabProps {
@@ -26,7 +25,6 @@ export function PersonalTab({ staff }: PersonalTabProps) {
   return (
     <div className="border border-border/60 rounded-2xl bg-card overflow-hidden shadow-2xs divide-y divide-border/60">
       <PersonalDemographicsSection staff={staff} formatDate={formatDate} />
-      <NextOfKinSection nextOfKin={staff.nextOfKin} />
       <EducationPayrollSection staff={staff} />
     </div>
   );

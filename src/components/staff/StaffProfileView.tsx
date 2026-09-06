@@ -51,7 +51,7 @@ export function StaffProfileView({
     <div className="space-y-5 max-w-6xl mx-auto pb-10">
       <ProfileHeader
         staff={staff}
-        onEditProfile={() => router.push(`/admin/staff/${staff.id}/edit`)}
+        onEditProfile={() => router.push(`/admin/staff/${staff.id}/edit?step=3`)}
         onResetPassword={() => setResetPasswordOpen(true)}
         onReassignDept={() => setReassignDeptOpen(true)}
         onSendMessage={() => setSendMessageOpen(true)}

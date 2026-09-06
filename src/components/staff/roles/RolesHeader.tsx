@@ -23,16 +23,16 @@ export function RolesHeader({ onOpenCreateRole }: RolesHeaderProps) {
           Staff Management
         </button>
         <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-        <span className="text-foreground font-semibold">Roles & Access Control</span>
+        <span className="text-foreground font-semibold">Roles & Permissions</span>
       </nav>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Roles & Scopes Management
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            Roles & Permissions
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Define corporate roles, manage RBAC permission scopes, and inspect security access matrices.
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Define corporate roles, manage RBAC permissions, and inspect security access matrices.
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export function RolesHeader({ onOpenCreateRole }: RolesHeaderProps) {
           <Button
             size="sm"
             onClick={onOpenCreateRole}
-            className="h-9 px-3.5 bg-[#00A651] hover:bg-[#008C44] text-white font-bold gap-1.5 text-xs sm:text-sm"
+            className="h-9 px-3.5 bg-[#44883C] hover:bg-[#3b7434] text-white font-bold gap-1.5 text-xs sm:text-sm cursor-pointer shadow-xs"
           >
             <Plus className="h-4 w-4" /> Create Custom Role
           </Button>

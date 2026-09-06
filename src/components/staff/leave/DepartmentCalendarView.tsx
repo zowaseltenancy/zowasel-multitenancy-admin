@@ -78,6 +78,7 @@ export function DepartmentCalendarView({
             <strong className="text-foreground">Approved</strong>
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 ml-1.5" />
             <strong className="text-foreground">Pending</strong>
+            <span className="text-[10px] text-muted-foreground ml-1.5 font-medium">• Working days only</span>
           </span>
           <span className="font-mono text-[10px]">
             {calendarMonth.toLocaleString('default', { month: 'short' })} {calendarMonth.getFullYear()}

@@ -22,79 +22,79 @@ export function ReviewPlacementPayrollSection({
   return (
     <>
       {/* 5. Corporate Placement & Designation */}
-      <div id="rev-section-placement" className="p-3.5 space-y-2 scroll-mt-6">
-        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+      <div id="rev-section-placement" className="p-5 sm:p-6 space-y-3.5 scroll-mt-6">
+        <div className="flex items-center justify-between pb-2 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <Briefcase className="h-3.5 w-3.5 text-[#44883C]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <Briefcase className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-foreground">
               3A. Corporate Placement & Designation
             </span>
           </div>
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#008C44] dark:text-[#00C862] hover:underline cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
           >
             <Pencil className="h-3 w-3" /> Edit
           </button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 sm:gap-5 text-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground block">Department</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{candidateDept}</p>
+            <span className="text-[11px] text-muted-foreground block">Department</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{candidateDept}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Designated Role</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{candidateRole}</p>
+            <span className="text-[11px] text-muted-foreground block">Designated Role</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{candidateRole}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Staff ID</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono">{employment?.employeeId || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Staff ID</span>
+            <p className="font-semibold text-foreground font-mono text-[12.5px] mt-0.5">{employment?.employeeId || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Employment Type</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100 capitalize">{employment?.employmentType || 'full-time'}</p>
+            <span className="text-[11px] text-muted-foreground block">Employment Type</span>
+            <p className="font-semibold text-foreground capitalize text-[13px] mt-0.5">{employment?.employmentType || 'full-time'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Date of Joining</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{employment?.dateOfJoining || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Date of Joining</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{employment?.dateOfJoining || '—'}</p>
           </div>
         </div>
       </div>
 
       {/* 6. Payroll Disbursement & Statutory Tax */}
-      <div id="rev-section-payroll" className="p-3.5 space-y-2 scroll-mt-6">
-        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+      <div id="rev-section-payroll" className="p-5 sm:p-6 space-y-3.5 scroll-mt-6 border-t border-border/60">
+        <div className="flex items-center justify-between pb-2 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <Landmark className="h-3.5 w-3.5 text-[#00A651]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <Landmark className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-foreground">
               3B. Payroll Disbursement & Statutory Tax
             </span>
           </div>
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#008C44] dark:text-[#00C862] hover:underline cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
           >
             <Pencil className="h-3 w-3" /> Edit
           </button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 text-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground block">Disbursement Bank</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{bank?.bankName || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Disbursement Bank</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{bank?.bankName || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Account Number (NUBAN)</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono">{bank?.accountNumber || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Account Number (NUBAN)</span>
+            <p className="font-semibold text-foreground font-mono text-[12.5px] mt-0.5">{bank?.accountNumber || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Branch Sort Code</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono">{bank?.sortCode || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Branch Sort Code</span>
+            <p className="font-semibold text-foreground font-mono text-[12.5px] mt-0.5">{bank?.sortCode || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Tax ID / TIN</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono">{bank?.taxId || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Tax ID / TIN</span>
+            <p className="font-semibold text-foreground font-mono text-[12.5px] mt-0.5">{bank?.taxId || '—'}</p>
           </div>
         </div>
       </div>

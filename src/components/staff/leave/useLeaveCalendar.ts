@@ -25,9 +25,17 @@ export function useLeaveCalendar(requests: LeaveRequest[], defaultOpen: boolean)
 
   const getLeavesForDate = (day: number) => {
     const year = calendarMonth.getFullYear();
-    const monthStr = String(calendarMonth.getMonth() + 1).padStart(2, '0');
+    const month = calendarMonth.getMonth();
+    const monthStr = String(month + 1).padStart(2, '0');
     const dayStr = String(day).padStart(2, '0');
     const dateStr = `${year}-${monthStr}-${dayStr}`;
+
+    // Ensure leave days highlighted on calendar strictly fall on working days (Mon-Fri), not weekends
+    const dateObj = new Date(year, month, day);
+    const dayOfWeek = dateObj.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return [];
+    }
 
     return requests.filter((r) => {
       const isStatusOk =

@@ -70,6 +70,7 @@ export function OnboardingStepSwitcher({
       <StepAddressAndKin
         register={register}
         errors={errors}
+        watch={watch}
         kinPhoneCode={kinPhoneCode}
         setKinPhoneCode={setKinPhoneCode}
       />

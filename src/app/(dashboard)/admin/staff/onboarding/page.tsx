@@ -30,6 +30,7 @@ export default function StaffOnboardingPage() {
     lastName: data.personalInfo.lastName,
     email: data.personalInfo.email,
     phone: data.personalInfo.phone,
+    avatarUrl: data.personalInfo.avatarUrl,
     dateOfBirth: data.personalInfo.dateOfBirth,
     gender: data.personalInfo.gender as any,
     maritalStatus: data.personalInfo.maritalStatus,
@@ -70,7 +71,7 @@ export default function StaffOnboardingPage() {
   if (!mounted) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00A651]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#44883C]" />
       </div>
     );
   }

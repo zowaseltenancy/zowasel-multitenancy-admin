@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { StaffFormValues } from '@/lib/validations/staff';
@@ -12,19 +13,27 @@ import { OnboardingCameraModal } from './onboarding/OnboardingCameraModal';
 import { useStaffOnboardingForm } from './onboarding/useStaffOnboardingForm';
 
 interface StaffOnboardingFormProps {
+  initialStep?: number;
+  title?: string;
   defaultValues?: Partial<StaffFormValues>;
   roles: { id: string; name: string }[];
   departments: string[];
   onSubmit: (data: StaffFormValues) => Promise<void>;
   isSubmitting?: boolean;
+  submitLabel?: string;
+  onCancel?: () => void;
 }
 
 export function StaffOnboardingForm({
+  initialStep = 0,
+  title,
   defaultValues,
   roles,
   departments,
   onSubmit,
   isSubmitting = false,
+  submitLabel,
+  onCancel,
 }: StaffOnboardingFormProps) {
   const {
     step,
@@ -56,22 +65,34 @@ export function StaffOnboardingForm({
     candidateInitials,
     candidateRole,
     candidateDept,
-  } = useStaffOnboardingForm({ defaultValues, roles, onSubmit });
+  } = useStaffOnboardingForm({ initialStep, defaultValues, roles, onSubmit });
 
   return (
     <div className="space-y-3.5 w-full max-w-7xl mx-auto">
       <OnboardingHeader
+        title={title}
         step={step}
         completedDetailsCount={completedDetailsCount}
         totalDetailsCount={totalDetailsCount}
         onSaveDraft={() => toast.success('Draft progress saved successfully. You can safely resume later.')}
       />
 
-      <div className="border border-border/60 rounded-2xl bg-card shadow-xs overflow-hidden flex flex-col">
-        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-border/60 flex-1">
-          <div ref={formScrollRef} className="lg:col-span-9 p-6 sm:p-8 lg:p-9 flex flex-col justify-between space-y-6 sm:space-y-8 animate-in fade-in-50 duration-200">
+      {/* DUAL-PANE DESKTOP LAYOUT: Form content scrolls internally; Side wizard remains completely fixed */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start lg:h-[calc(100vh-12.5rem)] lg:min-h-[580px]">
+        {/* LEFT: MAIN FORM CARD (Center content that scrolls internally) */}
+        <div
+          className="lg:col-span-9 rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden flex flex-col h-full"
+        >
+          <div
+            ref={formScrollRef}
+            className="p-6 sm:p-8 lg:p-9 space-y-6 sm:space-y-8 animate-in fade-in-50 duration-200 flex-1 overflow-y-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
             <div className="space-y-6 sm:space-y-8">
-              <StepCardHeader stepNumber={step + 1} title={currentStage.title} description={currentStage.description} />
+              <StepCardHeader
+                stepNumber={step + 1}
+                title={currentStage.title}
+                description={currentStage.description}
+              />
 
               <OnboardingStepSwitcher
                 step={step}
@@ -95,34 +116,44 @@ export function StaffOnboardingForm({
               />
             </div>
 
-            <div className="pt-6 mt-8 border-t border-border/40 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="pt-5 border-t border-border/40 flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-[#44883C] shrink-0" />
               <span>All entered data is securely encrypted and auto-saved in compliance with enterprise policies.</span>
             </div>
           </div>
 
+          <OnboardingFooterNav
+            step={step}
+            lastSavedTime={lastSavedTime}
+            isSubmitting={isSubmitting}
+            submitLabel={submitLabel}
+            onCancel={onCancel}
+            onBack={() => {
+              if (step > 0) goToStep(step - 1);
+            }}
+            onNext={() => goToStep(step + 1)}
+            onSubmit={handleSubmit(onFinalSubmit)}
+          />
+        </div>
+
+        {/* RIGHT: WIZARD PROGRESS CARD (Completely static and fixed in place, does NOT move) */}
+        <div className="lg:col-span-3 flex flex-col h-full overflow-hidden">
           <OnboardingRightRail
             step={step}
             avatarUrl={currentValues.personalInfo?.avatarUrl}
             candidateInitials={candidateInitials}
             candidateName={candidateName}
             candidateEmail={currentValues.personalInfo?.email}
+            candidateRole={candidateRole}
+            candidateDept={candidateDept}
             currentStageFields={currentStageFields}
             stageDoneCount={stageDoneCount}
             stageTotalCount={stageTotalCount}
             completedDetailsCount={completedDetailsCount}
             totalDetailsCount={totalDetailsCount}
+            onGoToStep={goToStep}
           />
         </div>
-
-        <OnboardingFooterNav
-          step={step}
-          lastSavedTime={lastSavedTime}
-          isSubmitting={isSubmitting}
-          onBack={() => { if (step > 0) goToStep(step - 1); }}
-          onNext={() => goToStep(step + 1)}
-          onSubmit={handleSubmit(onFinalSubmit)}
-        />
       </div>
 
       <OnboardingCameraModal

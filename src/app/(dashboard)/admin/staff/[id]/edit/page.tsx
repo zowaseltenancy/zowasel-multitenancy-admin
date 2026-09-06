@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { StaffOnboardingForm } from '@/components/staff/StaffOnboardingForm';
 import { useStaff } from '@/hooks/useStaff';
 import { toast } from 'sonner';
@@ -9,9 +9,14 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StaffFormValues } from '@/lib/validations/staff';
 
-export default function EditStaffPage() {
+function EditStaffContent() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const stepParam = searchParams.get('step');
+  // Default to 3 (the final stage of onboarding: Final Dossier Review & Provisioning)
+  const initialStep = stepParam !== null ? parseInt(stepParam, 10) : 3;
+
   const { repo, refresh } = useStaff();
   const [defaultValues, setDefaultValues] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +40,7 @@ export default function EditStaffPage() {
         lastName: staff.lastName,
         email: staff.email,
         phone: staff.phone,
+        avatarUrl: staff.avatarUrl || '',
         dateOfBirth: staff.dateOfBirth,
         gender: staff.gender || 'male',
         maritalStatus: staff.maritalStatus,
@@ -62,10 +68,23 @@ export default function EditStaffPage() {
   const handleUpdate = async (data: StaffFormValues) => {
     setSubmitting(true);
     try {
-      // Flatten and keep id/status unchanged
       const updated = {
-        ...data.personalInfo,
-        ...data.employment,
+        firstName: data.personalInfo.firstName,
+        lastName: data.personalInfo.lastName,
+        email: data.personalInfo.email,
+        phone: data.personalInfo.phone,
+        avatarUrl: data.personalInfo.avatarUrl,
+        dateOfBirth: data.personalInfo.dateOfBirth,
+        gender: data.personalInfo.gender,
+        maritalStatus: data.personalInfo.maritalStatus,
+        nationality: data.personalInfo.nationality,
+        department: data.employment.department,
+        roleId: data.employment.roleId,
+        managerId: data.employment.managerId,
+        employeeId: data.employment.employeeId,
+        dateJoined: data.employment.dateOfJoining,
+        employmentType: data.employment.employmentType,
+        workLocation: data.employment.workLocation,
         address: data.address,
         nextOfKin: data.nextOfKin,
         education: data.education,
@@ -73,7 +92,6 @@ export default function EditStaffPage() {
         bank: data.bank,
         documents: data.documents,
       };
-      // Update only the fields that exist
       repo.updateStaff(params.id as string, updated);
       refresh();
       toast.success('Staff updated successfully');
@@ -88,7 +106,7 @@ export default function EditStaffPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#44883C]" />
       </div>
     );
   }
@@ -101,18 +119,18 @@ export default function EditStaffPage() {
             variant="ghost"
             size="sm"
             onClick={() => router.push(`/admin/staff/${params.id}`)}
-            className="mb-2 -ml-2 text-muted-foreground hover:text-foreground gap-1.5"
+            className="mb-2 -ml-2 text-muted-foreground hover:text-foreground gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Staff Profile
           </Button>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Edit Staff Member</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Update employee personal details, department placement, emergency contacts, or background records.
-          </p>
         </div>
       </div>
 
       <StaffOnboardingForm
+        initialStep={initialStep}
+        title="Edit Staff Member"
+        submitLabel="Save Changes"
+        onCancel={() => router.push(`/admin/staff/${params.id}`)}
         defaultValues={defaultValues}
         roles={roles}
         departments={departments}
@@ -120,5 +138,19 @@ export default function EditStaffPage() {
         isSubmitting={submitting}
       />
     </div>
+  );
+}
+
+export default function EditStaffPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-[#44883C]" />
+        </div>
+      }
+    >
+      <EditStaffContent />
+    </Suspense>
   );
 }

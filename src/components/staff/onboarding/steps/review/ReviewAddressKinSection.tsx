@@ -26,79 +26,79 @@ export function ReviewAddressKinSection({
   return (
     <>
       {/* 3. Permanent Residential Address */}
-      <div id="rev-section-address" className="p-3.5 space-y-2 scroll-mt-6">
-        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+      <div id="rev-section-address" className="p-5 sm:p-6 space-y-3.5 scroll-mt-6">
+        <div className="flex items-center justify-between pb-2 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 text-[#44883C]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <MapPin className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-foreground">
               2A. Permanent Residential Address
             </span>
           </div>
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#008C44] dark:text-[#00C862] hover:underline cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
           >
             <Pencil className="h-3 w-3" /> Edit
           </button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 text-xs">
           <div className="sm:col-span-2">
-            <span className="text-[10px] text-muted-foreground block">Street / Location</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{address?.line1 || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Street / Location</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{address?.line1 || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">City</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{address?.city || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">City</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{address?.city || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">State / Region</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{address?.state || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">State / Region</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{address?.state || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Country</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{address?.country || 'Nigeria'}</p>
+            <span className="text-[11px] text-muted-foreground block">Country</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{address?.country || 'Nigeria'}</p>
           </div>
         </div>
       </div>
 
       {/* 4. Next of Kin & Emergency Contact */}
-      <div id="rev-section-kin" className="p-3.5 space-y-2 scroll-mt-6">
-        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+      <div id="rev-section-kin" className="p-5 sm:p-6 space-y-3.5 scroll-mt-6 border-t border-border/60">
+        <div className="flex items-center justify-between pb-2 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <HeartHandshake className="h-3.5 w-3.5 text-[#00A651]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            <HeartHandshake className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-xs font-bold uppercase tracking-wider text-foreground">
               2B. Emergency Contact & Next of Kin (Optional)
             </span>
           </div>
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#008C44] dark:text-[#00C862] hover:underline cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
           >
             <Pencil className="h-3 w-3" /> Edit
           </button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 text-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground block">Full Name</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{nextOfKin?.fullName || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Full Name</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{nextOfKin?.fullName || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Relationship</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{nextOfKin?.relationship || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Relationship</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{nextOfKin?.relationship || '—'}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Emergency Phone</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono">{formattedKinPhone}</p>
+            <span className="text-[11px] text-muted-foreground block">Emergency Phone</span>
+            <p className="font-semibold text-foreground font-mono text-[12.5px] mt-0.5">{formattedKinPhone}</p>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">Emergency Email</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{nextOfKin?.email || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Emergency Email</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{nextOfKin?.email || '—'}</p>
           </div>
           <div className="col-span-2 sm:col-span-4">
-            <span className="text-[10px] text-muted-foreground block">Emergency Contact Address</span>
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{nextOfKin?.address || '—'}</p>
+            <span className="text-[11px] text-muted-foreground block">Emergency Contact Address</span>
+            <p className="font-semibold text-foreground text-[13px] mt-0.5">{nextOfKin?.address || '—'}</p>
           </div>
         </div>
       </div>

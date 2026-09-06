@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { HeartHandshake, User, Mail } from 'lucide-react';
-import { UseFormRegister, FieldErrors } from 'react-hook-form';
+import React, { useState } from 'react';
+import { HeartHandshake, User, Mail, ChevronDown } from 'lucide-react';
+import { UseFormRegister, FieldErrors, UseFormWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,7 @@ import { CountryCodeDropdown } from '../CountryCodeDropdown';
 interface NextOfKinFieldsProps {
   register: UseFormRegister<StaffFormValues>;
   errors: FieldErrors<StaffFormValues>;
+  watch?: UseFormWatch<StaffFormValues>;
   kinPhoneCode: string;
   setKinPhoneCode: (code: string) => void;
 }
@@ -19,20 +20,66 @@ interface NextOfKinFieldsProps {
 export function NextOfKinFields({
   register,
   errors,
+  watch,
   kinPhoneCode,
   setKinPhoneCode,
 }: NextOfKinFieldsProps) {
+  const currentFullName = watch ? watch('nextOfKin.fullName') : '';
+  const currentPhone = watch ? watch('nextOfKin.phone') : '';
+  const [isOpen, setIsOpen] = useState(() => Boolean(currentFullName || currentPhone || errors.nextOfKin));
+
   return (
-    <div className="space-y-6 pt-6 border-t border-border/60">
-      <div className="flex items-center gap-2 pb-2 border-b border-border/60">
-        <HeartHandshake className="h-4 w-4 text-[#00A651]" />
-        <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-          Next of Kin & Emergency Contact <span className="text-xs font-normal text-muted-foreground capitalize">(Optional)</span>
-        </h3>
+    <div className="space-y-6 pt-7 border-t border-border/60">
+      {/* Header with interactive Toggle */}
+      <div className="flex items-center justify-between pb-3 border-b border-border/60">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+            <HeartHandshake className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-foreground">
+              Next of Kin & Emergency Contact <span className="text-xs font-normal text-muted-foreground lowercase">(optional)</span>
+            </h3>
+            <p className="text-[11px] text-muted-foreground">Toggle to reveal emergency contact details</p>
+          </div>
+        </div>
+
+        {/* Toggle Switch */}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+            isOpen ? 'bg-purple-600' : 'bg-muted border-border/60'
+          }`}
+          role="switch"
+          aria-checked={isOpen}
+          title={isOpen ? 'Click to hide Next of Kin fields' : 'Click to reveal Next of Kin fields'}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+              isOpen ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 sm:gap-x-10 gap-y-6 sm:gap-y-8">
-        <div className="space-y-2">
-          <Label htmlFor="kinName" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
+
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="w-full p-3.5 rounded-xl bg-muted/20 border border-dashed border-border/70 hover:border-[#44883C]/50 text-xs text-muted-foreground flex items-center justify-between cursor-pointer transition-colors"
+        >
+          <span>Next of kin details are collapsed. Click to designate an emergency contact.</span>
+          <span className="text-xs font-bold text-[#44883C] hover:underline shrink-0">
+            + Reveal Fields
+          </span>
+        </button>
+      )}
+
+      {isOpen && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-6 sm:gap-y-7 animate-in fade-in-50 duration-200">
+        <div className="space-y-2.5">
+          <Label htmlFor="kinName" className="text-xs font-semibold text-foreground block">
             Next of Kin Full Name <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
           </Label>
           <div className="relative">
@@ -41,7 +88,7 @@ export function NextOfKinFields({
               id="kinName"
               placeholder="e.g. Bukola Adeyemi"
               {...register('nextOfKin.fullName')}
-              className="h-11 pl-10 text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100"
+              className="h-11 pl-10 text-sm rounded-xl bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
             />
           </div>
           {errors.nextOfKin?.fullName && (
@@ -49,23 +96,23 @@ export function NextOfKinFields({
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="kinRel" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
+        <div className="space-y-2.5">
+          <Label htmlFor="kinRel" className="text-xs font-semibold text-foreground block">
             Relationship <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
           </Label>
           <Input
             id="kinRel"
             placeholder="e.g. Spouse / Brother / Mother"
             {...register('nextOfKin.relationship')}
-            className="h-11 text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100"
+            className="h-11 text-sm rounded-xl bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
           />
           {errors.nextOfKin?.relationship && (
             <p className="text-[11px] text-destructive">{errors.nextOfKin.relationship.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="kinPhone" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
+        <div className="space-y-2.5">
+          <Label htmlFor="kinPhone" className="text-xs font-semibold text-foreground block">
             Emergency Phone Number <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
           </Label>
           <div className="flex items-center gap-2.5">
@@ -78,7 +125,7 @@ export function NextOfKinFields({
                 id="kinPhone"
                 placeholder="803 123 4567"
                 {...register('nextOfKin.phone')}
-                className="h-11 text-sm rounded-xl font-medium bg-background text-slate-900 dark:text-slate-100"
+                className="h-11 text-sm rounded-xl font-medium bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
               />
             </div>
           </div>
@@ -87,8 +134,8 @@ export function NextOfKinFields({
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="kinEmail" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
+        <div className="space-y-2.5">
+          <Label htmlFor="kinEmail" className="text-xs font-semibold text-foreground block">
             Emergency Email <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
           </Label>
           <div className="relative">
@@ -98,13 +145,13 @@ export function NextOfKinFields({
               type="email"
               placeholder="e.g. bukola@example.com"
               {...register('nextOfKin.email')}
-              className="h-11 pl-10 text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100"
+              className="h-11 pl-10 text-sm rounded-xl bg-background text-foreground focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
             />
           </div>
         </div>
 
-        <div className="sm:col-span-2 space-y-2">
-          <Label htmlFor="kinAddress" className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block">
+        <div className="sm:col-span-2 space-y-2.5">
+          <Label htmlFor="kinAddress" className="text-xs font-semibold text-foreground block">
             Residential Address <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
           </Label>
           <Textarea
@@ -112,10 +159,11 @@ export function NextOfKinFields({
             rows={2}
             placeholder="Emergency contact residence address..."
             {...register('nextOfKin.address')}
-            className="text-sm rounded-xl bg-background text-slate-900 dark:text-slate-100 min-h-20"
+            className="text-sm rounded-xl bg-background text-foreground min-h-20 focus-visible:ring-[#44883C]/20 focus-visible:border-[#44883C]"
           />
         </div>
       </div>
+      )}
     </div>
   );
 }

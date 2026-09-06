@@ -24,7 +24,7 @@ export function StepPlacementPayroll({
   roles,
 }: StepPlacementPayrollProps) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 sm:space-y-10">
       <PlacementFields
         register={register}
         errors={errors}
