@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
-import { UserCheck } from 'lucide-react';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import { StaffDepartment } from '@/types/user';
 import { DEPARTMENTS } from '@/components/staff/dashboard/departmentMeta';
@@ -42,15 +40,6 @@ export default function ZowaselStaffOverviewPage() {
       />
 
       <StaffDepartmentGrid staffCounts={staffCounts} />
-
-      {/* Full directory link */}
-      <Link
-        href="/admin/staff/directory"
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
-      >
-        <UserCheck className="h-4 w-4" />
-        View Full Staff Directory
-      </Link>
     </div>
   );
 }

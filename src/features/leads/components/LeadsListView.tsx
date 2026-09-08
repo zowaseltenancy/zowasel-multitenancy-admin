@@ -14,7 +14,7 @@ import RemoveLeadDialog from "./RemoveLeadDialog";
 import Pagination from "@/components/shared/Pagination";
 import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
 import { useLeads } from "../hooks/useLeads";
-import { useLeadConversion } from "../hooks/useLeadConversion";
+import { ConvertLeadValues, useLeadConversion } from "../hooks/useLeadConversion";
 import { LEAD_STATUS_LABELS } from "@/constants/lead";
 import { Lead, LeadStatus } from "@/types/lead";
 import { GeographicFilterState } from "@/types/geo";
@@ -74,9 +74,9 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
   const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
   const paginatedLeads = filteredLeads.slice((page - 1) * pageSize, page * pageSize);
 
-  const handleConfirmConvert = () => {
+  const handleConfirmConvert = (values?: ConvertLeadValues) => {
     if (!convertTarget) return;
-    convert(convertTarget);
+    convert(convertTarget, values);
     setConvertTarget(null);
   };
 

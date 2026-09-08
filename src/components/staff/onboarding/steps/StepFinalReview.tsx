@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { StaffFormValues } from '@/lib/validations/staff';
-import { ReviewOverviewBanner } from './review/ReviewOverviewBanner';
 import { ReviewPersonalSection } from './review/ReviewPersonalSection';
 import { ReviewAddressKinSection } from './review/ReviewAddressKinSection';
 import { ReviewPlacementPayrollSection } from './review/ReviewPlacementPayrollSection';
@@ -20,8 +19,6 @@ interface StepFinalReviewProps {
 
 export function StepFinalReview({
   currentValues,
-  candidateName,
-  candidateInitials,
   candidateRole,
   candidateDept,
   personalPhoneCode,
@@ -30,21 +27,14 @@ export function StepFinalReview({
 }: StepFinalReviewProps) {
   return (
     <div className="border border-border/60 rounded-xl bg-card overflow-hidden shadow-2xs divide-y divide-border/60">
-      <ReviewOverviewBanner
-        avatarUrl={currentValues.personalInfo?.avatarUrl}
-        candidateInitials={candidateInitials}
-        candidateName={candidateName}
-        candidateRole={candidateRole}
-        candidateDept={candidateDept}
-        candidateEmail={currentValues.personalInfo?.email}
-      />
-
+      {/* 1. Personal Information & Identity */}
       <ReviewPersonalSection
         personalInfo={currentValues.personalInfo}
         personalPhoneCode={personalPhoneCode}
         onEdit={() => onGoToStep(0)}
       />
 
+      {/* 2. Permanent Address & Next of Kin */}
       <ReviewAddressKinSection
         address={currentValues.address}
         nextOfKin={currentValues.nextOfKin}
@@ -52,6 +42,7 @@ export function StepFinalReview({
         onEdit={() => onGoToStep(1)}
       />
 
+      {/* 3. Corporate Placement & Payroll */}
       <ReviewPlacementPayrollSection
         employment={currentValues.employment}
         bank={currentValues.bank}

@@ -5,8 +5,6 @@ import {
   Users,
   UserCheck,
   CalendarClock,
-  UserPlus,
-  Shield,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -33,31 +31,6 @@ export function StaffDashboardSummary({
           {totalStaff} staff across {departmentCount} departments,{' '}
           {activeCount} currently active.
         </p>
-      </div>
-
-      {/* Global Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/admin/staff/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
-        >
-          <UserPlus className="h-4 w-4" />
-          Add Employee
-        </Link>
-        <Link
-          href="/admin/staff/leave/request"
-          className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <CalendarClock className="h-4 w-4" />
-          Request Leave
-        </Link>
-        <Link
-          href="/admin/staff/roles"
-          className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <Shield className="h-4 w-4" />
-          Manage Roles
-        </Link>
       </div>
 
       {/* Summary Cards */}

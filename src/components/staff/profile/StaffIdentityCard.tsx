@@ -98,22 +98,14 @@ export function StaffIdentityCard({ staff, roleName, onEditPhoto }: StaffIdentit
                 <DeptIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 {staff.departmentObj?.name || staff.department}
               </span>
-              {(staff.employmenttype || staff.employmentType) && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="capitalize">{staff.employmenttype || staff.employmentType}</span>
-                </>
-              )}
-              {staff.country && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span>{staff.country}</span>
-                </>
-              )}
             </div>
 
-            {/* Quick Metadata */}
-            <StaffQuickContactMeta staff={staff} />
+            {/* Quick Staff ID Badge */}
+            <div className="flex items-center gap-2 pt-0.5 text-xs text-muted-foreground">
+              <span className="font-mono text-[11px] bg-muted/60 text-foreground px-2 py-0.5 rounded-md border border-border/60 font-medium">
+                ID: {staff.employeeId || staff.id}
+              </span>
+            </div>
           </div>
         </div>
 

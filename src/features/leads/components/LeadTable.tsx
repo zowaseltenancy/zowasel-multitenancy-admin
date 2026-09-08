@@ -66,15 +66,13 @@ export default function LeadTable({ leads, onConvert, onMarkLost, onRemove }: Pr
                     </Link>
                     {(lead.status === "incomplete" || lead.status === "ready_to_convert") && (
                       <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1.5"
-                          onClick={() => onConvert(lead)}
+                        <Link
+                          href={`/admin/leads/${lead.id}/convert`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent text-foreground hover:text-primary"
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                           Convert
-                        </Button>
+                        </Link>
                         <Button
                           size="sm"
                           variant="ghost"

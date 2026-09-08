@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { User, Upload, Camera } from 'lucide-react';
+import { User, Upload, Camera, Trash2, CheckCircle2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,16 +19,21 @@ export function ProfilePhotoStudio({
   onOpenCamera,
 }: ProfilePhotoStudioProps) {
   const [isDragging, setIsDragging] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file (PNG, JPG).');
       return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size exceeds the 5MB maximum limit.');
+      return;
+    }
     const reader = new FileReader();
     reader.onloadend = () => {
       onAvatarChange(reader.result as string);
-      toast.success('Photo uploaded & updated in wizard');
+      toast.success('Official headshot attached successfully.');
     };
     reader.readAsDataURL(file);
   };
@@ -51,9 +56,15 @@ export function ProfilePhotoStudio({
 
   return (
     <div className="space-y-2.5">
-      <Label className="text-xs sm:text-sm font-semibold text-foreground block">
-        Profile Photo & Headshot
-      </Label>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs sm:text-sm font-bold text-foreground">
+          Employee Headshot & Identity Photo <span className="text-[#44883C]">*</span>
+        </Label>
+        <span className="text-[11px] text-muted-foreground hidden sm:inline-block">
+          Used on digital staff ID card & enterprise directory
+        </span>
+      </div>
+
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -61,62 +72,100 @@ export function ProfilePhotoStudio({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`flex flex-row items-center gap-4 p-4 sm:p-5 border border-dashed rounded-xl transition-all ${
+        className={`relative flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 p-4 sm:p-5 border rounded-2xl transition-all ${
           isDragging
-            ? 'border-[#44883C] bg-[#44883C]/10 ring-2 ring-[#44883C]/20'
-            : 'border-border/80 hover:border-[#44883C]/50 bg-muted/15 hover:bg-muted/20'
+            ? 'border-[#44883C] bg-[#44883C]/10 ring-2 ring-[#44883C]/20 shadow-xs'
+            : 'border-border/80 hover:border-[#44883C]/50 bg-card hover:bg-muted/10 shadow-2xs'
         }`}
       >
-        <div className="relative shrink-0">
-          {avatarUrl ? (
-            <div className="relative group">
+        {/* 1. EXECUTIVE CIRCULAR PORTRAIT PREVIEW */}
+        <div className="relative shrink-0 flex flex-col items-center">
+          <div className="relative h-20 w-20 sm:h-22 sm:w-22 rounded-full p-1 bg-background border border-border/80 shadow-xs ring-1 ring-border/40 overflow-hidden">
+            {avatarUrl ? (
               <img
                 src={avatarUrl}
-                alt="Avatar Preview"
-                className="h-16 w-16 rounded-xl object-cover border border-[#44883C]/40 shadow-xs ring-2 ring-[#44883C]/20"
+                alt="Headshot Preview"
+                className="h-full w-full rounded-full object-cover"
               />
-              <button
-                type="button"
-                onClick={() => onAvatarChange('')}
-                className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-destructive text-white flex items-center justify-center text-[9px] shadow-xs hover:scale-105 transition-transform"
-              >
-                ✕
-              </button>
-            </div>
+            ) : (
+              <div className="h-full w-full rounded-full bg-muted/40 text-muted-foreground/60 flex items-center justify-center border-2 border-dashed border-border/70">
+                <User className="h-8 w-8 opacity-40" />
+              </div>
+            )}
+          </div>
+
+          {avatarUrl ? (
+            <span className="mt-1.5 inline-flex items-center gap-1 text-[10.5px] font-bold text-[#44883C] dark:text-[#5cb850]">
+              <CheckCircle2 className="h-3 w-3" /> Attached
+            </span>
           ) : (
-            <div className="h-16 w-16 rounded-xl bg-muted/40 text-muted-foreground flex items-center justify-center border border-dashed border-border/80">
-              <User className="h-7 w-7 opacity-40" />
-            </div>
+            <span className="mt-1.5 text-[10.5px] font-medium text-muted-foreground">
+              Awaiting Photo
+            </span>
           )}
         </div>
 
-        <div className="space-y-1 min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs sm:text-sm font-semibold text-foreground">Employee Headshot</p>
-              <Badge variant="secondary" className="text-[9px] px-1.5 py-0.2">JPG, PNG up to 5MB</Badge>
+        {/* 2. SPECIFICATIONS & CONTROLS */}
+        <div className="space-y-3 min-w-0 flex-1 text-center sm:text-left">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <h4 className="text-sm font-bold text-foreground">Official Corporate Portrait</h4>
+              <Badge variant="outline" className="text-[10px] font-semibold px-2 py-0 border-border text-muted-foreground">
+                JPG, PNG up to 5MB
+              </Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">High resolution JPG or PNG format, up to 5MB.</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Recommended: Passport or square crop with a forward-facing, neutral background for optimal employee badge resolution.
+            </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-background hover:bg-muted border border-border/80 rounded-lg text-xs font-semibold text-foreground transition-colors shadow-2xs">
-              <Upload className="h-3.5 w-3.5 text-[#44883C]" /> Browse
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-8 text-xs font-semibold gap-1.5 bg-background hover:bg-muted border-border text-foreground shadow-2xs"
+            >
+              <Upload className="h-3.5 w-3.5 text-[#44883C]" />
+              {avatarUrl ? 'Change Photo' : 'Upload Headshot'}
+            </Button>
+
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onOpenCamera}
-              className="h-8 text-xs gap-1.5 font-medium bg-background px-3"
+              className="h-8 text-xs font-semibold gap-1.5 bg-background hover:bg-muted border-border text-foreground shadow-2xs"
             >
-              <Camera className="h-3.5 w-3.5 text-muted-foreground" /> Webcam
+              <Camera className="h-3.5 w-3.5 text-muted-foreground" />
+              Take Photo
             </Button>
+
+            {avatarUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onAvatarChange('');
+                  toast.info('Profile headshot removed.');
+                }}
+                className="h-8 text-xs font-medium text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 px-2.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remove
+              </Button>
+            )}
           </div>
         </div>
       </div>

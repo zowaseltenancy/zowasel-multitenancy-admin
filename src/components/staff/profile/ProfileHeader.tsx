@@ -7,14 +7,14 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Edit3, KeyRound, MoreHorizontal, ShieldCheck, Building2,
+  KeyRound, MoreHorizontal, ShieldCheck, Building2,
   CalendarPlus, Mail, UserX, UserCheck, ChevronRight,
 } from 'lucide-react';
 import { StaffMember } from '@/types/staff';
 
 interface ProfileHeaderProps {
   staff: StaffMember;
-  onEditProfile: () => void;
+  onEditProfile?: () => void;
   onResetPassword: () => void;
   onChangeRole?: () => void;
   onReassignDept: () => void;
@@ -25,7 +25,6 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({
   staff,
-  onEditProfile,
   onResetPassword,
   onChangeRole,
   onReassignDept,
@@ -69,17 +68,8 @@ export function ProfileHeader({
           </p>
         </div>
 
-        {/* Right Actions: Edit Profile, Reset Password, More Actions */}
+        {/* Right Actions: Reset Password, More Actions */}
         <div className="flex items-center gap-2 self-start sm:self-center">
-          <Button
-            type="button"
-            size="sm"
-            onClick={onEditProfile}
-            className="h-8 sm:h-9 px-3.5 bg-[#44883C] hover:bg-[#3b7434] text-white font-medium shadow-xs gap-1.5 cursor-pointer text-xs sm:text-sm"
-          >
-            <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Edit Profile
-          </Button>
-
           <Button
             type="button"
             variant="outline"
