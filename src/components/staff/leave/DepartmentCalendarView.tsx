@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LeaveRequest } from '@/types/staff';
 import { CalendarHeaderControls } from './calendar/CalendarHeaderControls';
 import { CalendarMatrixGrid } from './calendar/CalendarMatrixGrid';
+import { LEAVE_TYPE_LEGEND } from './leaveUtils';
 
 interface DepartmentCalendarViewProps {
   open: boolean;
@@ -28,14 +29,6 @@ interface DepartmentCalendarViewProps {
   onClose: () => void;
   onSelectAbsence: (leave: LeaveRequest) => void;
 }
-
-const LEAVE_TYPE_LEGEND = [
-  { label: 'Annual', color: 'bg-emerald-500', textClass: 'text-emerald-700 dark:text-emerald-300', bgClass: 'bg-emerald-500/10 border-emerald-500/30' },
-  { label: 'Sick', color: 'bg-rose-500', textClass: 'text-rose-700 dark:text-rose-300', bgClass: 'bg-rose-500/10 border-rose-500/30' },
-  { label: 'Casual', color: 'bg-blue-500', textClass: 'text-blue-700 dark:text-blue-300', bgClass: 'bg-blue-500/10 border-blue-500/30' },
-  { label: 'Parental', color: 'bg-purple-500', textClass: 'text-purple-700 dark:text-purple-300', bgClass: 'bg-purple-500/10 border-purple-500/30' },
-  { label: 'Unpaid', color: 'bg-amber-500', textClass: 'text-amber-700 dark:text-amber-300', bgClass: 'bg-amber-500/10 border-amber-500/30' },
-];
 
 export function DepartmentCalendarView({
   open,
@@ -60,7 +53,9 @@ export function DepartmentCalendarView({
   if (!open) return null;
 
   return (
-    <Card className="max-w-5xl mx-auto border border-border/70 rounded-2xl shadow-md overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+    <Card
+      className="max-w-5xl mx-auto border border-border/70 rounded-2xl shadow-md overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+    >
       {/* Top Colorful Gradient Accent Line */}
       <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-blue-500 via-purple-500 to-amber-500" />
 
@@ -101,7 +96,13 @@ export function DepartmentCalendarView({
               </span>
             ))}
 
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-dashed border-amber-500/60 bg-amber-500/5 text-amber-700 dark:text-amber-400 font-medium">
+            <span
+              className={
+                'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border ' +
+                'border-dashed border-amber-500/60 bg-amber-500/5 text-amber-700 ' +
+                'dark:text-amber-400 font-medium'
+              }
+            >
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
               Pending
             </span>

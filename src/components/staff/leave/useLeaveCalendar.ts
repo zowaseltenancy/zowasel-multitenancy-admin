@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { LeaveRequest } from '@/types/staff';
+import { isWeekend } from './leaveUtils';
 
 export function useLeaveCalendar(requests: LeaveRequest[], defaultOpen: boolean) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(defaultOpen);
@@ -32,8 +33,7 @@ export function useLeaveCalendar(requests: LeaveRequest[], defaultOpen: boolean)
 
     // Ensure leave days highlighted on calendar strictly fall on working days (Mon-Fri), not weekends
     const dateObj = new Date(year, month, day);
-    const dayOfWeek = dateObj.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (isWeekend(dateObj)) {
       return [];
     }
 
