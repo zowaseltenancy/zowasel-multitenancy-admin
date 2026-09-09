@@ -486,7 +486,7 @@ export default function LeaveManagementPage() {
               <Select
                 value={String(calendarMonth.getMonth())}
                 onValueChange={(value) => {
-                  const newMonth = parseInt(value);
+                  const newMonth = parseInt(value ?? '');
                   setCalendarMonth(
                     new Date(calendarMonth.getFullYear(), newMonth, 1)
                   );
@@ -508,7 +508,7 @@ export default function LeaveManagementPage() {
               <Select
                 value={String(calendarMonth.getFullYear())}
                 onValueChange={(value) => {
-                  const newYear = parseInt(value);
+                  const newYear = parseInt(value ?? '');
                   setCalendarMonth(
                     new Date(newYear, calendarMonth.getMonth(), 1)
                   );
@@ -529,7 +529,7 @@ export default function LeaveManagementPage() {
               {/* Department Filter */}
               <Select
                 value={calendarDepartment}
-                onValueChange={setCalendarDepartment}
+                onValueChange={(value) => setCalendarDepartment(value ?? "")}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Departments" />

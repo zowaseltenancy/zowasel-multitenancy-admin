@@ -16,6 +16,7 @@ import {
   AdminForgotPasswordRequest,
   AdminLoginRequest,
   AdminResetPasswordRequest,
+  AdminVerifyOtpRequest,
 } from "../api/auth.types";
 
 function persistLogin(result: Awaited<ReturnType<typeof authApi.login>>) {
@@ -68,6 +69,16 @@ export function useLogout() {
 export function useForgotPassword() {
   return useMutation({
     mutationFn: (payload: AdminForgotPasswordRequest) => authApi.forgotPassword(payload),
+  });
+}
+
+/**
+ * Pre-checks a reset code. The endpoint validates without consuming it, so the
+ * same code must still be supplied to useResetPassword afterwards.
+ */
+export function useVerifyOtp() {
+  return useMutation({
+    mutationFn: (payload: AdminVerifyOtpRequest) => authApi.verifyOtp(payload),
   });
 }
 

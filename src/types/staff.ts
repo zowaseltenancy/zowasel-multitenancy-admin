@@ -3,10 +3,13 @@ export interface StaffMember {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  phone?: string;
   department: string;
   roleId: string;
-  status: 'active' | 'inactive';
+  // 'pending' matches the option the staff form offers for someone invited
+  // but not yet activated; the union previously omitted it, so saving that
+  // choice could not typecheck.
+  status: 'active' | 'inactive' | 'pending';
   avatarUrl?: string;
   dateJoined?: string;
   lastActive?: string;
@@ -20,6 +23,17 @@ export interface StaffMember {
   managerId?: string;
   employmentType?: 'full-time' | 'part-time' | 'contract';
   workLocation?: string;
+
+  // Department-scoped roles assigned to this member, distinct from the single
+  // `roleId` above. Read by the profile view and the detail page.
+  departmentRoleIds?: string[];
+
+  // Populated by the onboarding form, which collects biodata under this key
+  // before it is flattened onto the record. Only the fields actually read
+  // elsewhere are declared.
+  personalInfo?: {
+    avatarUrl?: string;
+  };
 
   address?: {
     line1: string;

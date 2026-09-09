@@ -140,7 +140,7 @@ export default function StaffFormModal({ open, onOpenChange, staff, roles, onSav
             <div>
               <Label>Department</Label>
               <Select
-                onValueChange={(value) => setValue("department", value)}
+                onValueChange={(value) => setValue("department", value ?? "")}
                 defaultValue={watch("department")}
               >
                 <SelectTrigger>
@@ -161,7 +161,7 @@ export default function StaffFormModal({ open, onOpenChange, staff, roles, onSav
             <div>
               <Label>Role</Label>
               <Select
-                onValueChange={(value) => setValue("roleId", value)}
+                onValueChange={(value) => setValue("roleId", value ?? "")}
                 defaultValue={watch("roleId")}
               >
                 <SelectTrigger>

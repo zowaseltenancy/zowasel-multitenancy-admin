@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, AlertCircle, Building2, RotateCcw } from "lucide-react";
+import { ArrowRight, AlertCircle, Building2, Loader2, RotateCcw } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,12 @@ import { Organization } from "@/types/organization";
 
 interface Props {
   organizations: Organization[];
+  /**
+   * Filtering happens server-side now, so an empty list mid-request is "not
+   * loaded yet", not "no matches". Without this the empty state flashes on
+   * every filter change and reads as a false negative.
+   */
+  isLoading?: boolean;
   onClearFilters?: () => void;
 }
 
@@ -23,7 +29,18 @@ function getPrimaryPlan(organization: Organization) {
   return organization.subscriptions[0]?.plan ?? "—";
 }
 
-export default function OrganizationTable({ organizations, onClearFilters }: Props) {
+export default function OrganizationTable({ organizations, isLoading = false, onClearFilters }: Props) {
+  if (isLoading && organizations.length === 0) {
+    return (
+      <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed border-2">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#438B3E]/10 text-[#438B3E] dark:bg-[#438B3E]/20 dark:text-[#B8E5B8] mb-3.5">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+        <h3 className="text-base font-semibold text-foreground">Loading organizations…</h3>
+      </Card>
+    );
+  }
+
   if (organizations.length === 0) {
     return (
       <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed border-2">

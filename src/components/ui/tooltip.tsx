@@ -1,5 +1,7 @@
 "use client"
 
+import { isValidElement, type ReactElement } from "react"
+
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
@@ -21,8 +23,31 @@ function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
-function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+// `asChild` is the shadcn/Radix idiom — render the child as the trigger rather
+// than wrapping it in another element. @base-ui expresses the same thing as
+// `render={<child />}`, so it is translated here instead of at each call site:
+// ten tooltips across the staff screens already use `asChild`, and rewriting
+// their markup would risk changing what renders.
+function TooltipTrigger({
+  asChild,
+  children,
+  ...props
+}: TooltipPrimitive.Trigger.Props & { asChild?: boolean }) {
+  if (asChild && isValidElement(children)) {
+    return (
+      <TooltipPrimitive.Trigger
+        data-slot="tooltip-trigger"
+        render={children as ReactElement<Record<string, unknown>>}
+        {...props}
+      />
+    )
+  }
+
+  return (
+    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props}>
+      {children}
+    </TooltipPrimitive.Trigger>
+  )
 }
 
 function TooltipContent({

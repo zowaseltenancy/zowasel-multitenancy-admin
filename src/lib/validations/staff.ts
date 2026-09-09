@@ -9,6 +9,10 @@ const personalInfoSchema = z.object({
   gender: z.enum(['male', 'female', 'other']),
   maritalStatus: z.string().optional(),
   nationality: z.string().optional(),
+  // The onboarding form sets personalInfo.avatarUrl from the webcam/upload
+  // step; the schema never declared it, so every setValue/watch on that path
+  // failed to typecheck.
+  avatarUrl: z.string().optional(),
 });
 
 const employmentSchema = z.object({

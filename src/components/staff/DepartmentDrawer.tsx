@@ -71,7 +71,7 @@ export function DepartmentDrawer({ open, onOpenChange, department, onSuccess }: 
           </div>
           <div>
             <Label>Department Head</Label>
-            <Select value={headId} onValueChange={setHeadId}>
+            <Select value={headId} onValueChange={(value) => setHeadId(value ?? "")}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a staff member" />
               </SelectTrigger>

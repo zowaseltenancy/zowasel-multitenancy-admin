@@ -74,10 +74,13 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
   const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
   const paginatedLeads = filteredLeads.slice((page - 1) * pageSize, page * pageSize);
 
+  // The dialog closes on the server's answer, not on the click. Conversion now
+  // provisions a business and sends an onboarding email, so a failure has to
+  // leave the dialog open — and the toast comes from the mutation rather than
+  // being fired optimistically alongside it.
   const handleConfirmConvert = () => {
     if (!convertTarget) return;
-    convert(convertTarget);
-    setConvertTarget(null);
+    convert(convertTarget, { onSuccess: () => setConvertTarget(null) });
   };
 
   const handleMarkLost = (lead: Lead) => {
@@ -85,11 +88,11 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
     toast.info(`${lead.businessName} marked as lost.`);
   };
 
+  // Same reasoning as convert: the server refuses to delete a converted lead,
+  // so the dialog must stay open on failure instead of reporting success.
   const handleConfirmRemove = () => {
     if (!removeTarget) return;
-    removeLead(removeTarget.id);
-    toast.success(`${removeTarget.businessName} removed from the pipeline.`);
-    setRemoveTarget(null);
+    removeLead(removeTarget.id, { onSuccess: () => setRemoveTarget(null) });
   };
 
   return (

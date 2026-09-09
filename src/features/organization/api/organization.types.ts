@@ -14,6 +14,16 @@ export interface BusinessListQuery {
   type?: string;
   onboardingSource?: "DIRECT_SIGNUP" | "AGENT";
   plan?: string;
+  // ── "More Filters" panel ───────────────────────────────────────────────────
+  // These three used to be applied in the browser over whatever page had been
+  // fetched, which is why the panel looked like it did nothing. They are now
+  // server-side filters.
+  /** One member of staff: assigned account staff, or the agent on the converted lead. */
+  onboardedById?: string;
+  /** Module ids. Sent comma-separated; matches a business holding ANY of them. */
+  modules?: string[];
+  /** Bucketed count of live module subscriptions. */
+  moduleCount?: "0" | "1-2" | "3+";
 }
 
 export interface BusinessListItemDto {
@@ -71,10 +81,14 @@ export interface BusinessDetailDto extends BusinessListItemDto {
     joinedAt: string;
   }>;
   kybDocuments: Array<{
+    /** Null for the two flat URL columns on the tenant record. */
+    id: string | null;
     type: string;
     url: string;
+    filename: string | null;
     status: string;
     uploadedAt: string | null;
+    reviewedAt: string | null;
   }>;
   governanceStructure: {
     type: string | null;

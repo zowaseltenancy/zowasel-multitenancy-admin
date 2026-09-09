@@ -246,7 +246,9 @@ export function StaffProfileView({ staff, roles, departmentRoles  }: Props) {
               <CardContent>
                 <ul className="space-y-1">
                   {staff.departmentRoleIds.map(roleId => {
-                    const role = repo.getDepartmentRoles().find(r => r.id === roleId);
+                    // `departmentRoles` is already a prop on this component; reaching
+                    // for the repo here duplicated the lookup and left `repo` undefined.
+                    const role = departmentRoles?.find((r) => r.id === roleId);
                     return role ? (
                       <li key={roleId} className="flex items-center gap-2 text-sm">
                         <Badge variant="outline">{role.name}</Badge>

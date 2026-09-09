@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { AlertCircle, Mail, Search } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -293,7 +291,7 @@ export default function StaffDirectoryPage() {
           />
         </div>
 
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
+        <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value ?? "")}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
@@ -307,7 +305,7 @@ export default function StaffDirectoryPage() {
           </SelectContent>
         </Select>
 
-        <Select value={deptFilter} onValueChange={setDeptFilter}>
+        <Select value={deptFilter} onValueChange={(value) => setDeptFilter(value ?? "")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="All Departments" />
           </SelectTrigger>
@@ -321,7 +319,7 @@ export default function StaffDirectoryPage() {
           </SelectContent>
         </Select>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "")}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
@@ -583,7 +581,7 @@ export default function StaffDirectoryPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="role-select">New Role</Label>
-              <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+              <Select value={selectedRoleId} onValueChange={(value) => setSelectedRoleId(value ?? "")}>
                 <SelectTrigger id="role-select">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>

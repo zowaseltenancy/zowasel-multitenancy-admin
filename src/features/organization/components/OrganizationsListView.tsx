@@ -6,8 +6,9 @@ import Pagination from "@/components/shared/Pagination";
 import CompactRegionScopeSelector from "@/components/shared/CompactRegionScopeSelector";
 import { KybStatus } from "@/types/kyb";
 import { GeographicFilterState } from "@/types/geo";
-import { Organization } from "@/types/organization";
-import { useOrganizations } from "../hooks/useOrganizations";
+import { useStaff } from "@/features/staff/hooks/useStaff";
+import { useOrganizations, useOrganizationStats } from "../hooks/useOrganizations";
+import { BusinessListQuery } from "../api/organization.types";
 import OrganizationStatsCards from "./OrganizationStatsCards";
 import OrganizationTable from "./OrganizationTable";
 import OrganizationFilterToolbar, {
@@ -34,8 +35,6 @@ export default function OrganizationsListView({
   bottomElement,
   lockStatusFilter = false,
 }: Props) {
-  const { organizations } = useOrganizations();
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [activeTabStatus, setActiveTabStatus] = useState<KybStatus | "all">(defaultFilter);
@@ -68,6 +67,14 @@ export default function OrganizationsListView({
     setPage(1);
   }, [defaultFilter]);
 
+  // Search is now a server-side filter, so the raw input is debounced — without
+  // this every keystroke is a request, and the responses can land out of order.
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(filters.search), 300);
+    return () => clearTimeout(timer);
+  }, [filters.search]);
+
   // Handler when user updates filters from toolbar
   const handleFilterChange = (newFilters: OrganizationFiltersState) => {
     setFilters(newFilters);
@@ -77,92 +84,75 @@ export default function OrganizationsListView({
     setPage(1);
   };
 
-  const getModuleCount = (organization: Organization) => {
-    return organization.subscriptions.reduce(
-      (total, subscription) => total + subscription.activeModules.length,
-      0
-    );
-  };
+  // Every filter in the toolbar now maps to a query parameter.
+  //
+  // Previously all of this ran in the browser over one fetched page, which is
+  // why the "More Filters" panel appeared to do nothing: type/onboardedBy/
+  // moduleCount were compared against fields the list projection either
+  // normalises away (Tenant.type is free-form and was collapsed to "merchant"
+  // by the mapper) or does not populate for every row. Filtering a single page
+  // also can't find a match that lives on page two.
+  const query = useMemo<BusinessListQuery>(() => {
+    const effectiveStatus = lockStatusFilter ? activeTabStatus : filters.status;
 
-  // Filter organizations based on all primary & secondary filters
-  const filtered = useMemo(() => {
-    return organizations.filter((organization) => {
-      // 1. Status Filter
-      const effectiveStatus = lockStatusFilter ? activeTabStatus : filters.status;
-      const matchesStatus =
-        effectiveStatus === "all" || organization.kybStatus === effectiveStatus;
+    return {
+      page,
+      limit: pageSize,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      // The API's enum is upper-case; the UI's is lower-case.
+      ...(effectiveStatus !== "all" ? { kybStatus: effectiveStatus.toUpperCase() } : {}),
+      ...(filters.plan !== "all" ? { plan: filters.plan } : {}),
+      ...(filters.type !== "all" ? { type: filters.type } : {}),
+      ...(filters.onboardedBy !== "all" ? { onboardedById: filters.onboardedBy } : {}),
+      ...(filters.modules.length > 0 ? { modules: filters.modules } : {}),
+      ...(filters.moduleCount !== "all" ? { moduleCount: filters.moduleCount } : {}),
+      ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+      // The map selector. continent/subRegion/country compose server-side —
+      // Africa plus Western Africa is an intersection, not a contradiction.
+      ...(geoFilter.continent !== "all" ? { continent: geoFilter.continent } : {}),
+      ...(geoFilter.subRegion !== "all" ? { subRegion: geoFilter.subRegion } : {}),
+      ...(geoFilter.countryCode !== "all" ? { country: geoFilter.countryCode } : {}),
+    };
+  }, [
+    page,
+    pageSize,
+    filters,
+    debouncedSearch,
+    activeTabStatus,
+    lockStatusFilter,
+    geoFilter,
+  ]);
 
-      // 2. Plan Filter
-      const matchesPlan =
-        filters.plan === "all" ||
-        organization.subscriptions.some(
-          (s) => s.plan.toLowerCase() === filters.plan.toLowerCase()
-        );
+  const { organizations, meta, isLoading, isFetching } = useOrganizations(query);
 
-      // 3. Modules Filter (multi-select)
-      const matchesModules =
-        filters.modules.length === 0 ||
-        organization.subscriptions.some((s) =>
-          filters.modules.some((modKey) => s.activeModules.includes(modKey))
-        );
-
-      // 4. Region Filter (specific country)
-      // 4. Secondary: Onboarded By Staff / Agent
-      const matchesOnboardedBy =
-        filters.onboardedBy === "all" ||
-        organization.onboardedByAgent?.id === filters.onboardedBy ||
-        organization.assignedStaff?.primary?.id === filters.onboardedBy;
-
-      // 5. Secondary: Organization Type
-      const matchesType =
-        filters.type === "all" || organization.type === filters.type;
-
-      // 6. Secondary: Module Count
-      const modCount = getModuleCount(organization);
-      let matchesModCount = true;
-      if (filters.moduleCount === "0") {
-        matchesModCount = modCount === 0;
-      } else if (filters.moduleCount === "1-2") {
-        matchesModCount = modCount >= 1 && modCount <= 2;
-      } else if (filters.moduleCount === "3+") {
-        matchesModCount = modCount >= 3;
+  // Platform-wide counts for the tiles. Counting the fetched rows would make
+  // "Total" mean "rows on this page" and every tile move as you filter or page.
+  const { stats } = useOrganizationStats();
+  const counts = stats
+    ? {
+        total: stats.total,
+        approved: stats.kyb.APPROVED,
+        pending: stats.kyb.PENDING,
+        rejected: stats.kyb.REJECTED,
       }
+    : undefined;
 
-      // 7. Search Query
-      const query = filters.search.trim().toLowerCase();
-      const matchesSearch =
-        query.length === 0 ||
-        organization.name.toLowerCase().includes(query) ||
-        organization.businessId.toLowerCase().includes(query) ||
-        organization.owner.name.toLowerCase().includes(query) ||
-        organization.owner.email.toLowerCase().includes(query);
+  // The "Onboarded By" choices come from the staff directory rather than from
+  // the rows on screen — a paginated page only contains a handful of them.
+  const { staff } = useStaff({ limit: 100 });
+  const staffOptions = useMemo(
+    () =>
+      staff.map((member) => ({
+        id: member.id,
+        label:
+          [member.firstName, member.lastName].filter(Boolean).join(" ") || member.email,
+      })),
+    [staff],
+  );
 
-      // 8. Global Geographic Scope (Map Selector)
-      const matchesContinent =
-        geoFilter.continent === "all" || organization.continent === geoFilter.continent;
-      const matchesSubRegion =
-        geoFilter.subRegion === "all" || organization.subRegion === geoFilter.subRegion;
-      const matchesCountry =
-        geoFilter.countryCode === "all" || organization.countryCode === geoFilter.countryCode;
-
-      return (
-        matchesStatus &&
-        matchesPlan &&
-        matchesModules &&
-        matchesOnboardedBy &&
-        matchesType &&
-        matchesModCount &&
-        matchesSearch &&
-        matchesContinent &&
-        matchesSubRegion &&
-        matchesCountry
-      );
-    });
-  }, [organizations, filters, activeTabStatus, lockStatusFilter, geoFilter]);
-
-  const totalItems = filtered.length;
-  const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const totalItems = meta?.total ?? organizations.length;
+  const pageCount = Math.max(1, meta?.totalPages ?? 1);
 
   const handleClearFilters = () => {
     handleFilterChange({
@@ -183,6 +173,7 @@ export default function OrganizationsListView({
 
           <OrganizationStatsCards
             organizations={organizations}
+            counts={counts}
             activeFilter={activeTabStatus}
             onFilterChange={(value) => {
               setActiveTabStatus(value);
@@ -213,12 +204,14 @@ export default function OrganizationsListView({
         filters={filters}
         onFilterChange={handleFilterChange}
         organizations={organizations}
+        staffOptions={staffOptions}
         hideStatusInToolbar={lockStatusFilter}
       />
 
       {/* Organizations Table */}
       <OrganizationTable
-        organizations={paginated}
+        organizations={organizations}
+        isLoading={isLoading || isFetching}
         onClearFilters={handleClearFilters}
       />
 

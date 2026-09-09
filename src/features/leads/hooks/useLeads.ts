@@ -51,9 +51,17 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
     onSuccess: invalidate,
   });
 
+  // No tenantId: the server provisions the business from the lead and emails
+  // the owner an onboarding invitation. Passing one links an existing business
+  // instead, which the console has no way to choose.
   const convertMutation = useMutation({
-    mutationFn: ({ id, tenantId, note }: { id: string; tenantId: string; note?: string }) =>
-      leadsApi.convert(id, { tenantId, note }),
+    mutationFn: ({ id, tenantId, note }: { id: string; tenantId?: string; note?: string }) =>
+      leadsApi.convert(id, { ...(tenantId ? { tenantId } : {}), ...(note ? { note } : {}) }),
+    onSuccess: invalidate,
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => leadsApi.remove(id),
     onSuccess: invalidate,
   });
 
@@ -74,11 +82,25 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
       );
     },
 
-    convertLead: (leadId: string, organizationId: string, note?: string) => {
+    /**
+     * `organizationId` is optional. Omit it — which is what the console does —
+     * and the server creates the business from the lead, creates the owner's
+     * account, and emails them an onboarding link so they can set a password
+     * and complete their profile.
+     */
+    convertLead: (
+      leadId: string,
+      organizationId?: string,
+      note?: string,
+      options?: { onSuccess?: () => void },
+    ) => {
       convertMutation.mutate(
-        { id: leadId, tenantId: organizationId, note },
+        { id: leadId, ...(organizationId ? { tenantId: organizationId } : {}), note },
         {
-          onSuccess: () => toast.success("Lead converted."),
+          onSuccess: () => {
+            toast.success("Lead converted — onboarding invitation sent to the owner.");
+            options?.onSuccess?.();
+          },
           onError: (error) => toast.error(getApiErrorMessage(error, "Unable to convert the lead.")),
         },
       );
@@ -97,14 +119,34 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
       });
     },
 
-    // There is no DELETE /admin/leads/{id}. Leads are closed or disqualified,
-    // never deleted, so the pipeline keeps its history. Use markLost instead.
-    removeLead: (_leadId: string) => {
-      toast.error("Leads can't be deleted — mark the lead lost instead.");
+    /**
+     * DELETE /admin/leads/{id}. Permanent — the timeline and any attached
+     * documents go with it.
+     *
+     * The server refuses a converted lead: that row is the attribution record
+     * behind a live business (it is what the organization directory reads to
+     * show an onboarding agent, and what the AGENT/DIRECT_SIGNUP filter is
+     * derived from), so deleting it would silently reattribute a real customer.
+     * The error surfaces as a toast rather than being pre-empted here, because
+     * the caller's copy of the lead can be stale.
+     */
+    removeLead: (leadId: string, options?: { onSuccess?: () => void }) => {
+      removeMutation.mutate(leadId, {
+        onSuccess: () => {
+          toast.success("Lead removed.");
+          options?.onSuccess?.();
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, "Unable to remove the lead.")),
+      });
     },
 
-    isMutating: markLostMutation.isPending || convertMutation.isPending || createMutation.isPending,
+    isMutating:
+      markLostMutation.isPending ||
+      convertMutation.isPending ||
+      createMutation.isPending ||
+      removeMutation.isPending,
     isCreating: createMutation.isPending,
+    isRemoving: removeMutation.isPending,
   };
 }
 

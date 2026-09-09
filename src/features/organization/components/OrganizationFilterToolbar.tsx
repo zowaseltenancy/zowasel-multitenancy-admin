@@ -100,6 +100,12 @@ interface Props {
   filters: OrganizationFiltersState;
   onFilterChange: (filters: OrganizationFiltersState) => void;
   organizations: Organization[];
+  /**
+   * The "Onboarded By" choices. Supply these when the table is paginated
+   * server-side: deriving them from `organizations` then only offers the staff
+   * who happen to appear on the current page.
+   */
+  staffOptions?: Array<{ id: string; label: string }>;
   hideStatusInToolbar?: boolean;
 }
 
@@ -107,6 +113,7 @@ export default function OrganizationFilterToolbar({
   filters,
   onFilterChange,
   organizations,
+  staffOptions,
   hideStatusInToolbar = false,
 }: Props) {
   // Temporary state for Modules popover multi-select
@@ -119,8 +126,10 @@ export default function OrganizationFilterToolbar({
   const [tempModuleCount, setTempModuleCount] = useState<"all" | "0" | "1-2" | "3+">(filters.moduleCount);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
-  // Derive unique staff / agents from organization data
+  // Prefer the caller's list; fall back to deriving it from the rows on screen.
   const onboardedByOptions = useMemo(() => {
+    if (staffOptions) return staffOptions;
+
     const staffSet = new Map<string, string>();
     organizations.forEach((org) => {
       if (org.onboardedByAgent?.name) {
@@ -134,7 +143,7 @@ export default function OrganizationFilterToolbar({
       id,
       label: name,
     }));
-  }, [organizations]);
+  }, [organizations, staffOptions]);
 
   // Calculate secondary active filter count for "More Filters"
   const secondaryFilterCount = useMemo(() => {

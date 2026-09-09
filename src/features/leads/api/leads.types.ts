@@ -52,9 +52,29 @@ export interface UpdateLeadStageRequest {
   note?: string;
 }
 
+/**
+ * Two modes, and the difference is whether the business already exists.
+ *
+ * Sending `tenantId` links the lead to an existing business. Omitting it makes
+ * the server provision one from the lead — tenant, owner account, OWNER
+ * membership, and a single-use onboarding invitation emailed to the owner. The
+ * console takes the second path: it has a won lead and no business to link.
+ */
 export interface ConvertLeadRequest {
-  tenantId: string;
+  tenantId?: string;
   note?: string;
+  /** Overrides for what the lead itself cannot supply. */
+  owner?: {
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  business?: {
+    name?: string;
+    type?: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 // ── Create ───────────────────────────────────────────────────────────────────

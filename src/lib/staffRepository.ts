@@ -78,6 +78,41 @@ export class StaffRepository {
     return this.readDB().roles;
   }
 
+  // Role writes, mirroring the department-role CRUD further down. The roles
+  // screen already calls these; only the reads existed, so the page could list
+  // roles but not save one.
+  addRole(
+    role: Omit<StaffRole, 'id' | 'isSystemRole' | 'description'> & { description?: string },
+  ): StaffRole {
+    const db = this.readDB();
+    const newRole: StaffRole = {
+      ...role,
+      description: role.description ?? '',
+      // Roles created from the UI are never system roles — those are seeded and
+      // the screen refuses to delete them.
+      isSystemRole: false,
+      id: `role-${Date.now()}`,
+    };
+    db.roles.push(newRole);
+    this.writeDB(db);
+    return newRole;
+  }
+
+  updateRole(id: string, updates: Partial<StaffRole>) {
+    const db = this.readDB();
+    const idx = db.roles.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      db.roles[idx] = { ...db.roles[idx], ...updates };
+      this.writeDB(db);
+    }
+  }
+
+  deleteRole(id: string) {
+    const db = this.readDB();
+    db.roles = db.roles.filter(r => r.id !== id);
+    this.writeDB(db);
+  }
+
   // ---- Departments ----
   getDepartments(): Department[] {
     return this.readDB().departments;

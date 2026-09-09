@@ -13,9 +13,18 @@ import {
   TenantUsersResult,
 } from "./organization.types";
 
+// "all" is the UI's word for "no filter", so it is dropped rather than sent.
+//
+// Arrays are joined with commas because the API's list filters are csvList
+// fields: axios would otherwise serialise them as `modules[]=a&modules[]=b`,
+// which the server reads as one parameter named "modules[]" and ignores. An
+// empty array is dropped for the same reason "all" is — it means unfiltered.
 function cleanParams(params: BusinessListQuery) {
   return Object.fromEntries(
-    Object.entries(params).filter(([, value]) => value !== undefined && value !== "" && value !== "all"),
+    Object.entries(params)
+      .filter(([, value]) => value !== undefined && value !== "" && value !== "all")
+      .filter(([, value]) => !Array.isArray(value) || value.length > 0)
+      .map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : value]),
   );
 }
 

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useUsers } from "@/features/users/hooks/useUsers";
+import { useDepartments, useStaff } from "@/features/staff/hooks/useStaff";
 import { StaffDepartment } from "@/types/user";
 
 const DEPARTMENT_META: Record<
@@ -79,17 +79,22 @@ const DEPARTMENT_META: Record<
 const DEPARTMENTS = Object.keys(DEPARTMENT_META) as StaffDepartment[];
 
 export default function ZowaselStaffOverviewPage() {
-  const { users } = useUsers();
+  // GET /admin/staff — the `admins` table, which is what "Zowasel staff" means.
+  // This previously filtered the mock user list on userCategory === "staff";
+  // real staff are a separate table reached by a different endpoint, not a
+  // subset of tenant users.
+  const { staff, meta } = useStaff({ page: 1, limit: 100 });
+  // GET /admin/departments, rather than the hardcoded DEPARTMENT_META keys —
+  // the real departments are Sales, Operations, Compliance, Finance and
+  // People & Culture, none of which appear in that constant.
+  const { departments } = useDepartments();
 
-  // Filter staff users
-  const staff = useMemo(
-    () => users.filter((user) => user.userCategory === "staff"),
-    [users]
-  );
+  const totalStaff = meta?.total ?? staff.length;
+  const activeCount = staff.filter((member) => member.status === "ACTIVE").length;
 
-  const activeCount = staff.filter((s) => s.status === "active").length;
-
-  // Placeholder – replace with real data from your leave API
+  // No endpoint for a platform-wide pending-leave count: the leave overview is
+  // GET /admin/leave/requests/overview, gated on leave:review, and returns rows
+  // rather than a tally. Left at zero until that is wired.
   const pendingLeaveCount = 0;
 
   return (
@@ -99,7 +104,7 @@ export default function ZowaselStaffOverviewPage() {
         <h1 className="text-3xl font-bold tracking-tight">Zowasel Staff</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Internal Zowasel personnel, separate from platform/tenant users —{" "}
-          {staff.length} staff across {DEPARTMENTS.length} departments,{" "}
+          {totalStaff} staff across {departments.length || DEPARTMENTS.length} departments,{" "}
           {activeCount} currently active.
         </p>
       </div>
@@ -138,7 +143,7 @@ export default function ZowaselStaffOverviewPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Staff</p>
-              <p className="text-2xl font-bold">{staff.length}</p>
+              <p className="text-2xl font-bold">{totalStaff}</p>
             </div>
           </CardContent>
         </Card>
@@ -179,7 +184,7 @@ export default function ZowaselStaffOverviewPage() {
         {DEPARTMENTS.map((dept) => {
           const meta = DEPARTMENT_META[dept];
           const Icon = meta.icon;
-          const count = staff.filter((s) => s.department === dept).length;
+          const count = staff.filter((member) => member.department?.name === dept).length;
 
           return (
             <div key={dept} className="group relative">

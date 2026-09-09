@@ -94,8 +94,7 @@ export default function LeadDetailView({ leadId }: Props) {
   const regionLabel = [lead.countryName, lead.subRegion, lead.continent].filter(Boolean).join(" / ");
 
   const handleConfirmConvert = () => {
-    convert(lead);
-    setConvertOpen(false);
+    convert(lead, { onSuccess: () => setConvertOpen(false) });
   };
 
   const handleMarkLost = () => {
@@ -103,12 +102,17 @@ export default function LeadDetailView({ leadId }: Props) {
     toast.info(`${lead.businessName} marked as lost.`);
   };
 
+  // Navigate only once the delete has actually landed. Redirecting on the click
+  // meant a refusal — the server rejects deleting a converted lead — left the
+  // user on the pipeline with an error toast and the lead still there.
   const handleConfirmRemove = () => {
-    removingRef.current = true;
-    removeLead(lead.id);
-    toast.success(`${lead.businessName} removed from the pipeline.`);
-    setRemoveOpen(false);
-    router.push("/admin/leads/pipeline");
+    removeLead(lead.id, {
+      onSuccess: () => {
+        removingRef.current = true;
+        setRemoveOpen(false);
+        router.push("/admin/leads/pipeline");
+      },
+    });
   };
 
   return (

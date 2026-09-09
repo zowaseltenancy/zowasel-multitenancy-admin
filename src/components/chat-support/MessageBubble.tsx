@@ -117,7 +117,7 @@ export function MessageBubble({ message, isOwn, contactName }: Props) {
           {message.type === 'text' && <p className="whitespace-pre-wrap">{message.body}</p>}
           {message.type === 'media' && (
             <>
-              {message.attachments.map((att, idx) => (
+              {message.attachments?.map((att, idx) => (
                 <div key={idx}>{renderAttachment(att)}</div>
               ))}
               {message.body && <p className="text-sm mt-1">{message.body}</p>}
