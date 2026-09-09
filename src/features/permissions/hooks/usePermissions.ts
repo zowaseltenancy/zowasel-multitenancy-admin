@@ -1,15 +1,45 @@
-"use client";
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Role, PermissionCategory } from "@/types/permissions";
 import { MOCK_ROLES } from "../data/mockRoles";
 import { ALL_PERMISSIONS, PERMISSION_GROUPS } from "@/constants/permissions";
+
+const STORAGE_KEY = "platform_permissions_roles_db";
+
+function getStoredRoles(): Role[] {
+  if (typeof window === "undefined") return MOCK_ROLES;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return MOCK_ROLES;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : MOCK_ROLES;
+  } catch {
+    return MOCK_ROLES;
+  }
+}
+
+function persistRoles(roles: Role[]) {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(roles));
+    } catch (e) {
+      console.error("Failed to persist platform roles", e);
+    }
+  }
+}
 
 export function usePermissions() {
   const [roles, setRoles] = useState<Role[]>(MOCK_ROLES);
   const [selectedRoleId, setSelectedRoleId] = useState<string>(MOCK_ROLES[0].id);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const stored = getStoredRoles();
+    setRoles(stored);
+    if (stored.length > 0 && !stored.some((r) => r.id === selectedRoleId)) {
+      setSelectedRoleId(stored[0].id);
+    }
+  }, []);
 
   const selectedRole = useMemo(() => {
     return roles.find((r) => r.id === selectedRoleId) || roles[0];
@@ -41,8 +71,8 @@ export function usePermissions() {
   }, [searchQuery, categoryFilter]);
 
   const togglePermissionForRole = (roleId: string, permissionCode: string) => {
-    setRoles((prevRoles) =>
-      prevRoles.map((role) => {
+    setRoles((prevRoles) => {
+      const next = prevRoles.map((role) => {
         if (role.id !== roleId) return role;
         if (role.isSystemRole) return role; // Protect system roles
 
@@ -56,8 +86,10 @@ export function usePermissions() {
           permissions: newPermissions,
           updatedAt: new Date().toISOString(),
         };
-      })
-    );
+      });
+      persistRoles(next);
+      return next;
+    });
   };
 
   const toggleAllCategoryPermissionsForRole = (
@@ -67,8 +99,8 @@ export function usePermissions() {
   ) => {
     const categoryCodes = ALL_PERMISSIONS.filter((p) => p.category === category).map((p) => p.code);
 
-    setRoles((prevRoles) =>
-      prevRoles.map((role) => {
+    setRoles((prevRoles) => {
+      const next = prevRoles.map((role) => {
         if (role.id !== roleId || role.isSystemRole) return role;
 
         let newPermissions: string[];
@@ -83,8 +115,10 @@ export function usePermissions() {
           permissions: newPermissions,
           updatedAt: new Date().toISOString(),
         };
-      })
-    );
+      });
+      persistRoles(next);
+      return next;
+    });
   };
 
   const createRole = (data: { name: string; description: string; permissions: string[] }) => {
@@ -99,7 +133,11 @@ export function usePermissions() {
       updatedAt: new Date().toISOString(),
     };
 
-    setRoles((prev) => [...prev, newRole]);
+    setRoles((prev) => {
+      const next = [...prev, newRole];
+      persistRoles(next);
+      return next;
+    });
     setSelectedRoleId(newRole.id);
     return newRole;
   };
@@ -108,8 +146,8 @@ export function usePermissions() {
     roleId: string,
     data: { name: string; description: string; permissions?: string[] }
   ) => {
-    setRoles((prevRoles) =>
-      prevRoles.map((role) => {
+    setRoles((prevRoles) => {
+      const next = prevRoles.map((role) => {
         if (role.id !== roleId) return role;
 
         return {
@@ -119,12 +157,18 @@ export function usePermissions() {
           permissions: data.permissions ?? role.permissions,
           updatedAt: new Date().toISOString(),
         };
-      })
-    );
+      });
+      persistRoles(next);
+      return next;
+    });
   };
 
   const deleteRole = (roleId: string) => {
-    setRoles((prev) => prev.filter((r) => r.id !== roleId && !r.isSystemRole));
+    setRoles((prev) => {
+      const next = prev.filter((r) => r.id !== roleId && !r.isSystemRole);
+      persistRoles(next);
+      return next;
+    });
     if (selectedRoleId === roleId) {
       setSelectedRoleId(MOCK_ROLES[0].id);
     }

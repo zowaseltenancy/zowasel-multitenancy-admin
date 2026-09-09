@@ -6,7 +6,41 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+// `onValueChange` is translated rather than re-exported raw.
+//
+// @base-ui hands the callback `(value: string | null, details)` — null when the
+// selection is cleared — while every call site in this app is written against
+// the shadcn/Radix shape `(value: string) => void`, which is what a
+// `useState<string>` setter accepts. Adapting here fixes all of them at once
+// instead of widening a dozen handlers to `string | null` and null-coalescing
+// in each; a cleared selection arrives as "" so the state type stays `string`.
+//
+// Same reasoning as the `asChild` → `render` translation in tooltip.tsx and
+// dropdown-menu.tsx.
+// Generic over the value type so a select bound to a narrower union (e.g.
+// PlatformUserCategory) keeps that type instead of widening to string.
+type SelectRootProps<Value extends string> = Omit<
+  SelectPrimitive.Root.Props<Value>,
+  "onValueChange"
+> & {
+  onValueChange?: (value: Value) => void
+}
+
+function Select<Value extends string = string>({
+  onValueChange,
+  ...props
+}: SelectRootProps<Value>) {
+  return (
+    <SelectPrimitive.Root
+      onValueChange={
+        onValueChange
+          ? (value) => onValueChange((value ?? "") as Value)
+          : undefined
+      }
+      {...props}
+    />
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -41,7 +75,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex w-full items-center justify-between gap-2 rounded-xl border border-input bg-card py-2 px-3.5 text-sm whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-11 data-[size=sm]:h-9 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

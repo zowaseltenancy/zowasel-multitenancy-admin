@@ -25,7 +25,7 @@ import ConvertLeadDialog from "./ConvertLeadDialog";
 import RemoveLeadDialog from "./RemoveLeadDialog";
 import { getApiErrorMessage } from "@/lib/axios";
 import { useLead, useLeads } from "../hooks/useLeads";
-import { useLeadConversion } from "../hooks/useLeadConversion";
+import { ConvertLeadValues, useLeadConversion } from "../hooks/useLeadConversion";
 import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
 
 interface Props {
@@ -93,8 +93,10 @@ export default function LeadDetailView({ leadId }: Props) {
   const canAct = lead.status === "incomplete" || lead.status === "ready_to_convert";
   const regionLabel = [lead.countryName, lead.subRegion, lead.continent].filter(Boolean).join(" / ");
 
-  const handleConfirmConvert = () => {
-    convert(lead, { onSuccess: () => setConvertOpen(false) });
+  // The dialog collects overrides, so they arrive here and pass straight
+  // through. It closes on the server's answer, not on the click.
+  const handleConfirmConvert = (values?: ConvertLeadValues) => {
+    convert(lead, values, { onSuccess: () => setConvertOpen(false) });
   };
 
   const handleMarkLost = () => {

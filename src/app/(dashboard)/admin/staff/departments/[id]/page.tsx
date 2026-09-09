@@ -1,84 +1,141 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useStaff } from '@/hooks/useStaff';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, UserCog, Settings, ListChecks } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Department, StaffMember } from '@/types/staff';
-import { StaffListTable } from '@/components/staff/StaffListTable';
+import { Suspense, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
+import { DepartmentRole } from '@/types/staff';
+import { DepartmentDrawer } from '@/components/staff/DepartmentDrawer';
+import { RoleBuilderDialog } from '@/components/staff/RoleBuilderDialog';
+import { DepartmentDetailHeader } from '@/components/staff/department/DepartmentDetailHeader';
+import { DepartmentRolesList } from '@/components/staff/department/DepartmentRolesList';
+import { DepartmentMembersTab } from '@/components/staff/department/DepartmentMembersTab';
+import { DepartmentNotFound } from '@/components/staff/department/DepartmentNotFound';
+import { DepartmentTabControls } from '@/components/staff/department/DepartmentTabControls';
+import { useDepartmentDetail } from '@/components/staff/department/useDepartmentDetail';
 
-export default function DepartmentDetailPage() {
+function DepartmentDetailContent() {
   const params = useParams();
-  const router = useRouter();
-  const { repo } = useStaff();
-  const [mounted, setMounted] = useState(false);
-  const [dept, setDept] = useState<Department | null>(null);
-  const [members, setMembers] = useState<StaffMember[]>([]);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab');
 
-  useEffect(() => { setMounted(true); }, []);
-  useEffect(() => {
-    if (!mounted) return;
-    const d = repo.getDepartmentById(params.id as string);
-    if (!d) { router.push('/admin/staff/departments'); return; }
-    setDept(d);
-    setMembers(repo.getAllStaff().filter(s => s.department === d.name));
-  }, [mounted, params.id]);
+  const {
+    repo,
+    mounted,
+    dept,
+    members,
+    roles,
+    filteredMembers,
+    memberSearch,
+    setMemberSearch,
+    handleRoleSave,
+    deleteRole,
+    refreshDept,
+  } = useDepartmentDetail(params?.id);
 
-  if (!dept) return <div className="p-6 text-center">Loading...</div>;
+  const [activeTab, setActiveTab] = useState(tabParam === 'roles' ? 'roles' : 'members');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<DepartmentRole | null>(null);
 
-  const head = dept.headId ? repo.getStaffById(dept.headId) : null;
+  if (!mounted) {
+    return (
+      <div className="p-8 flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!dept) {
+    return <DepartmentNotFound />;
+  }
+
+  // getStaffById returns undefined for a missing id; the header prop is
+  // `StaffMember | null`, so the two are reconciled here.
+  const head = (dept.headId ? repo.getStaffById(dept.headId) : null) ?? null;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-2">
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back
-      </Button>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
+      <DepartmentDetailHeader
+        dept={dept}
+        head={head}
+        membersCount={members.length}
+        onEditDept={() => setDrawerOpen(true)}
+      />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{dept.name}</h2>
-          <p className="text-muted-foreground">{dept.description}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push(`/admin/staff/departments/${dept.id}/roles`)}>
-            <Settings className="h-4 w-4 mr-2" /> Department Roles
-          </Button>
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <DepartmentTabControls
+          activeTab={activeTab}
+          membersCount={members.length}
+          rolesCount={roles.length}
+          memberSearch={memberSearch}
+          onSearchChange={setMemberSearch}
+          onCreateRole={() => {
+            setEditingRole(null);
+            setRoleDialogOpen(true);
+          }}
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" /> Total Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{members.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <UserCog className="h-4 w-4" /> Department Head
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{head ? `${head.firstName} ${head.lastName}` : '—'}</p>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="members" className="space-y-4 mt-0">
+          <DepartmentMembersTab
+            deptName={dept.name}
+            filteredMembers={filteredMembers}
+            roles={repo.getRoles()}
+          />
+        </TabsContent>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <StaffListTable staff={members} roles={repo.getRoles()} />
-        </CardContent>
-      </Card>
+        <TabsContent value="roles" className="space-y-4 mt-0">
+          <DepartmentRolesList
+            deptName={dept.name}
+            roles={roles}
+            onCreateRole={() => {
+              setEditingRole(null);
+              setRoleDialogOpen(true);
+            }}
+            onEditRole={(role) => {
+              setEditingRole(role);
+              setRoleDialogOpen(true);
+            }}
+            onDeleteRole={deleteRole}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <DepartmentDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        department={dept}
+        onSuccess={() => {
+          refreshDept();
+          setDrawerOpen(false);
+        }}
+      />
+
+      <RoleBuilderDialog
+        open={roleDialogOpen}
+        onOpenChange={setRoleDialogOpen}
+        departmentId={dept.id}
+        existingRole={editingRole}
+        onSave={(role) => {
+          handleRoleSave(role, editingRole);
+          setRoleDialogOpen(false);
+          setEditingRole(null);
+        }}
+      />
     </div>
+  );
+}
+
+export default function DepartmentDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 flex justify-center items-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <DepartmentDetailContent />
+    </Suspense>
   );
 }

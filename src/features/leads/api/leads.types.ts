@@ -68,12 +68,23 @@ export interface ConvertLeadRequest {
     email?: string;
     firstName?: string;
     lastName?: string;
+    /** Stored on the owner's profile. Defaults to the lead's phone. */
+    phone?: string;
+    dateOfBirth?: string;
   };
   business?: {
     name?: string;
     type?: string;
     email?: string;
     phone?: string;
+    /**
+     * Set only when the caller states it. The server never guesses — KYB
+     * document requirements are driven by country, so a wrong value asks the
+     * business for the wrong documents.
+     */
+    country?: string;
+    /** ISO 3166-1 alpha-2. */
+    countryCode?: string;
   };
 }
 

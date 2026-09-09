@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local design-brief scratch files. extract_docx.ps1 was a one-off Windows
+# script (hardcoded to C:\project\...) for pulling media out of a .docx brief,
+# and extracted_onboarding_spec.txt was its output. Neither is code or design.
+extract_docx.ps1
+extracted_*.txt
+docx_media/
+*.docx

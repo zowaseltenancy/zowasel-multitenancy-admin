@@ -8,7 +8,7 @@ import { Lead } from "@/types/lead";
 import { leadsApi } from "../api/leads.api";
 import { mapLead, toCreateLeadRequest } from "../api/leads.mappers";
 import { leadsKeys } from "../api/leads.keys";
-import { ListLeadsQuery } from "../api/leads.types";
+import { ConvertLeadRequest, ListLeadsQuery } from "../api/leads.types";
 import { CreateLeadSchema } from "@/schemas/lead.schema";
 
 // Backed by GET /admin/leads. Replaces a useState(mockLeads) hook whose
@@ -55,8 +55,8 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
   // the owner an onboarding invitation. Passing one links an existing business
   // instead, which the console has no way to choose.
   const convertMutation = useMutation({
-    mutationFn: ({ id, tenantId, note }: { id: string; tenantId?: string; note?: string }) =>
-      leadsApi.convert(id, { ...(tenantId ? { tenantId } : {}), ...(note ? { note } : {}) }),
+    mutationFn: ({ id, payload }: { id: string; payload: ConvertLeadRequest }) =>
+      leadsApi.convert(id, payload),
     onSuccess: invalidate,
   });
 
@@ -83,19 +83,18 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
     },
 
     /**
-     * `organizationId` is optional. Omit it — which is what the console does —
-     * and the server creates the business from the lead, creates the owner's
-     * account, and emails them an onboarding link so they can set a password
-     * and complete their profile.
+     * `payload` carries the optional overrides. With no `tenantId` — which is
+     * what the console always sends — the server creates the business from the
+     * lead, creates or links the owner's account, and emails them a single-use
+     * link so they can set a password and complete their profile.
      */
     convertLead: (
       leadId: string,
-      organizationId?: string,
-      note?: string,
+      payload: ConvertLeadRequest = {},
       options?: { onSuccess?: () => void },
     ) => {
       convertMutation.mutate(
-        { id: leadId, ...(organizationId ? { tenantId: organizationId } : {}), note },
+        { id: leadId, payload },
         {
           onSuccess: () => {
             toast.success("Lead converted — onboarding invitation sent to the owner.");

@@ -4,9 +4,9 @@ const personalInfoSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email'),
-  phone: z.string().min(10, 'Phone must be at least 10 digits'),
+  phone: z.string().min(7, 'Phone must be at least 7 digits'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  gender: z.enum(['male', 'female', 'other']),
+  gender: z.string().min(1, 'Gender is required'),
   maritalStatus: z.string().optional(),
   nationality: z.string().optional(),
   // The onboarding form sets personalInfo.avatarUrl from the webcam/upload
@@ -21,7 +21,7 @@ const employmentSchema = z.object({
   managerId: z.string().optional(),
   employeeId: z.string().optional(),
   dateOfJoining: z.string().min(1, 'Joining date is required'),
-  employmentType: z.enum(['full-time', 'part-time', 'contract']),
+  employmentType: z.enum(['full-time', 'part-time', 'contract', 'intern']),
   workLocation: z.string().optional(),
 });
 
@@ -35,9 +35,9 @@ const addressSchema = z.object({
 });
 
 const nextOfKinSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
-  relationship: z.string().min(1, 'Relationship is required'),
-  phone: z.string().min(10, 'Phone is required'),
+  fullName: z.string().optional(),
+  relationship: z.string().optional(),
+  phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   address: z.string().optional(),
 });
@@ -76,4 +76,18 @@ export const staffFormSchema = z.object({
   documents: z.array(z.any()).default([]),
 });
 
-export type StaffFormValues = z.infer<typeof staffFormSchema>;
+// Two distinct shapes, because several arrays use `.default([])`:
+//
+//   z.input  — what the form holds while editing. The defaulted fields are
+//              optional, and this is what useForm is instantiated with, so it
+//              is what register/watch/setValue are typed on.
+//   z.output — what the resolver produces on submit, with defaults applied,
+//              so those same fields are required.
+//
+// StaffFormValues is the input shape because that is what every step component
+// receives from the form. Mixing the two is what made UseFormRegister and
+// UseFormSetValue mutually unassignable across the onboarding components.
+export type StaffFormValues = z.input<typeof staffFormSchema>;
+
+/** The resolved payload handed to onSubmit, with `.default([])` applied. */
+export type StaffFormSubmitValues = z.output<typeof staffFormSchema>;

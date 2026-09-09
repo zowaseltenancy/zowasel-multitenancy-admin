@@ -69,7 +69,28 @@ export function StaffListTable({ staff, roles }: Props) {
               <td className="p-3 hidden lg:table-cell text-muted-foreground">{member.phone}</td>
               <td className="p-3 hidden xl:table-cell text-muted-foreground">{member.department}</td>
               <td className="p-3">
-                <Badge variant="secondary">{getRoleName(member.roleId)}</Badge>
+                <div className="flex flex-wrap items-center gap-1">
+                  {member.systemRole && member.systemRole !== 'staff' && (
+                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-semibold ${
+                      member.systemRole === 'super_admin'
+                        ? 'border-amber-500/40 text-amber-600 bg-amber-500/10'
+                        : 'border-[#00A651]/40 text-[#00A651] bg-[#00A651]/10'
+                    }`}>
+                      {member.systemRole === 'super_admin' ? 'Super Admin' : 'Admin'}
+                    </Badge>
+                  )}
+                  {member.roleIds && member.roleIds.length > 0 ? (
+                    member.roleIds.map((rId) => (
+                      <Badge key={rId} variant="secondary" className="text-[10.5px]">
+                        {getRoleName(rId)}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge variant="secondary" className="text-[10.5px]">
+                      {getRoleName(member.roleId)}
+                    </Badge>
+                  )}
+                </div>
               </td>
               <td className="p-3">
                 <Badge variant={member.status === 'active' ? 'default' : 'destructive'} className="capitalize">
