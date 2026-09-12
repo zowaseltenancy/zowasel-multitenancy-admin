@@ -1,188 +1,238 @@
-import { Chat, Message, WhatsAppContact, Organization } from '@/types/whatsapp';
-
-interface DB {
-  organizations: Organization[];
-  chats: Chat[];
-  messages: Record<string, Message[]>;
-  contacts: WhatsAppContact[];
+// lib/whatsappRepository.ts
+export interface Contact {
+  id: string;
+  name: string;
+  phone: string;
+  department?: string;
+  tags: string[];
+  metadata: Record<string, string>;
+  source: 'directory' | 'adhoc';
+  avatar?: string;
 }
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  sender: 'agent' | 'contact' | 'internal';
+  content: string;
+  type: 'text' | 'image' | 'video' | 'document' | 'voice' | 'location';
+  timestamp: string;
+  status?: 'sent' | 'delivered' | 'read';
+  agentId?: string;
+  meta?: any;
+}
+
+export interface Conversation {
+  id: string;
+  contactId: string;
+  assignedAgentId?: string;
+  department: string;
+  starred: boolean;
+  tags: string[];
+  unreadCount: number;
+  lastMessageAt: string;
+  messages: Message[];
+}
+
+const STORAGE_KEY = 'whatsapp_mock_data';
 
 export class WhatsAppRepository {
-  private storageKey = 'whatsapp_mock_db';
+  private data: { contacts: Contact[]; conversations: Conversation[] } = {
+    contacts: [],
+    conversations: [],
+  };
 
-  deleteChat(chatId: string) {
-    const db = this.readDB();
-    db.chats = db.chats.filter(c => c.id !== chatId);
-    delete db.messages[chatId];
-    this.writeDB(db);
-    }
-
-    addMemberToOrganization(orgId: string, contactId: string) {
-  const db = this.readDB();
-  const org = db.organizations.find(o => o.id === orgId);
-  if (org && !org.memberContactIds.includes(contactId)) {
-    org.memberContactIds.push(contactId);
-    this.writeDB(db);
+  constructor() {
+    this.load();
   }
-}
-  private readDB(): DB {
-    if (typeof window === 'undefined')
-        return { organizations: [], chats: [], messages: {}, contacts: [] };
-    const raw = localStorage.getItem(this.storageKey);
-    if (!raw) return { organizations: [], chats: [], messages: {}, contacts: [] };
-    return JSON.parse(raw);
-    }
 
-  private writeDB(db: DB) {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(this.storageKey, JSON.stringify(db));
+  private load() {
+    if (typeof window === 'undefined') return;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      this.data = JSON.parse(raw);
+    } else {
+      this.seed();
     }
   }
 
-  init(seed: DB) {
-    if (typeof window !== 'undefined' && !localStorage.getItem(this.storageKey)) {
-      this.writeDB(seed);
+  private persist() {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+  }
+
+  private seed() {
+    const contacts: Contact[] = [
+      {
+        id: 'c1',
+        name: 'John Farmer',
+        phone: '+2348012345678',
+        department: 'Sales',
+        tags: ['VIP', 'Follow-up'],
+        metadata: { location: 'Kaduna' },
+        source: 'adhoc',
+      },
+      {
+        id: 'c2',
+        name: 'Mary Trader',
+        phone: '+2348098765432',
+        department: 'Support',
+        tags: ['New'],
+        metadata: { location: 'Lagos' },
+        source: 'adhoc',
+      },
+    ];
+
+    const conversations: Conversation[] = [
+      {
+        id: 'conv1',
+        contactId: 'c1',
+        assignedAgentId: 'staff-1',
+        department: 'Sales',
+        starred: true,
+        tags: ['VIP'],
+        unreadCount: 2,
+        lastMessageAt: new Date().toISOString(),
+        messages: [
+          {
+            id: 'm1',
+            conversationId: 'conv1',
+            sender: 'contact',
+            content: 'Hello, I need help with my order',
+            type: 'text',
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+          },
+          {
+            id: 'm2',
+            conversationId: 'conv1',
+            sender: 'agent',
+            content: 'Hi John, let me check',
+            type: 'text',
+            timestamp: new Date(Date.now() - 3500000).toISOString(),
+            status: 'read',
+          },
+        ],
+      },
+      {
+        id: 'conv2',
+        contactId: 'c2',
+        department: 'Support',
+        starred: false,
+        tags: [],
+        unreadCount: 0,
+        lastMessageAt: new Date().toISOString(),
+        messages: [],
+      },
+    ];
+
+    this.data = { contacts, conversations };
+    this.persist();
+  }
+
+  getContacts(): Contact[] {
+    return this.data.contacts;
+  }
+
+  getConversations(filter?: string): Conversation[] {
+    let convs = this.data.conversations;
+    const currentAgentId = 'staff-1';
+    switch (filter) {
+      case 'all':
+        return convs;
+      case 'mine':
+        return convs.filter((c) => c.assignedAgentId === currentAgentId);
+      case 'unassigned':
+        return convs.filter((c) => !c.assignedAgentId);
+      case 'starred':
+        return convs.filter((c) => c.starred);
+      default:
+        return convs.filter((c) => c.department === filter);
     }
   }
 
-getOrganizations(): Organization[] {
-  const db = this.readDB();
-  return db.organizations || [];
-}
-
-getMembersByOrganization(orgId: string): WhatsAppContact[] {
-  const db = this.readDB();
-  const org = (db.organizations || []).find(o => o.id === orgId);
-  if (!org) return [];
-  return org.memberContactIds
-    .map(id => db.contacts.find(c => c.id === id))
-    .filter(Boolean) as WhatsAppContact[];
-}
-
-  // ---- Conversation filters ----
-  getConversations(filter?: {
-    agentId?: string | null;
-    department?: string;
-    starred?: boolean;
-    searchQuery?: string;
-    organizationId?: string;
-  }): Chat[] {
-    let chats = this.readDB().chats;
-    const db = this.readDB();
-
-    if (filter?.organizationId) {
-      const org = db.organizations.find((o) => o.id === filter.organizationId);
-      const memberIds = org?.memberContactIds || [];
-      chats = chats.filter((c) => memberIds.includes(c.contactId));
-    }
-
-    if (filter?.agentId !== undefined) {
-      chats = chats.filter((c) => c.assignedAgentId === filter.agentId);
-    }
-    if (filter?.department) {
-      chats = chats.filter((c) => c.department === filter.department);
-    }
-    if (filter?.starred) {
-      chats = chats.filter((c) => c.isStarred);
-    }
-    if (filter?.searchQuery) {
-      const q = filter.searchQuery.toLowerCase();
-      chats = chats.filter((c) => {
-        const contact = this.getContact(c.contactId);
-        return (
-          c.id.toLowerCase().includes(q) ||
-          contact?.displayName.toLowerCase().includes(q) ||
-          c.lastMessage?.body?.toLowerCase().includes(q)
-        );
-      });
-    }
-
-    return chats.sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    );
+  getConversation(id: string): Conversation | undefined {
+    return this.data.conversations.find((c) => c.id === id);
   }
 
-  getMessages(chatId: string): Message[] {
-    const db = this.readDB();
-    return (db.messages[chatId] || []).sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+  getMessages(conversationId: string): Message[] {
+    const conv = this.getConversation(conversationId);
+    return conv ? conv.messages : [];
   }
 
-  sendMessage(message: Message) {
-    const db = this.readDB();
-    if (!db.messages[message.chatId]) db.messages[message.chatId] = [];
-    db.messages[message.chatId].push(message);
+  sendMessage(
+    conversationId: string,
+    content: string,
+    type: Message['type'] = 'text',
+    sender: 'agent' | 'contact' | 'internal' = 'agent',
+    agentId?: string
+  ) {
+    const conv = this.getConversation(conversationId);
+    if (!conv) return;
+    const msg: Message = {
+      id: `m${Date.now()}`,
+      conversationId,
+      sender,
+      content,
+      type,
+      timestamp: new Date().toISOString(),
+      status: sender === 'agent' ? 'sent' : undefined,
+      agentId,
+    };
+    conv.messages.push(msg);
+    conv.lastMessageAt = msg.timestamp;
+    if (sender === 'contact') conv.unreadCount += 1;
+    this.persist();
+  }
 
-    const chat = db.chats.find((c) => c.id === message.chatId);
-    if (chat) {
-      chat.lastMessage = {
-        id: message.id,
-        body: message.type === 'text' ? message.body : message.body || 'Media',
-        timestamp: message.timestamp,
-      };
-      chat.updatedAt = message.timestamp;
-      if (message.senderId === chat.contactId && !message.isInternalNote) {
-        chat.unreadCount += 1;
+  updateMessageStatus(messageId: string, status: 'sent' | 'delivered' | 'read') {
+    for (const conv of this.data.conversations) {
+      const msg = conv.messages.find((m) => m.id === messageId);
+      if (msg) {
+        msg.status = status;
+        break;
       }
     }
-    this.writeDB(db);
+    this.persist();
   }
 
-  markRead(chatId: string) {
-    const db = this.readDB();
-    const chat = db.chats.find((c) => c.id === chatId);
-    if (chat) chat.unreadCount = 0;
-    const msgs = db.messages[chatId];
-    if (msgs) {
-      msgs.forEach((m) => {
-        if (m.status !== 'read') m.status = 'read';
-      });
+  assignAgent(conversationId: string, agentId?: string) {
+    const conv = this.getConversation(conversationId);
+    if (conv) {
+      conv.assignedAgentId = agentId;
+      this.persist();
     }
-    this.writeDB(db);
   }
 
-  toggleStar(chatId: string) {
-    const db = this.readDB();
-    const chat = db.chats.find((c) => c.id === chatId);
-    if (chat) chat.isStarred = !chat.isStarred;
-    this.writeDB(db);
+  toggleStar(conversationId: string) {
+    const conv = this.getConversation(conversationId);
+    if (conv) {
+      conv.starred = !conv.starred;
+      this.persist();
+    }
   }
 
-  assignAgent(chatId: string, agentId: string | null) {
-    const db = this.readDB();
-    const chat = db.chats.find((c) => c.id === chatId);
-    if (chat) chat.assignedAgentId = agentId;
-    this.writeDB(db);
+  addTag(conversationId: string, tag: string) {
+    const conv = this.getConversation(conversationId);
+    if (conv && !conv.tags.includes(tag)) {
+      conv.tags.push(tag);
+      this.persist();
+    }
   }
 
-  getContact(contactId: string): WhatsAppContact | undefined {
-    return this.readDB().contacts.find((c) => c.id === contactId);
+  addContact(contact: Contact) {
+    this.data.contacts.push(contact);
+    this.persist();
   }
 
-  searchContacts(query: string): WhatsAppContact[] {
-    const q = query.toLowerCase();
-    return this.readDB().contacts.filter(
-      (c) =>
-        c.displayName.toLowerCase().includes(q) || c.phoneNumber.includes(q)
-    );
+  simulateIncoming(conversationId: string, content: string, type: Message['type'] = 'text') {
+    this.sendMessage(conversationId, content, type, 'contact');
   }
 
-  addExternalContact(contact: Omit<WhatsAppContact, 'id' | 'isExternal'>): WhatsAppContact {
-    const db = this.readDB();
-    const newContact: WhatsAppContact = { ...contact, id: `ext-${Date.now()}`, isExternal: true };
-    db.contacts.push(newContact);
-    this.writeDB(db);
-    return newContact;
-  }
-
-  addChat(chat: Chat) {
-    const db = this.readDB();
-    db.chats.push(chat);
-    this.writeDB(db);
-  }
-
-  resetDB(seed: DB) {
-    this.writeDB(seed);
+  markAsRead(conversationId: string) {
+    const conv = this.getConversation(conversationId);
+    if (conv) {
+      conv.unreadCount = 0;
+      this.persist();
+    }
   }
 }

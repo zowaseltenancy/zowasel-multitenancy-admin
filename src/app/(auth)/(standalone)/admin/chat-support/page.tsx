@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider } from '@/hooks/useAuth';
 import { WhatsAppRepoProvider } from '@/hooks/useWhatsAppRepository';
-import WorkspaceLayout from '@/components/chat-support/WorkspaceLayout';
+import WorkspaceLayout from '@/components/messaging/WorkspaceLayout';
 import { mockUser } from '@/data/mockWhatsApp';
-import { DevToolbar } from '@/components/chat-support/DevToolbar';
+import { DevToolbar } from '@/components/messaging/DevUtilityBar';
 
 export default function WorkspacePage() {
   const [mounted, setMounted] = useState(false);

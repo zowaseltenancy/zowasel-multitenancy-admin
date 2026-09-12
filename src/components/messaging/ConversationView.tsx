@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Chat, Message } from '@/types/whatsapp';
 import { useWhatsAppRepo } from '@/hooks/useWhatsAppRepository';
 import { useAuth } from '@/hooks/useAuth';
-import { ChatHeader } from './ChatHeader';
+import { ChatHeader } from './ConversationHeader';
 import { MessageBubble } from './MessageBubble';
 import { Composer } from './Composer';
 import { PermissionGate } from '../PermissionGate';

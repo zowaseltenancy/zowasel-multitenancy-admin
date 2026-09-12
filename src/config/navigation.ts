@@ -6,6 +6,7 @@ import {
   Home,
   LayoutGrid,
   Megaphone,
+  MessageSquare,
   ShieldCheck,
   TrendingUp,
   UserCheck,
@@ -183,6 +184,15 @@ export const navigation: NavigationItem[] = [
           { label: "Overview", href: "/admin/staff/departments" },
         ],
       },
+    ],
+  },
+  {
+    label: "Messaging",
+    href: "/admin/messaging",
+    icon: MessageSquare,
+    children: [
+      { label: "Inbox", href: "/admin/messaging" },
+      { label: "Roles & Permissions", href: "/admin/messaging/permissions" },
     ],
   },
   {
