@@ -9,18 +9,39 @@ import {
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Pagination from '@/components/shared/Pagination';
 import CompactRegionScopeSelector from '@/components/shared/CompactRegionScopeSelector';
 import { Card, CardContent } from '@/components/ui/card';
 import { KYB_DOCUMENT_LABELS } from '@/constants/kyb';
-import { useOrganizations } from '@/features/organization/hooks/useOrganizations';
+import {
+  useKybDocuments,
+  useOrganizationStats,
+} from '@/features/organization/hooks/useOrganizations';
 import { GeographicFilterState } from '@/types/geo';
+import { KybDocumentType } from '@/types/kyb';
+
+// The API returns the document type as the free-form string the country
+// requirements use; the label map is keyed on the union this app knows about.
+// Anything outside it gets the "other" label rather than being mislabelled.
+const KNOWN_DOCUMENT_TYPES: KybDocumentType[] = [
+  'business_registration',
+  'tax_clearance',
+  'directors_id',
+  'utility_bill',
+  'memorandum',
+  'shareholder_mapping',
+  'bvn',
+  'proof_of_address',
+];
+
+function toDocumentLabelKey(value: string): KybDocumentType {
+  const normalized = value.toLowerCase() as KybDocumentType;
+  return KNOWN_DOCUMENT_TYPES.includes(normalized) ? normalized : 'other';
+}
 
 export default function KybOverviewPage() {
-  const { organizations } = useOrganizations();
-
   const [geoFilter, setGeoFilter] = useState<GeographicFilterState>({
     scope: 'global',
     continent: 'all',
@@ -28,73 +49,52 @@ export default function KybOverviewPage() {
     countryCode: 'all',
   });
 
-  const filteredOrganizations = useMemo(() => {
-    return organizations.filter((org) => {
-      const matchesContinent =
-        geoFilter.continent === 'all' || org.continent === geoFilter.continent;
-      const matchesSubRegion =
-        geoFilter.subRegion === 'all' || org.subRegion === geoFilter.subRegion;
-      const matchesCountry =
-        geoFilter.countryCode === 'all' || org.countryCode === geoFilter.countryCode;
-
-      return matchesContinent && matchesSubRegion && matchesCountry;
-    });
-  }, [organizations, geoFilter]);
-
-  const approved = filteredOrganizations.filter(
-    (organization) => organization.kybStatus === 'approved'
-  ).length;
-
-  const pending = filteredOrganizations.filter(
-    (organization) => organization.kybStatus === 'pending'
-  ).length;
-
-  const rejected = filteredOrganizations.filter(
-    (organization) => organization.kybStatus === 'rejected'
-  ).length;
-
-  const allSubmittedDocuments = useMemo(() => {
-    return filteredOrganizations
-      .flatMap((org) =>
-        org.kybDocuments.map((doc) => ({
-          ...doc,
-          organizationId: org.id,
-          organizationName: org.name,
-          businessId: org.businessId,
-          ownerName: org.owner.name,
-          kybStatus: org.kybStatus,
-        }))
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-      );
-  }, [filteredOrganizations]);
-
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const pageCount = Math.max(
-    1,
-    Math.ceil(allSubmittedDocuments.length / pageSize)
-  );
+
+  // GET /admin/kyb/documents — one row per document.
+  //
+  // This page used to flat-map `kybDocuments` off GET /admin/businesses, which
+  // carries no documents at all (a business can have a dozen, so the directory
+  // does not pay for them on every page). The table was therefore always
+  // empty, no matter what had been submitted.
+  const {
+    documents,
+    meta,
+    isLoading,
+    error,
+  } = useKybDocuments({
+    page,
+    limit: pageSize,
+    ...(geoFilter.continent !== 'all' ? { continent: geoFilter.continent } : {}),
+    ...(geoFilter.subRegion !== 'all' ? { subRegion: geoFilter.subRegion } : {}),
+    ...(geoFilter.countryCode !== 'all' ? { country: geoFilter.countryCode } : {}),
+  });
+
+  // Platform-wide business counts, from GET /admin/businesses/stats. These
+  // count businesses by KYB status, which is what the three status tiles mean —
+  // counting the documents on the current page would answer a different
+  // question and change as you paged.
+  const { stats: businessStats } = useOrganizationStats();
+
+  const approved = businessStats?.kyb.APPROVED ?? 0;
+  const pending = businessStats?.kyb.PENDING ?? 0;
+  const rejected = businessStats?.kyb.REJECTED ?? 0;
+
+  const totalSubmissions = meta?.total ?? documents.length;
+  const pageCount = Math.max(1, meta?.totalPages ?? 1);
 
   useEffect(() => {
-    // Reset to page 1 when the underlying (filtered) document count changes
-    // rather than clamping the current page — this mirrors the pagination
-    // reset already done inline for direct filter-control changes elsewhere.
+    // Reset to page 1 when the regional scope changes — the page number from
+    // the previous scope has no meaning in the new one.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
-  }, [allSubmittedDocuments.length]);
-
-  const paginatedDocuments = allSubmittedDocuments.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  }, [geoFilter.continent, geoFilter.subRegion, geoFilter.countryCode]);
 
   const stats = [
     {
       label: 'Total Submissions',
-      value: allSubmittedDocuments.length,
+      value: totalSubmissions,
       icon: FileCheck,
       cardBg: 'bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20',
       iconClassName: 'bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400',
@@ -195,7 +195,25 @@ export default function KybOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {allSubmittedDocuments.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="p-6 text-center text-sm text-muted-foreground"
+                    >
+                      Loading submitted documents…
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="p-6 text-center text-sm text-muted-foreground"
+                    >
+                      {error}
+                    </td>
+                  </tr>
+                ) : documents.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
@@ -205,23 +223,24 @@ export default function KybOverviewPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedDocuments.map((doc, idx) => (
+                  documents.map((doc) => (
                     <tr
-                      key={`${doc.organizationId}-${doc.type}-${idx}`}
+                      key={doc.id}
                       className="transition-colors hover:bg-muted/30"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-primary shrink-0" />
                           <span className="font-medium">
-                            {KYB_DOCUMENT_LABELS[doc.type] ?? doc.type}
+                            {KYB_DOCUMENT_LABELS[toDocumentLabelKey(doc.type)] ?? doc.type}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-medium">{doc.organizationName}</p>
+                        <p className="font-medium">{doc.business.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {doc.businessId} • {doc.ownerName}
+                          {doc.business.businessId}
+                          {doc.business.ownerName ? ` • ${doc.business.ownerName}` : ''}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
@@ -246,7 +265,7 @@ export default function KybOverviewPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Link
-                          href={`/admin/kyb/${doc.organizationId}`}
+                          href={`/admin/kyb/${doc.business.id}`}
                           className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                         >
                           Inspect Document

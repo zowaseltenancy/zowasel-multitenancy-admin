@@ -12,9 +12,11 @@ interface Props {
   onBack: () => void;
   onToggleContext: () => void;
   contextOpen: boolean;
+  /** Opens the contact drawer. Passed by WorkspaceLayout. */
+  onViewContact: (contactId: string) => void;
 }
 
-export function ChatHeader({ chat, onBack, onToggleContext, contextOpen,onNewContact }: Props) {
+export function ChatHeader({ chat, onBack, onToggleContext, contextOpen }: Props) {
   const { repo, refresh } = useWhatsAppRepo();
   const user = useAuth();
   const contact = repo.getContact(chat.contactId) as WhatsAppContact;

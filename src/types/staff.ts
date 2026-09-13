@@ -3,7 +3,9 @@ export interface StaffMember {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  // Optional rather than required: widening is safe for consumers, but making
+  // it required breaks every caller that builds a StaffMember without a phone.
+  phone?: string;
   mobilenumber?: string;
   country?: string;
   employmenttype?: string;
@@ -11,11 +13,17 @@ export interface StaffMember {
   departmentId?: string;
   departmentObj?: { id: string; name: string } | null;
   roleId: string;
-  systemRole?: 'super_admin' | 'admin' | 'staff' | string;
+  systemRole?: 'super_admin' | 'admin' | 'staff';
   roleIds?: string[];
   roles?: { id: string; name: string; description?: string }[];
   permissions?: string[];
-  status: 'active' | 'inactive' | 'suspended' | 'invited' | string;
+  // The full set from both sides. 'pending' is the option the staff form
+  // offers for someone invited but not yet activated.
+  //
+  // Deliberately closed: both this and systemRole carried a trailing
+  // `| string`, which collapses the union back to string and silently disables
+  // every exhaustiveness check and typo catch the union exists to provide.
+  status: 'active' | 'inactive' | 'pending' | 'suspended' | 'invited';
   statusHistory?: Array<{ status: string; at: string; reason?: string }>;
   manager?: { id: string; firstName: string | null; lastName: string | null; email?: string } | null;
   avatarUrl?: string;
@@ -35,6 +43,17 @@ export interface StaffMember {
   managerId?: string;
   employmentType?: 'full-time' | 'part-time' | 'contract' | 'intern';
   workLocation?: string;
+
+  // Department-scoped roles assigned to this member, distinct from the single
+  // `roleId` above. Read by the profile view and the detail page.
+  departmentRoleIds?: string[];
+
+  // Populated by the onboarding form, which collects biodata under this key
+  // before it is flattened onto the record. Only the fields actually read
+  // elsewhere are declared.
+  personalInfo?: {
+    avatarUrl?: string;
+  };
 
   address?: {
     line1: string;
@@ -78,7 +97,9 @@ export interface StaffMember {
 
   // Extended profile attributes (condex.docx)
   bio?: string;
-  departmentRoleIds?: string[];
+  // departmentRoleIds is declared above, next to the other role fields — both
+  // sides of the merge added it in different places, which git combined
+  // cleanly into a duplicate.
   projects?: StaffProject[];
   complianceDocuments?: StaffDocument[];
   performance?: StaffPerformance;

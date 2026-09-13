@@ -10,7 +10,6 @@ interface ProjectsAndHistorySectionProps {
 
 export function ProjectsAndHistorySection({
   staff,
-  departmentRoles = [],
 }: ProjectsAndHistorySectionProps) {
   return (
     <>

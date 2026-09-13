@@ -141,7 +141,7 @@ export default function OrganizationKybTab({
               {organization.kybDocuments.map(
                 (document) => (
                   <div
-                    key={document.type}
+                    key={document.id ?? `${document.type}:${document.url}`}
                     className="flex items-center justify-between py-4"
                   >
                     <div className="flex items-center gap-3">
@@ -174,10 +174,11 @@ export default function OrganizationKybTab({
                         </p>
 
                         <p className="text-xs text-muted-foreground">
-                          Uploaded{" "}
-                          {new Date(
-                            document.uploadedAt
-                          ).toLocaleDateString()}
+                          {document.uploadedAt
+                            ? `Uploaded ${new Date(
+                                document.uploadedAt
+                              ).toLocaleDateString()}`
+                            : "Upload date not recorded"}
                         </p>
                       </div>
                     </div>

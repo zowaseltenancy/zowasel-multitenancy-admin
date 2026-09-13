@@ -10,9 +10,8 @@ import { mockLeads } from "../data/mockLeads";
 import { leadsApi } from "../api/leads.api";
 import { mapLead, toCreateLeadRequest } from "../api/leads.mappers";
 import { leadsKeys } from "../api/leads.keys";
-import { ListLeadsQuery } from "../api/leads.types";
+import { ConvertLeadRequest, ListLeadsQuery } from "../api/leads.types";
 import { CreateLeadSchema } from "@/schemas/lead.schema";
-import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
 
 // ── Client-side mock store with persistence fallback ─────────────────────────
 const STORAGE_KEY = "zowasel_mock_leads";
@@ -52,15 +51,6 @@ function updateMockLeads(updater: (prev: Lead[]) => Lead[]) {
 
 export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
   const queryClient = useQueryClient();
-  const [localLeads, setLocalLeads] = useState<Lead[]>(mockLeadsStore);
-
-  useEffect(() => {
-    const handleUpdate = () => setLocalLeads([...mockLeadsStore]);
-    listeners.add(handleUpdate);
-    return () => {
-      listeners.delete(handleUpdate);
-    };
-  }, []);
 
   const query = useQuery({
     queryKey: leadsKeys.list(params),
@@ -69,13 +59,9 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
       items: result.items.map(mapLead),
       meta: result.meta,
     }),
-    retry: 1,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: leadsKeys.all });
-
-  const hasServerData = query.isSuccess && query.data?.items !== undefined;
-  const leads = hasServerData ? query.data.items : localLeads;
 
   const markLostMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
@@ -93,134 +79,68 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
   });
 
   const convertMutation = useMutation({
-    mutationFn: ({ id, tenantId, note }: { id: string; tenantId: string; note?: string }) =>
-      leadsApi.convert(id, { tenantId, note }),
+    mutationFn: ({ id, payload }: { id: string; payload: ConvertLeadRequest }) =>
+      leadsApi.convert(id, payload),
+    onSuccess: invalidate,
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => leadsApi.remove(id),
     onSuccess: invalidate,
   });
 
   return {
-    leads,
-    meta: query.data?.meta ?? {
-      page: params.page ?? 1,
-      limit: params.limit ?? leads.length,
-      total: leads.length,
-      totalPages: 1,
-    },
-    isLoading: query.isLoading && !localLeads.length,
+    leads: query.data?.items ?? [],
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
     isFetching: query.isFetching,
-    error: hasServerData || localLeads.length === 0
-      ? (query.error ? getApiErrorMessage(query.error, "Unable to load leads.") : null)
-      : null,
+    error: query.error ? getApiErrorMessage(query.error, "Unable to load leads.") : null,
 
     markLost: (leadId: string, reason?: string) => {
       markLostMutation.mutate(
         { id: leadId, reason },
         {
-          onSuccess: () => {
-            updateMockLeads((prev) =>
-              prev.map((lead) => (lead.id === leadId ? { ...lead, status: "lost" } : lead))
-            );
-            toast.success("Lead marked as lost.");
-          },
-          onError: () => {
-            updateMockLeads((prev) =>
-              prev.map((lead) => (lead.id === leadId ? { ...lead, status: "lost" } : lead))
-            );
-            toast.success("Lead marked as lost.");
-          },
+          onSuccess: () => toast.success("Lead marked as lost."),
+          onError: (error) => toast.error(getApiErrorMessage(error, "Unable to mark the lead lost.")),
         },
       );
     },
 
-    convertLead: (leadId: string, organizationId: string, note?: string) => {
+    convertLead: (
+      leadId: string,
+      payload: ConvertLeadRequest = {},
+      options?: { onSuccess?: () => void },
+    ) => {
       convertMutation.mutate(
-        { id: leadId, tenantId: organizationId, note },
+        { id: leadId, payload },
         {
           onSuccess: () => {
-            updateMockLeads((prev) =>
-              prev.map((lead) =>
-                lead.id === leadId
-                  ? { ...lead, status: "converted", convertedOrganizationId: organizationId }
-                  : lead
-              )
-            );
-            toast.success("Lead converted.");
+            toast.success("Lead converted — onboarding invitation sent to the owner.");
+            options?.onSuccess?.();
           },
-          onError: () => {
-            updateMockLeads((prev) =>
-              prev.map((lead) =>
-                lead.id === leadId
-                  ? { ...lead, status: "converted", convertedOrganizationId: organizationId }
-                  : lead
-              )
-            );
-            toast.success("Lead converted.");
-          },
+          onError: (error) => toast.error(getApiErrorMessage(error, "Unable to convert the lead.")),
         },
       );
     },
 
     addLead: (values: CreateLeadSchema, options?: { onSuccess?: () => void }) => {
-      const geo = GLOBAL_COUNTRY_CURRENCIES.find((c) => c.countryCode === values.countryCode);
-      const classificationFields: Partial<Lead> =
-        values.intendedType === "merchant"
-          ? {
-              storeName: values.storeName,
-              outletLat: values.outletLat,
-              outletLng: values.outletLng,
-              posCount: values.posCount,
-              monthlyVolume: values.monthlyVolume,
-            }
-          : values.intendedType === "agrodealer"
-          ? {
-              licenseNo: values.licenseNo,
-              storageMt: values.storageMt,
-              inputSpecialties: values.inputSpecialties,
-              lgaCoverage: values.lgaCoverage,
-            }
-          : {
-              cacNumber: values.cacNumber,
-              taxId: values.taxId,
-              annualTurnover: values.annualTurnover,
-              decisionMakerTitle: values.decisionMakerTitle,
-            };
-
-      const newMockLead: Lead = {
-        id: `lead_${Date.now()}`,
-        businessName: values.businessName,
-        contactName: values.contactName,
-        email: values.email,
-        phone: values.phone,
-        intendedType: values.intendedType,
-        source: values.source,
-        status: "incomplete",
-        missingFields: [],
-        notes: values.notes,
-        countryCode: values.countryCode,
-        countryName: geo?.countryName ?? values.countryCode,
-        subRegion: geo?.subRegion ?? "west_africa",
-        continent: geo?.continent ?? "africa",
-        createdAt: new Date().toISOString().slice(0, 10),
-        ...classificationFields,
-      };
-
       createMutation.mutate(values, {
         onSuccess: () => {
-          updateMockLeads((prev) => [newMockLead, ...prev]);
           toast.success("Lead added to the pipeline.");
           options?.onSuccess?.();
         },
-        onError: () => {
-          updateMockLeads((prev) => [newMockLead, ...prev]);
-          toast.success("Lead added to the pipeline.");
-          options?.onSuccess?.();
-        },
+        onError: (error) => toast.error(getApiErrorMessage(error, "Unable to add the lead.")),
       });
     },
 
-    removeLead: (leadId: string) => {
-      updateMockLeads((prev) => prev.filter((lead) => lead.id !== leadId));
-      toast.success("Lead removed from the pipeline.");
+    removeLead: (leadId: string, options?: { onSuccess?: () => void }) => {
+      removeMutation.mutate(leadId, {
+        onSuccess: () => {
+          toast.success("Lead removed.");
+          options?.onSuccess?.();
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, "Unable to remove the lead.")),
+      });
     },
 
     updateLead: (leadId: string, updates: Partial<Lead>, options?: { onSuccess?: () => void }) => {
@@ -235,8 +155,13 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
       options?.onSuccess?.();
     },
 
-    isMutating: markLostMutation.isPending || convertMutation.isPending || createMutation.isPending,
+    isMutating:
+      markLostMutation.isPending ||
+      convertMutation.isPending ||
+      createMutation.isPending ||
+      removeMutation.isPending,
     isCreating: createMutation.isPending,
+    isRemoving: removeMutation.isPending,
   };
 }
 

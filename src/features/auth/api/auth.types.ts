@@ -16,6 +16,14 @@ export interface AdminForgotPasswordRequest {
   email: string;
 }
 
+// POST /admin/auth/verify-otp — checks a reset code without consuming it, so
+// an invalid or expired one fails on the code screen rather than after the user
+// has typed a new password twice. The code still has to be valid at reset time.
+export interface AdminVerifyOtpRequest {
+  email: string;
+  otp: string;
+}
+
 export interface AdminResetPasswordRequest {
   email: string;
   otp: string;

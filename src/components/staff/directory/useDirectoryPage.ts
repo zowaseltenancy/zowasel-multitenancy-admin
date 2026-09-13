@@ -23,8 +23,15 @@ export function useDirectoryPage(repo: any, refresh: () => void) {
 
   const staffList = useMemo(() => repo.getAllStaff(), [repo]);
   const roles = useMemo(() => repo.getRoles(), [repo]);
-  const departments = useMemo(
-    () => Array.from(new Set(staffList.map((s: StaffMember) => s.department).filter(Boolean))).sort(),
+  const departments = useMemo<string[]>(
+    () =>
+      Array.from(
+        new Set<string>(
+          staffList
+            .map((s: StaffMember) => s.department)
+            .filter((name: string): name is string => Boolean(name)),
+        ),
+      ).sort(),
     [staffList]
   );
 

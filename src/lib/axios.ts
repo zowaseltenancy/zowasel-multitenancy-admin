@@ -155,12 +155,30 @@ function createClient(baseURL: string) {
         return Promise.reject(error);
       }
 
-      // Login is exempt: a 401 there means bad credentials, and bouncing the
-      // user off the login page they are already on would be absurd.
+      // Endpoints that are unauthenticated by nature. A 401 from any of these
+      // is the endpoint's own answer — bad credentials, a wrong OTP, an
+      // expired invitation — not an expired session, so refreshing and
+      // retrying is both pointless and misleading: the caller ends up seeing
+      // the refresh failure instead of "that code is invalid", and
+      // clearAdminSession() fires in the middle of a flow where the user was
+      // never signed in.
+      const UNAUTHENTICATED_PATHS = [
+        "/admin/auth/login",
+        "/admin/auth/refresh",
+        "/admin/auth/forgot-password",
+        "/admin/auth/verify-otp",
+        "/admin/auth/reset-password",
+        "/admin/invitations/accept",
+        "/admin/invitations/by-token",
+      ];
+
       if (
         status !== 401 ||
         !originalRequest ||
-        originalRequest.url?.includes("/admin/auth/login")
+        // Without this the retried request can 401 again and refresh again,
+        // round and round. `_retry` was being set but never read.
+        originalRequest._retry ||
+        UNAUTHENTICATED_PATHS.some(path => originalRequest.url?.includes(path))
       ) {
         return Promise.reject(error);
       }

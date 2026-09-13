@@ -6,7 +6,41 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+// `onValueChange` is translated rather than re-exported raw.
+//
+// @base-ui hands the callback `(value: string | null, details)` — null when the
+// selection is cleared — while every call site in this app is written against
+// the shadcn/Radix shape `(value: string) => void`, which is what a
+// `useState<string>` setter accepts. Adapting here fixes all of them at once
+// instead of widening a dozen handlers to `string | null` and null-coalescing
+// in each; a cleared selection arrives as "" so the state type stays `string`.
+//
+// Same reasoning as the `asChild` → `render` translation in tooltip.tsx and
+// dropdown-menu.tsx.
+// Generic over the value type so a select bound to a narrower union (e.g.
+// PlatformUserCategory) keeps that type instead of widening to string.
+type SelectRootProps<Value extends string> = Omit<
+  SelectPrimitive.Root.Props<Value>,
+  "onValueChange"
+> & {
+  onValueChange?: (value: Value) => void
+}
+
+function Select<Value extends string = string>({
+  onValueChange,
+  ...props
+}: SelectRootProps<Value>) {
+  return (
+    <SelectPrimitive.Root
+      onValueChange={
+        onValueChange
+          ? (value) => onValueChange((value ?? "") as Value)
+          : undefined
+      }
+      {...props}
+    />
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

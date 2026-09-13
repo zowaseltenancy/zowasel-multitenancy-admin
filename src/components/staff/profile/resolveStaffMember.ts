@@ -1,5 +1,24 @@
 import { StaffMember, StaffRole } from '@/types/staff';
 
+type SystemRole = 'super_admin' | 'admin' | 'staff';
+
+// The API reports the system role in upper snake case (SUPER_ADMIN / ADMIN /
+// STAFF); StaffMember.systemRole is the lower-case union the UI compares
+// against. Normalising here rather than at each comparison site — StaffListTable
+// checks `systemRole === 'super_admin'`, which silently failed for every
+// API-sourced record and labelled a super admin as "Admin".
+//
+// The `status` field a few lines below already lower-cases for the same reason;
+// systemRole was simply missed.
+function toSystemRole(value: string | null | undefined): SystemRole | undefined {
+  switch (value?.toLowerCase()) {
+    case 'super_admin': return 'super_admin';
+    case 'admin':       return 'admin';
+    case 'staff':       return 'staff';
+    default:            return undefined;
+  }
+}
+
 export function resolveStaffMember(
   liveDto: any,
   local: StaffMember | null | undefined,
@@ -18,7 +37,7 @@ export function resolveStaffMember(
       departmentId: liveDto.department?.id || local?.departmentId,
       departmentObj: liveDto.department || local?.departmentObj,
       roleId: liveDto.roles?.[0]?.id || local?.roleId || 'role-staff',
-      systemRole: liveDto.role || liveDto.systemRole || local?.systemRole || 'STAFF',
+      systemRole: toSystemRole(liveDto.role ?? liveDto.systemRole ?? local?.systemRole) ?? 'staff',
       roleIds: liveDto.roles?.map((r: any) => r.id) || local?.roleIds || [],
       roles: liveDto.roles || local?.roles,
       permissions: liveDto.permissions || local?.permissions,
@@ -58,13 +77,13 @@ export function resolveStaffMember(
   }
 
   if (local) {
-    const sysRole =
-      local.systemRole ||
+    const sysRole: SystemRole =
+      toSystemRole(local.systemRole) ??
       (local.roleId === 'role-super-admin'
-        ? 'SUPER_ADMIN'
+        ? 'super_admin'
         : local.roleId === 'role-admin'
-        ? 'ADMIN'
-        : 'STAFF');
+        ? 'admin'
+        : 'staff');
 
     const roleObj = roles.find((r) => r.id === local.roleId);
     const resolvedRoles =

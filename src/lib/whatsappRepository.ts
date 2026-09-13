@@ -118,8 +118,11 @@ getMembersByOrganization(orgId: string): WhatsAppContact[] {
     if (chat) {
       chat.lastMessage = {
         id: message.id,
-        body: message.type === 'text' ? message.body : message.body || 'Media',
+        body: message.body || 'Media',
         timestamp: message.timestamp,
+        senderId: message.senderId,
+        status: message.status,
+        ...(message.isInternalNote ? { isInternalNote: true } : {}),
       };
       chat.updatedAt = message.timestamp;
       if (message.senderId === chat.contactId && !message.isInternalNote) {

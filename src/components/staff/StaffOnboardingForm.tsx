@@ -56,6 +56,9 @@ export function StaffOnboardingForm({
     goToStep,
     capturePhoto,
     onFinalSubmit,
+    // Feeds stageDoneCount/stageTotalCount below. Not passed to the right
+    // rail, which has no such prop — the per-field list is rendered by
+    // OnboardingStageChecklist, which is not wired into any screen yet.
     currentStageFields,
     stageDoneCount,
     stageTotalCount,
@@ -146,7 +149,6 @@ export function StaffOnboardingForm({
             candidateEmail={currentValues.personalInfo?.email}
             candidateRole={candidateRole}
             candidateDept={candidateDept}
-            currentStageFields={currentStageFields}
             stageDoneCount={stageDoneCount}
             stageTotalCount={stageTotalCount}
             completedDetailsCount={completedDetailsCount}

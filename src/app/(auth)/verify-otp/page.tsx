@@ -13,12 +13,11 @@ import {
   OTPInput,
 } from "@/components/auth";
 import { Button } from "@/components/ui/button";
-import { authErrorMessage, useForgotPassword } from "@/features/auth/hooks/useAuth";
+import { authErrorMessage, useForgotPassword, useVerifyOtp } from "@/features/auth/hooks/useAuth";
 import { getResetEmail, setResetEmail, setResetOtp } from "@/lib/auth-session";
 
 export default function VerifyOtpPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,6 +40,11 @@ export default function VerifyOtpPage() {
   }, []);
 
   const forgotPassword = useForgotPassword();
+  const verifyOtp = useVerifyOtp();
+  // Derived rather than a separate flag — the previous useState was left over
+  // from the mock submit and was never set, so the button never showed a
+  // pending state.
+  const isLoading = verifyOtp.isPending;
 
   // Live countdown for OTP expiration
   useEffect(() => {
@@ -105,7 +109,7 @@ export default function VerifyOtpPage() {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isLoading) return;
 
@@ -130,13 +134,27 @@ export default function VerifyOtpPage() {
     }
 
     setErrorMessage(null);
-    // Deliberately no server round-trip here. The admin reset flow verifies the
-    // code and sets the new password in a single call
-    // (POST /admin/auth/reset-password), so there is nothing to check yet —
-    // an invalid code surfaces on the next screen. Claiming "verified" here
-    // would be a lie the API cannot back up.
-    setResetOtp(code);
-    setIsSuccess(true);
+
+    try {
+      // POST /admin/auth/verify-otp. The endpoint checks the code without
+      // consuming it, so a wrong or expired one fails here rather than after
+      // the user has typed a new password twice on the next screen — the same
+      // code is still submitted to /admin/auth/reset-password.
+      await verifyOtp.mutateAsync({ email, otp: code });
+      setResetOtp(code);
+      setIsSuccess(true);
+    } catch (error) {
+      const message = authErrorMessage(
+        error,
+        "That code is invalid or has expired. Request a new one.",
+      );
+      setErrorMessage(message);
+      toast.error(message);
+      // Clear the boxes so a retry starts clean rather than editing a code
+      // the server has already rejected.
+      setOtp(["", "", "", "", "", ""]);
+      document.getElementById("otp-0")?.focus();
+    }
   };
 
   return (

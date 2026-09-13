@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StaffFormValues } from '@/lib/validations/staff';
+import { StaffMember } from '@/types/staff';
 
 function EditStaffContent() {
   const router = useRouter();
@@ -75,7 +76,7 @@ function EditStaffContent() {
         phone: data.personalInfo.phone,
         avatarUrl: data.personalInfo.avatarUrl,
         dateOfBirth: data.personalInfo.dateOfBirth,
-        gender: data.personalInfo.gender,
+        gender: toGender(data.personalInfo.gender),
         maritalStatus: data.personalInfo.maritalStatus,
         nationality: data.personalInfo.nationality,
         department: data.employment.department,
@@ -139,6 +140,20 @@ function EditStaffContent() {
       />
     </div>
   );
+}
+
+// The form schema types gender as a free string and the seeded sample data
+// uses 'Male' (see onboardingConstants), while StaffMember.gender is the
+// lower-case union — which is also what the profile screens assume, since they
+// render it with CSS `capitalize`. Normalised here, at the one place a form
+// payload becomes a StaffMember.
+function toGender(value: string | undefined): StaffMember['gender'] {
+  switch (value?.trim().toLowerCase()) {
+    case 'male':   return 'male';
+    case 'female': return 'female';
+    case 'other':  return 'other';
+    default:       return undefined;
+  }
 }
 
 export default function EditStaffPage() {

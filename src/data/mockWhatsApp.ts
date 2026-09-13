@@ -1,9 +1,10 @@
 import { PlatformUser } from '@/types/platform';
+import { WhatsAppPermission } from '@/types/permissions';
 import { Chat, Message, WhatsAppContact, Organization } from '@/types/whatsapp';
 import { WHATSAPP_PERMISSIONS } from '@/types/permissions';
 
 // ---------- Mock User (current agent) ----------
-export const mockUser: PlatformUser & { whatsappPermissions: string[] } = {
+export const mockUser: PlatformUser & { whatsappPermissions: WhatsAppPermission[] } = {
   id: 'agent-alice',
   firstName: 'Alice',
   lastName: 'Okonkwo',

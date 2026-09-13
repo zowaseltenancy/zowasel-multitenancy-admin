@@ -50,7 +50,9 @@ function DepartmentDetailContent() {
     return <DepartmentNotFound />;
   }
 
-  const head = dept.headId ? repo.getStaffById(dept.headId) : null;
+  // getStaffById returns undefined for a missing id; the header prop is
+  // `StaffMember | null`, so the two are reconciled here.
+  const head = (dept.headId ? repo.getStaffById(dept.headId) : null) ?? null;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">

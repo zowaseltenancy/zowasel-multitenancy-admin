@@ -8,6 +8,8 @@ export const KYB_DOCUMENT_LABELS: Record<KybDocumentType, string> = {
   memorandum: "Memorandum of Association",
   shareholder_mapping: "Shareholder Mapping",
   bvn: "BVN Verification",
+  proof_of_address: "Proof of Address",
+  other: "Supporting Document",
 };
 
 export const KYB_STATUS_FILTERS: {

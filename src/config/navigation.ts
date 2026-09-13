@@ -19,6 +19,11 @@ export interface NavigationChild {
   href: string;
   permission?: string | null;
   badge?: string | null;
+  // The staff section nests one level deeper — "Departments" carries an icon
+  // and its own children. Both optional, so entries without them are unchanged
+  // and nothing renders differently.
+  icon?: React.ComponentType<{ className?: string }>;
+  children?: NavigationChild[];
 }
 
 export interface NavigationItem {

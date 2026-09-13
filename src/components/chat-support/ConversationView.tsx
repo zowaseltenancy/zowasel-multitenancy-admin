@@ -13,11 +13,13 @@ interface Props {
   onBack: () => void;
   onToggleContext: () => void;
   contextOpen: boolean;
+  /** Forwarded to ChatHeader, which opens the contact drawer. */
+  onViewContact: (contactId: string) => void;
 }
 
 let idCounter = 0;
 
-export function ConversationView({ chat, onBack, onToggleContext, contextOpen }: Props) {
+export function ConversationView({ chat, onBack, onToggleContext, contextOpen, onViewContact }: Props) {
   const { repo, resetTrigger } = useWhatsAppRepo();
   const user = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -103,6 +105,7 @@ export function ConversationView({ chat, onBack, onToggleContext, contextOpen }:
       <ChatHeader
         chat={chat}
         onBack={onBack}
+        onViewContact={onViewContact}
         onToggleContext={onToggleContext}
         contextOpen={contextOpen}
       />

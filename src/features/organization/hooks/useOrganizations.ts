@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/lib/axios";
 import { AssignedStaffMember, Organization } from "@/types/organization";
-import { kybApi } from "@/features/kyb/api/kyb.api";
+import { kybApi, KybDocumentsQuery, KybReviewAction } from "@/features/kyb/api/kyb.api";
 import { organizationApi } from "../api/organization.api";
 import { organizationKeys } from "../api/organization.keys";
 import { mapBusinessDetail, mapBusinessListItem } from "../api/organization.mappers";
@@ -36,14 +36,20 @@ export function useOrganizations(params: BusinessListQuery = DEFAULT_LIST) {
 
   // PATCH /kyb/{tenantId}/review in user-service — auth-service's business
   // endpoints deliberately never touch kybStatus.
+  const DECISION_TOASTS: Record<KybReviewAction, string> = {
+    approve: "KYB approved.",
+    reject: "KYB rejected.",
+    pending: "KYB returned to the review queue.",
+  };
+
   const applyKybDecision = async (
     organizationId: string,
-    action: "approve" | "reject",
+    action: KybReviewAction,
     reason?: string,
   ) => {
     try {
       await kybApi.review(organizationId, { action, ...(reason ? { reason } : {}) });
-      toast.success(action === "approve" ? "KYB approved." : "KYB rejected.");
+      toast.success(DECISION_TOASTS[action]);
       invalidate();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to record the KYB decision."));
@@ -77,9 +83,16 @@ export function useOrganizations(params: BusinessListQuery = DEFAULT_LIST) {
       );
     },
 
-    // The review endpoint only accepts approve|reject — there is no way to send
-    // a business back to PENDING once it has been decided.
-    markKybPending: notAvailable("Reverting KYB to pending"),
+    // Returns an already-decided record to the review queue. The endpoint
+    // clears the previous verdict — kybApprovedAt, the rejection reason, and
+    // every per-document status — so the business is not shown a stale
+    // decision on a record that is under review again.
+    //
+    // It refuses a business that has never submitted anything: there would be
+    // nothing to review, and the business would be told it was being assessed.
+    markKybPending: (organizationId: string) => {
+      void applyKybDecision(organizationId, "pending");
+    },
 
     // No endpoint: tenantOfficers, the primary/secondary staff columns and the
     // team-member records are all readable but have no admin write route yet.
@@ -119,6 +132,28 @@ export function useOrganizationStats() {
     stats: query.data,
     isLoading: query.isLoading,
     error: query.error ? getApiErrorMessage(query.error, "Unable to load business stats.") : null,
+  };
+}
+
+/**
+ * The KYB document review queue, from GET /admin/kyb/documents.
+ *
+ * One row per document. The review screen used to build this by flat-mapping
+ * `kybDocuments` off the *list* endpoint, which never carries documents — so
+ * the table was always empty regardless of what had been submitted.
+ */
+export function useKybDocuments(params: KybDocumentsQuery = {}) {
+  const query = useQuery({
+    queryKey: [...organizationKeys.all, "kyb-documents", params],
+    queryFn: () => kybApi.documents(params),
+  });
+
+  return {
+    documents: query.data?.items ?? [],
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error ? getApiErrorMessage(query.error, "Unable to load KYB documents.") : null,
   };
 }
 

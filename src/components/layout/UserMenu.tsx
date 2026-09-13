@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useLogout } from "@/features/auth/hooks/useAuth";
+import { useAdminMe, useLogout } from "@/features/auth/hooks/useAuth";
 import { getStoredAdmin, StoredAdmin } from "@/lib/auth-session";
 import { Badge } from "@/components/ui/badge";
 
@@ -40,29 +40,41 @@ export default function UserMenu() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const logoutMutation = useLogout();
 
+  // GET /admin/me is the source of truth. The cached login response renders
+  // first so the header isn't blank on every load, then /admin/me corrects it —
+  // localStorage alone goes stale the moment a role or department changes
+  // server-side, and it survives a password reset that revoked the session.
+  const { data: me } = useAdminMe();
+
   useEffect(() => {
     setStoredAdminState(getStoredAdmin());
   }, []);
 
-  const admin = storedAdmin;
+  const admin = me ?? storedAdmin;
 
-  const firstName = admin?.firstName || "Busayo";
-  const lastName = admin?.lastName || "";
-  const fullName = `${firstName} ${lastName}`.trim();
-  const email = admin?.email || "admin@zowasel.com";
+  // No hardcoded fallbacks. "Busayo" / "admin@zowasel.com" / "Super Admin"
+  // meant an unidentified session was shown as a real person with the highest
+  // role in the system — the opposite of what a signed-in header should do.
+  const firstName = admin?.firstName ?? "";
+  const lastName = admin?.lastName ?? "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || admin?.email || "";
+  const email = admin?.email ?? "";
 
   const roleFormatMap: Record<string, string> = {
     SUPER_ADMIN: "Super Admin",
     ADMIN: "Admin",
     STAFF: "Staff",
   };
-  const roleLabel = (admin?.role && roleFormatMap[admin.role]) || "Super Admin";
+  // Falls back to the raw value rather than assuming the highest role.
+  const roleLabel = admin?.role ? roleFormatMap[admin.role] ?? admin.role : "";
 
   const initials =
     firstName && lastName
       ? `${firstName[0]}${lastName[0]}`.toUpperCase()
       : firstName
       ? firstName.slice(0, 2).toUpperCase()
+      : email
+      ? email.slice(0, 2).toUpperCase()
       : null;
 
   const handleLogout = async () => {
@@ -97,7 +109,7 @@ export default function UserMenu() {
 
               <div className="hidden text-left md:block">
                 <p className="text-sm font-semibold leading-tight text-foreground group-hover:text-primary transition-colors">
-                  {firstName}
+                  {firstName || email}
                 </p>
                 <p className="text-xs text-muted-foreground leading-tight">
                   {roleLabel}
@@ -131,6 +143,14 @@ export default function UserMenu() {
                     <ShieldCheck className="h-3 w-3 mr-0.5" />
                     {roleLabel}
                   </Badge>
+                  {me?.department ? (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 font-medium"
+                    >
+                      {me.department.name}
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
             </div>

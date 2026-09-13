@@ -18,7 +18,10 @@ export function LeaveTab({
   onRequestLeave,
 }: LeaveTabProps) {
   const staffRequests = leaveRequests.filter(
-    (req) => req.staffId === staff.id || req.staffName?.toLowerCase().includes(staff.lastName.toLowerCase())
+    // `staffName` was never a field; the record stores employeeName.
+    (req) =>
+      req.staffId === staff.id ||
+      req.employeeName?.toLowerCase().includes(staff.lastName.toLowerCase())
   );
 
   return (

@@ -8,6 +8,7 @@ import {
   AdminLoginResponse,
   AdminMe,
   AdminResetPasswordRequest,
+  AdminVerifyOtpRequest,
 } from "./auth.types";
 import { getStoredAdmin, StoredAdmin } from "@/lib/auth-session";
 
@@ -82,6 +83,14 @@ export const authApi = {
   async forgotPassword(payload: AdminForgotPasswordRequest) {
     const { data } = await apiClient.post<ApiResponse<null>>(
       "/admin/auth/forgot-password",
+      payload,
+    );
+    return data;
+  },
+
+  async verifyOtp(payload: AdminVerifyOtpRequest) {
+    const { data } = await apiClient.post<ApiResponse<null>>(
+      "/admin/auth/verify-otp",
       payload,
     );
     return data;

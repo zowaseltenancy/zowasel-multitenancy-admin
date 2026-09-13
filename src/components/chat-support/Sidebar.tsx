@@ -9,6 +9,8 @@ interface Props {
   selectedChatId: string | null;
   onSelectChat: (chatId: string) => void;
   onMobileBack: () => void;
+  /** Opens the quick-add contact panel. Passed by WorkspaceLayout. */
+  onNewContact: () => void;
 }
 
 export function Sidebar({ selectedChatId, onSelectChat, onMobileBack,onNewContact  }: Props) {

@@ -9,6 +9,9 @@ const personalInfoSchema = z.object({
   gender: z.string().min(1, 'Gender is required'),
   maritalStatus: z.string().optional(),
   nationality: z.string().optional(),
+  // The onboarding form sets personalInfo.avatarUrl from the webcam/upload
+  // step; the schema never declared it, so every setValue/watch on that path
+  // failed to typecheck.
   avatarUrl: z.string().optional(),
 });
 
@@ -73,4 +76,18 @@ export const staffFormSchema = z.object({
   documents: z.array(z.any()).default([]),
 });
 
-export type StaffFormValues = z.infer<typeof staffFormSchema>;
+// Two distinct shapes, because several arrays use `.default([])`:
+//
+//   z.input  — what the form holds while editing. The defaulted fields are
+//              optional, and this is what useForm is instantiated with, so it
+//              is what register/watch/setValue are typed on.
+//   z.output — what the resolver produces on submit, with defaults applied,
+//              so those same fields are required.
+//
+// StaffFormValues is the input shape because that is what every step component
+// receives from the form. Mixing the two is what made UseFormRegister and
+// UseFormSetValue mutually unassignable across the onboarding components.
+export type StaffFormValues = z.input<typeof staffFormSchema>;
+
+/** The resolved payload handed to onSubmit, with `.default([])` applied. */
+export type StaffFormSubmitValues = z.output<typeof staffFormSchema>;

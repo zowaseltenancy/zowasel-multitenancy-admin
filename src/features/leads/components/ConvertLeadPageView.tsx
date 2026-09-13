@@ -16,6 +16,7 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
+  FileCheck2,
 } from "lucide-react";
 
 import { usePageHeader } from "@/components/layout/PageHeaderContext";
@@ -34,37 +35,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
-import { LEAD_INTENDED_TYPE_LABELS } from "@/constants/lead";
-import { getPasswordStrength } from "@/lib/password";
+import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
 
 interface Props {
   leadId: string;
 }
 
-const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
-
-function generateStrongPassword(): string {
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  const numbers = "23456789";
-  const symbols = "!@#$%&*";
-  let pwd = "Zw#";
-  for (let i = 0; i < 5; i++) {
-    pwd += letters.charAt(Math.floor(Math.random() * letters.length));
-  }
-  for (let i = 0; i < 2; i++) {
-    pwd += numbers.charAt(Math.floor(Math.random() * numbers.length));
-  }
-  pwd += symbols.charAt(Math.floor(Math.random() * symbols.length));
-  return pwd;
-}
 
 export default function ConvertLeadPageView({ leadId }: Props) {
   const router = useRouter();
   const leadQuery = useLead(leadId);
   const lead = leadQuery.data;
-  const { convert } = useLeadConversion();
+  const { convert, isConverting } = useLeadConversion();
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form Fields:
   // 1. Business Owner Name
@@ -73,9 +56,6 @@ export default function ConvertLeadPageView({ leadId }: Props) {
   const [ownerPhone, setOwnerPhone] = useState(lead?.phone || "");
   // 3. Email
   const [ownerEmail, setOwnerEmail] = useState(lead?.email || "");
-  // 4. Password
-  const [password, setPassword] = useState(() => generateStrongPassword());
-  const [showPassword, setShowPassword] = useState(false);
   // 5. Country
   const [country, setCountry] = useState(lead?.countryName || "Nigeria");
   // 6. Date of Birth
@@ -117,21 +97,7 @@ export default function ConvertLeadPageView({ leadId }: Props) {
     );
   }
 
-  const passwordStrength = getPasswordStrength(password);
-  const passwordStrengthPercentage = Math.round((passwordStrength.score / 3) * 100);
 
-  const handleGeneratePassword = () => {
-    const newPwd = generateStrongPassword();
-    setPassword(newPwd);
-    setShowPassword(true);
-    if (errors.password) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.password;
-        return next;
-      });
-    }
-  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -143,13 +109,8 @@ export default function ConvertLeadPageView({ leadId }: Props) {
     }
     if (!ownerEmail.trim()) {
       newErrors.ownerEmail = "Email address is required.";
-    } else if (!EMAIL_REGEX.test(ownerEmail)) {
+    } else if (!/^\S+@\S+\.\S+$/.test(ownerEmail)) {
       newErrors.ownerEmail = "Please enter a valid email address.";
-    }
-    if (!password) {
-      newErrors.password = "Password is required.";
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
     }
     if (!country.trim()) {
       newErrors.country = "Country is required.";
@@ -162,31 +123,32 @@ export default function ConvertLeadPageView({ leadId }: Props) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleConvert = async () => {
+  // Navigation waits on the server's answer.
+  //
+  // Conversion can be refused — 409 if the lead is not CLOSED_WON or is already
+  // converted, 422 if it has no email address. Redirecting on the click left
+  // the admin back on the pipeline with only an error toast and the lead
+  // untouched, which reads as though it worked.
+  const handleConvert = () => {
     if (!validate()) return;
 
-    setIsSubmitting(true);
-    try {
-      const selectedGeo = GLOBAL_COUNTRY_CURRENCIES.find((c) => c.countryName === country);
+    const selectedGeo = GLOBAL_COUNTRY_CURRENCIES.find((c) => c.countryName === country);
 
-      const values: ConvertLeadValues = {
-        ownerName: ownerName.trim(),
-        ownerPhone: ownerPhone.trim(),
-        ownerEmail: ownerEmail.trim(),
-        ownerPassword: password,
-        country: country.trim(),
-        countryCode: selectedGeo?.countryCode ?? lead.countryCode,
-        dateOfBirth,
-        businessName: lead.businessName,
-        intendedType: lead.intendedType,
-        notes: lead.notes,
-      };
+    const values: ConvertLeadValues = {
+      ownerName: ownerName.trim(),
+      ownerPhone: ownerPhone.trim(),
+      ownerEmail: ownerEmail.trim(),
+      country: country.trim(),
+      countryCode: selectedGeo?.countryCode ?? lead.countryCode,
+      dateOfBirth,
+      businessName: lead.businessName,
+      intendedType: lead.intendedType,
+      notes: lead.notes,
+    };
 
-      convert(lead, values);
-      router.push("/admin/leads/pipeline");
-    } finally {
-      setIsSubmitting(false);
-    }
+    convert(lead, values, {
+      onSuccess: () => router.push("/admin/leads/pipeline"),
+    });
   };
 
   return (
@@ -230,8 +192,10 @@ export default function ConvertLeadPageView({ leadId }: Props) {
         </div>
       </div>
 
-      {/* Main Conversion Form */}
-      <Card className="border shadow-xs">
+      {/* Main Conversion Form Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        {/* Form Container (8 columns) */}
+        <Card className="md:col-span-8 border shadow-xs">
           <CardHeader className="border-b bg-muted/20 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
@@ -317,66 +281,18 @@ export default function ConvertLeadPageView({ leadId }: Props) {
               </div>
             </div>
 
-            {/* Field 4: Password */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-semibold flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                  Password <span className="text-destructive">*</span>
-                </Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGeneratePassword}
-                  className="h-7 text-xs text-primary hover:text-primary gap-1"
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Generate Strong
-                </Button>
-              </div>
-
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
-                  }}
-                  placeholder="Enter initial password"
-                  className="pr-10 h-11 font-mono text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-
-              {password && (
-                <div className="space-y-1 pt-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">Password Strength:</span>
-                    <span className="font-semibold text-foreground">{passwordStrength.label}</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-300 ${passwordStrength.color}`}
-                      style={{ width: `${passwordStrengthPercentage}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {errors.password && (
-                <p className="text-xs text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3.5 w-3.5" /> {errors.password}
-                </p>
-              )}
+            {/* The owner sets their own password.
+                POST /admin/leads/{id}/convert creates the account with a hash of
+                a secret that is generated, hashed and immediately discarded,
+                then emails them a single-use link valid for 7 days. An admin
+                choosing, seeing or holding a customer's password is not
+                something the endpoint accepts. */}
+            <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 p-4">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We&rsquo;ll email <span className="font-medium text-foreground">{ownerEmail || "the owner"}</span> a
+                secure link to set their own password. It works once and expires in 7 days.
+              </p>
             </div>
 
             {/* Field 5 & 6: Country and Date of Birth */}
@@ -445,15 +361,82 @@ export default function ConvertLeadPageView({ leadId }: Props) {
               </Link>
               <Button
                 onClick={handleConvert}
-                disabled={isSubmitting}
+                disabled={isConverting}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2 px-6"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                {isSubmitting ? "Converting..." : "Convert Lead"}
+                {isConverting ? "Converting..." : "Convert Lead"}
               </Button>
             </div>
           </CardContent>
-      </Card>
+        </Card>
+
+        {/* Lead Intelligence Card (4 columns) */}
+        <div className="md:col-span-4 space-y-4">
+          <Card className="border shadow-xs">
+            <CardHeader className="pb-3 border-b bg-muted/10">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Lead Information
+                </span>
+                <span className="text-xs font-mono text-muted-foreground">{lead.id}</span>
+              </div>
+              <CardTitle className="text-base font-bold text-foreground">
+                {lead.businessName}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {LEAD_INTENDED_TYPE_LABELS[lead.intendedType]}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3 text-xs">
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">Original Contact:</span>
+                <span className="font-semibold text-foreground">{lead.contactName}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">Original Phone:</span>
+                <span className="font-semibold text-foreground">{lead.phone}</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">Source:</span>
+                <span className="font-semibold text-foreground uppercase">
+                  {LEAD_SOURCE_LABELS[lead.source]}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">Captured Date:</span>
+                <span className="font-semibold text-foreground">{lead.createdAt}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                <Badge variant="outline" className="capitalize text-[11px]">
+                  {lead.status.replace("_", " ")}
+                </Badge>
+              </div>
+
+              {lead.notes && (
+                <div className="pt-2 border-t">
+                  <span className="text-muted-foreground block mb-1">Notes:</span>
+                  <p className="text-muted-foreground italic text-[11px]">{lead.notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+            <h5 className="font-semibold text-primary text-xs flex items-center gap-1.5">
+              <FileCheck2 className="h-4 w-4" />
+              Conversion Actions:
+            </h5>
+            <ul className="text-[11px] text-muted-foreground space-y-1 list-disc pl-4">
+              <li>Creates tenant organization in directory</li>
+              <li>Saves owner profile with phone, birthdate & country</li>
+              <li>Emails the owner a single-use link to set their password</li>
+              <li>Marks lead as converted in pipeline</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

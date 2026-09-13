@@ -8,9 +8,6 @@ import {
   Lock,
   Globe,
   Calendar,
-  Eye,
-  EyeOff,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -38,7 +35,6 @@ import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
 import { LEAD_INTENDED_TYPE_LABELS } from "@/constants/lead";
 import { Lead } from "@/types/lead";
 import { ConvertLeadValues } from "../hooks/useLeadConversion";
-import { getPasswordStrength } from "@/lib/password";
 
 interface Props {
   lead: Lead | null;
@@ -46,20 +42,6 @@ interface Props {
   onConfirm: (values?: ConvertLeadValues) => void;
 }
 
-function generateStrongPassword(): string {
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  const numbers = "23456789";
-  const symbols = "!@#$%&*";
-  let pwd = "Zw#";
-  for (let i = 0; i < 5; i++) {
-    pwd += letters.charAt(Math.floor(Math.random() * letters.length));
-  }
-  for (let i = 0; i < 2; i++) {
-    pwd += numbers.charAt(Math.floor(Math.random() * numbers.length));
-  }
-  pwd += symbols.charAt(Math.floor(Math.random() * symbols.length));
-  return pwd;
-}
 
 export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,9 +53,6 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
   const [ownerPhone, setOwnerPhone] = useState("");
   // 3. Email
   const [ownerEmail, setOwnerEmail] = useState("");
-  // 4. Password
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   // 5. Country
   const [country, setCountry] = useState("Nigeria");
   // 6. Date of Birth
@@ -86,9 +65,6 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
       setOwnerName(lead.contactName || "");
       setOwnerPhone(lead.phone || "");
       setOwnerEmail(lead.email || "");
-      const pwd = generateStrongPassword();
-      setPassword(pwd);
-      setShowPassword(false);
       setCountry(lead.countryName || "Nigeria");
       setDateOfBirth("");
       setErrors({});
@@ -97,20 +73,7 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
 
   if (!lead) return null;
 
-  const passwordStrength = getPasswordStrength(password);
 
-  const handleGeneratePassword = () => {
-    const newPwd = generateStrongPassword();
-    setPassword(newPwd);
-    setShowPassword(true);
-    if (errors.password) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.password;
-        return next;
-      });
-    }
-  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -124,11 +87,6 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
       newErrors.ownerEmail = "Email address is required.";
     } else if (!/^\S+@\S+\.\S+$/.test(ownerEmail)) {
       newErrors.ownerEmail = "Please enter a valid email address.";
-    }
-    if (!password) {
-      newErrors.password = "Password is required.";
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
     }
     if (!country.trim()) {
       newErrors.country = "Country is required.";
@@ -152,7 +110,6 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
         ownerName: ownerName.trim(),
         ownerPhone: ownerPhone.trim(),
         ownerEmail: ownerEmail.trim(),
-        ownerPassword: password,
         country: country.trim(),
         countryCode: selectedGeo?.countryCode ?? lead.countryCode,
         dateOfBirth,
@@ -261,66 +218,19 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
             )}
           </div>
 
-          {/* Field 4: Password */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="passwordDialog" className="text-xs font-semibold flex items-center gap-1.5">
-                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                Password <span className="text-destructive">*</span>
-              </Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleGeneratePassword}
-                className="h-6 text-xs text-primary hover:text-primary gap-1 px-1.5"
-              >
-                <Sparkles className="h-3 w-3" />
-                Generate
-              </Button>
-            </div>
-
-            <div className="relative">
-              <Input
-                id="passwordDialog"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
-                }}
-                placeholder="Enter password (min 8 chars)"
-                className="pr-10 h-10 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-
-            {password && (
-              <div className="space-y-1 pt-1">
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-muted-foreground">Strength:</span>
-                  <span className="font-semibold text-foreground">{passwordStrength.label}</span>
-                </div>
-                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-300 ${passwordStrength.color}`}
-                    style={{ width: `${(passwordStrength.score / 3) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {errors.password && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {errors.password}
-              </p>
-            )}
+          {/* The owner sets their own password.
+              POST /admin/leads/{id}/convert creates the account with a hash of
+              a secret that is generated, hashed and immediately discarded, then
+              emails them a single-use link valid for 7 days. An admin choosing,
+              seeing or holding a customer's password is not something the
+              endpoint accepts. */}
+          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
+            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              We&rsquo;ll email{' '}
+              <span className="font-medium text-foreground">{ownerEmail || 'the owner'}</span>{' '}
+              a secure link to set their own password. It works once and expires in 7 days.
+            </p>
           </div>
 
           {/* Field 5: Country */}

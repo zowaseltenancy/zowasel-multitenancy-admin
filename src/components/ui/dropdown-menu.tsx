@@ -14,8 +14,28 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+// Same `asChild` -> `render` translation as TooltipTrigger — see the note
+// there. Both idioms now work, so existing call sites keep their markup.
+function DropdownMenuTrigger({
+  asChild,
+  children,
+  ...props
+}: MenuPrimitive.Trigger.Props & { asChild?: boolean }) {
+  if (asChild && React.isValidElement(children)) {
+    return (
+      <MenuPrimitive.Trigger
+        data-slot="dropdown-menu-trigger"
+        render={children as React.ReactElement<Record<string, unknown>>}
+        {...props}
+      />
+    )
+  }
+
+  return (
+    <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props}>
+      {children}
+    </MenuPrimitive.Trigger>
+  )
 }
 
 function DropdownMenuContent({

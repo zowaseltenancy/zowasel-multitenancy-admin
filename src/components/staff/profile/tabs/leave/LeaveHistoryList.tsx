@@ -61,10 +61,17 @@ export function LeaveHistoryList({ requests }: LeaveHistoryListProps) {
             )}
           </div>
 
+          {/* appliedOn / reviewedBy were never fields on LeaveRequest — the
+              record stores createdAt and approvedBy. */}
           <div className="text-right text-[11px] text-muted-foreground shrink-0">
-            <p>Applied {req.appliedOn || 'recently'}</p>
-            {req.reviewedBy && (
-              <p className="text-[10.5px] text-slate-500">Reviewed by {req.reviewedBy}</p>
+            <p>
+              Applied{' '}
+              {req.createdAt
+                ? new Date(req.createdAt).toLocaleDateString()
+                : 'recently'}
+            </p>
+            {req.approvedBy && (
+              <p className="text-[10.5px] text-slate-500">Reviewed by {req.approvedBy}</p>
             )}
           </div>
         </div>

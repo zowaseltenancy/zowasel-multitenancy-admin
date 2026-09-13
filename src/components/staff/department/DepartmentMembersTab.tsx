@@ -5,12 +5,12 @@ import { Users, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StaffListTable } from '@/components/staff/StaffListTable';
-import { StaffMember, Role } from '@/types/staff';
+import { StaffMember, StaffRole } from '@/types/staff';
 
 interface DepartmentMembersTabProps {
   deptName: string;
   filteredMembers: StaffMember[];
-  roles: Role[];
+  roles: StaffRole[];
 }
 
 export function DepartmentMembersTab({

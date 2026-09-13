@@ -12,6 +12,11 @@ interface ContactCardProps {
 export function ContactCard({ staff }: ContactCardProps) {
   const [copied, setCopied] = useState<string | null>(null);
 
+  // Hoisted so the truthiness guard below narrows inside the onClick closure —
+  // narrowing on `staff.phone` does not reach into a callback, because the
+  // property could in principle change between render and click.
+  const phone = staff.phone;
+
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopied(label);
@@ -56,15 +61,15 @@ export function ContactCard({ staff }: ContactCardProps) {
           <span className="text-[11px] text-muted-foreground block">Work Phone</span>
           <div className="flex items-center justify-between gap-2">
             <a
-              href={staff.phone ? `tel:${staff.phone}` : '#'}
+              href={phone ? `tel:${phone}` : '#'}
               className="font-semibold text-slate-900 dark:text-slate-100 hover:text-[#00A651] transition-colors font-mono text-[11.5px]"
             >
-              {staff.phone || '—'}
+              {phone || '—'}
             </a>
-            {staff.phone && (
+            {phone && (
               <button
                 type="button"
-                onClick={() => handleCopy(staff.phone, 'Phone Number')}
+                onClick={() => handleCopy(phone, 'Phone Number')}
                 className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
                 title="Copy phone"
               >

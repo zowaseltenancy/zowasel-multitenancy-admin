@@ -179,6 +179,9 @@ export class StaffRepository {
     });
   }
 
+  // Role writes, mirroring the department-role CRUD further down. The roles
+  // screen already calls these; only the reads existed, so the page could list
+  // roles but not save one.
   // ---- Departments ----
   getDepartments(): Department[] {
     return this.readDB().departments || [];
@@ -286,16 +289,27 @@ export class StaffRepository {
   }
 
   // ---- Department Roles (Aligned with Custom Role & Permission Matrix API) ----
-  getDepartmentRoles(departmentId?: string): (DepartmentRole | StaffRole)[] {
+  // Returns DepartmentRole[], not the (DepartmentRole | StaffRole)[] union the
+  // two sources suggest.
+  //
+  // The only field StaffRole types more loosely than DepartmentRole requires is
+  // `departmentId` (optional and nullable there, required here) — and both
+  // branches below filter on it being present, so every returned row satisfies
+  // the narrower type. Asserting once here beats casting at each of the four
+  // call sites, all of which declare their state as DepartmentRole[].
+  getDepartmentRoles(departmentId?: string): DepartmentRole[] {
     const db = this.readDB();
     const allRoles = db.roles || [];
     // Roles with departmentId from the unified roles repository
     if (departmentId) {
       const unifiedDeptRoles = allRoles.filter(r => r && r.departmentId === departmentId);
       const legacyRoles = (db.departmentRoles || []).filter(r => r && r.departmentId === departmentId);
-      return [...unifiedDeptRoles, ...legacyRoles];
+      return [...unifiedDeptRoles, ...legacyRoles] as DepartmentRole[];
     }
-    return [...allRoles.filter(r => r && r.departmentId), ...(db.departmentRoles || [])];
+    return [
+      ...allRoles.filter(r => r && r.departmentId),
+      ...(db.departmentRoles || []),
+    ] as DepartmentRole[];
   }
 
   addDepartmentRole(role: Omit<DepartmentRole, 'id'>): DepartmentRole {
@@ -328,3 +342,20 @@ export class StaffRepository {
     this.writeDB(db);
   }
 }
+
+// ── Shared instance ──────────────────────────────────────────────────────────
+// leaveService imports `staffRepository` as a module-level singleton. It is
+// created lazily rather than at import time because the constructor's first
+// read touches localStorage, which does not exist during server rendering.
+//
+// This is the same store the StaffProvider's own instance uses — both read and
+// write the one `staff_management_db` key — so the two stay consistent.
+let sharedRepository: StaffRepository | null = null;
+
+export const staffRepository = new Proxy({} as StaffRepository, {
+  get(_target, prop, receiver) {
+    sharedRepository ??= new StaffRepository();
+    const value = Reflect.get(sharedRepository, prop, receiver);
+    return typeof value === 'function' ? value.bind(sharedRepository) : value;
+  },
+});

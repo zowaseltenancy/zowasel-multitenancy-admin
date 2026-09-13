@@ -10,6 +10,15 @@ interface ContextValue {
   ready: boolean;
   mutate: <T>(fn: (repo: WhatsAppRepository) => T) => T;
   resetData: () => void;
+  /** Re-render consumers after a direct repo write that bypassed `mutate`. */
+  refresh: () => void;
+  /**
+   * Dependency for effects that must re-read from the repo. Tracks `version`,
+   * so it changes on every write and not only on a reset — ConversationView
+   * keys its message reload off this, and a simulated incoming message would
+   * otherwise never appear.
+   */
+  resetTrigger: number;
 }
 
 const WhatsAppRepoContext = createContext<ContextValue | null>(null);
@@ -32,14 +41,28 @@ export const WhatsAppRepoProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return result;
   }, []);
 
+  // Same version bump as `mutate`, for callers that wrote through `repo`
+  // directly and just need the tree to re-read.
+  const refresh = useCallback(() => {
+    setVersion(v => v + 1);
+  }, []);
+
   const resetData = useCallback(() => {
     repoRef.current.resetDB(seedDB);
     setVersion(v => v + 1);
   }, []);
 
   const value = useMemo(
-    () => ({ repo: repoRef.current, version, ready, mutate, resetData }),
-    [version, ready, mutate, resetData]
+    () => ({
+      repo: repoRef.current,
+      version,
+      ready,
+      mutate,
+      resetData,
+      refresh,
+      resetTrigger: version,
+    }),
+    [version, ready, mutate, resetData, refresh]
   );
 
   return <WhatsAppRepoContext.Provider value={value}>{children}</WhatsAppRepoContext.Provider>;

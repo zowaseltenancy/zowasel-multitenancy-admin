@@ -11,17 +11,31 @@ function toKybStatus(value: string): KybStatus {
   return "not_submitted";
 }
 
+// Tenant.type is free-form server-side — it holds whatever the registration
+// form or a lead conversion wrote ("corporate", "limited_liability", null) —
+// while the admin console types it as a closed union of four. Anything outside
+// the union falls back to "merchant" only so the badge renders; it is NOT the
+// basis for filtering. The type filter is sent to the API and matched against
+// the real column, because collapsing unknown values here made "filter by
+// buyer" match nothing and "filter by merchant" match everything.
 function toOrganizationType(value: string | null): OrganizationType {
   const normalized = value?.toLowerCase().replace(/[_\s-]/g, "") ?? "";
-  if (normalized === "agrodealer" || normalized === "merchant" || normalized === "buyer" || normalized === "cooperative") {
+  if (
+    normalized === "agrodealer" ||
+    normalized === "merchant" ||
+    normalized === "buyer" ||
+    normalized === "cooperative"
+  ) {
     return normalized;
   }
-  if (normalized === "agrodealer") return "agrodealer";
   return "merchant";
 }
 
+// An unrecognised type maps to "other", not to business_registration. The old
+// fallback silently relabelled every unknown document as a registration
+// certificate — including proof_of_address, which the API does return.
 function toDocumentType(value: string): KybDocumentType {
-  const normalized = value as KybDocumentType;
+  const normalized = value.toLowerCase() as KybDocumentType;
   const known: KybDocumentType[] = [
     "business_registration",
     "tax_clearance",
@@ -30,8 +44,9 @@ function toDocumentType(value: string): KybDocumentType {
     "memorandum",
     "shareholder_mapping",
     "bvn",
+    "proof_of_address",
   ];
-  return known.includes(normalized) ? normalized : "business_registration";
+  return known.includes(normalized) ? normalized : "other";
 }
 
 function toTeamMemberRole(value: string): TeamMemberRole {
@@ -97,12 +112,20 @@ export function mapBusinessDetail(dto: BusinessDetailDto): Organization {
       role: toTeamMemberRole(member.role),
     })),
     kybDocuments: dto.kybDocuments.map((document) => ({
+      id: document.id,
       type: toDocumentType(document.type),
       url: document.url,
-      status: document.status.toLowerCase() === "verified" ? "verified" : document.status.toLowerCase() === "rejected" ? "rejected" : "pending",
-      // Required string on new-ui's KybDocument; the API returns null for the
-      // two flat tenant URLs, which carry no upload timestamp.
-      uploadedAt: document.uploadedAt ?? "",
+      filename: document.filename,
+      status:
+        document.status.toLowerCase() === "verified"
+          ? "verified"
+          : document.status.toLowerCase() === "rejected"
+            ? "rejected"
+            : "pending",
+      // Passed through as null rather than "" — the flat tenant URLs genuinely
+      // have no upload time, and "" rendered as "Invalid Date".
+      uploadedAt: document.uploadedAt,
+      reviewedAt: document.reviewedAt,
     })),
     governanceStructure: {
       // new-ui types this as a required union, but the column is nullable and

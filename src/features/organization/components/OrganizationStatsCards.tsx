@@ -12,10 +12,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Organization } from "@/types/organization";
 import { KybStatus } from "@/types/kyb";
 
+/**
+ * Platform-wide counts, when the caller has them. Supplied by
+ * GET /admin/businesses/stats.
+ *
+ * Without this the tiles counted the `organizations` array — which is one page
+ * of a filtered query, so "Total" meant "rows currently on screen" and every
+ * tile changed as you paged or filtered.
+ */
+export interface OrganizationCounts {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+}
+
 interface Props {
   organizations: Organization[];
   activeFilter: KybStatus | "all";
   onFilterChange: (value: KybStatus | "all") => void;
+  /** Platform-wide counts. Falls back to counting `organizations` when absent. */
+  counts?: OrganizationCounts;
   className?: string;
 }
 
@@ -23,8 +40,19 @@ export default function OrganizationStatsCards({
   organizations,
   activeFilter,
   onFilterChange,
+  counts,
   className,
 }: Props) {
+  const countBy = (status: KybStatus) =>
+    organizations.filter((organization) => organization.kybStatus === status).length;
+
+  const resolved: OrganizationCounts = counts ?? {
+    total: organizations.length,
+    approved: countBy("approved"),
+    pending: countBy("pending"),
+    rejected: countBy("rejected"),
+  };
+
   const stats: {
     label: string;
     value: number;
@@ -35,7 +63,7 @@ export default function OrganizationStatsCards({
   }[] = [
     {
       label: "Total",
-      value: organizations.length,
+      value: resolved.total,
       filter: "all",
       icon: Building2,
       cardBg: "bg-cyan-500/5 dark:bg-cyan-500/10 border-cyan-500/20",
@@ -43,9 +71,7 @@ export default function OrganizationStatsCards({
     },
     {
       label: "Approved",
-      value: organizations.filter(
-        (organization) => organization.kybStatus === "approved"
-      ).length,
+      value: resolved.approved,
       filter: "approved",
       icon: CheckCircle2,
       cardBg: "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20",
@@ -53,9 +79,7 @@ export default function OrganizationStatsCards({
     },
     {
       label: "Pending",
-      value: organizations.filter(
-        (organization) => organization.kybStatus === "pending"
-      ).length,
+      value: resolved.pending,
       filter: "pending",
       icon: Clock3,
       cardBg: "bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20",
@@ -63,9 +87,7 @@ export default function OrganizationStatsCards({
     },
     {
       label: "Rejected",
-      value: organizations.filter(
-        (organization) => organization.kybStatus === "rejected"
-      ).length,
+      value: resolved.rejected,
       filter: "rejected",
       icon: XCircle,
       cardBg: "bg-red-500/5 dark:bg-red-500/10 border-red-500/30",

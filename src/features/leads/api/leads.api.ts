@@ -48,5 +48,14 @@ export const leadsApi = {
     const { data } = await apiClient.post<ApiResponse<LeadDto>>(`/admin/leads/${id}/convert`, payload);
     return data.data;
   },
+
+  /**
+   * DELETE /admin/leads/{id}. Permanent, and it takes the lead's timeline and
+   * documents with it. The server refuses a converted lead — that record is
+   * the attribution link behind a live business, not a pipeline row.
+   */
+  async remove(id: string): Promise<void> {
+    await apiClient.delete<ApiResponse<null>>(`/admin/leads/${id}`);
+  },
 };
 
