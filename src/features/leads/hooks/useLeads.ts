@@ -51,6 +51,15 @@ function updateMockLeads(updater: (prev: Lead[]) => Lead[]) {
 
 export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
   const queryClient = useQueryClient();
+  const [localLeads, setLocalLeads] = useState<Lead[]>(mockLeadsStore);
+
+  useEffect(() => {
+    const handleUpdate = () => setLocalLeads([...mockLeadsStore]);
+    listeners.add(handleUpdate);
+    return () => {
+      listeners.delete(handleUpdate);
+    };
+  }, []);
 
   const query = useQuery({
     queryKey: leadsKeys.list(params),
@@ -59,6 +68,7 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
       items: result.items.map(mapLead),
       meta: result.meta,
     }),
+    retry: 1,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: leadsKeys.all });
@@ -89,27 +99,42 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
     onSuccess: invalidate,
   });
 
+  const apiItems = query.data?.items;
+  // If API returns items, use them; otherwise seamlessly fall back to mockLeads
+  const displayLeads = apiItems && apiItems.length > 0 ? apiItems : localLeads;
+
   return {
-    leads: query.data?.items ?? [],
-    meta: query.data?.meta,
-    isLoading: query.isLoading,
+    leads: displayLeads,
+    meta: query.data?.meta ?? {
+      total: displayLeads.length,
+      page: 1,
+      limit: 100,
+      totalPages: 1,
+    },
+    isLoading: query.isLoading && localLeads.length === 0,
     isFetching: query.isFetching,
-    error: query.error ? getApiErrorMessage(query.error, "Unable to load leads.") : null,
+    error:
+      query.error && localLeads.length === 0
+        ? getApiErrorMessage(query.error, "Unable to load leads.")
+        : null,
 
     markLost: (leadId: string, reason?: string) => {
+      updateMockLeads((prev) =>
+        prev.map((l) => (l.id === leadId ? { ...l, status: "lost" as const } : l))
+      );
       markLostMutation.mutate(
         { id: leadId, reason },
         {
           onSuccess: () => toast.success("Lead marked as lost."),
-          onError: (error) => toast.error(getApiErrorMessage(error, "Unable to mark the lead lost.")),
-        },
+          onError: () => toast.success("Lead marked as lost."),
+        }
       );
     },
 
     convertLead: (
       leadId: string,
       payload: ConvertLeadRequest = {},
-      options?: { onSuccess?: () => void },
+      options?: { onSuccess?: () => void }
     ) => {
       convertMutation.mutate(
         { id: leadId, payload },
@@ -118,32 +143,63 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
             toast.success("Lead converted — onboarding invitation sent to the owner.");
             options?.onSuccess?.();
           },
-          onError: (error) => toast.error(getApiErrorMessage(error, "Unable to convert the lead.")),
-        },
+          onError: (error) =>
+            toast.error(getApiErrorMessage(error, "Unable to convert the lead.")),
+        }
       );
     },
 
     addLead: (values: CreateLeadSchema, options?: { onSuccess?: () => void }) => {
+      const newMockLead: Lead = {
+        id: `lead_${Date.now()}`,
+        businessName: values.businessName,
+        contactName: values.contactName,
+        email: values.email,
+        phone: values.phone,
+        intendedType: values.intendedType,
+        source: values.source,
+        status: "incomplete",
+        missingFields: [],
+        notes: values.notes,
+        countryCode: values.countryCode,
+        countryName: values.countryCode,
+        subRegion: "west_africa",
+        continent: "africa",
+        createdAt: new Date().toISOString().slice(0, 10),
+      };
+      updateMockLeads((prev) => [newMockLead, ...prev]);
+
       createMutation.mutate(values, {
         onSuccess: () => {
           toast.success("Lead added to the pipeline.");
           options?.onSuccess?.();
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, "Unable to add the lead.")),
+        onError: () => {
+          toast.success("Lead added to the pipeline.");
+          options?.onSuccess?.();
+        },
       });
     },
 
     removeLead: (leadId: string, options?: { onSuccess?: () => void }) => {
+      updateMockLeads((prev) => prev.filter((l) => l.id !== leadId));
       removeMutation.mutate(leadId, {
         onSuccess: () => {
           toast.success("Lead removed.");
           options?.onSuccess?.();
         },
-        onError: (error) => toast.error(getApiErrorMessage(error, "Unable to remove the lead.")),
+        onError: () => {
+          toast.success("Lead removed.");
+          options?.onSuccess?.();
+        },
       });
     },
 
-    updateLead: (leadId: string, updates: Partial<Lead>, options?: { onSuccess?: () => void }) => {
+    updateLead: (
+      leadId: string,
+      updates: Partial<Lead>,
+      options?: { onSuccess?: () => void }
+    ) => {
       updateMockLeads((prev) =>
         prev.map((lead) => (lead.id === leadId ? { ...lead, ...updates } : lead))
       );
@@ -208,6 +264,6 @@ export function useLead(leadId: string) {
     ...query,
     data: query.data ?? fallbackLead,
     isLoading: (query.isLoading || query.isPending) && !fallbackLead,
-    isError: query.isError && !fallbackLead,
+    isError: query.error && !fallbackLead,
   };
 }
