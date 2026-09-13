@@ -1,22 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   User,
   Phone,
   Mail,
   Lock,
   Globe,
   Calendar,
-  Eye,
-  EyeOff,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
-  FileCheck2,
 } from "lucide-react";
 
 import { usePageHeader } from "@/components/layout/PageHeaderContext";
@@ -35,19 +32,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
-import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
+import { LEAD_INTENDED_TYPE_LABELS } from "@/constants/lead";
 
 interface Props {
   leadId: string;
 }
-
 
 export default function ConvertLeadPageView({ leadId }: Props) {
   const router = useRouter();
   const leadQuery = useLead(leadId);
   const lead = leadQuery.data;
   const { convert, isConverting } = useLeadConversion();
-
 
   // Form Fields:
   // 1. Business Owner Name
@@ -56,12 +51,34 @@ export default function ConvertLeadPageView({ leadId }: Props) {
   const [ownerPhone, setOwnerPhone] = useState(lead?.phone || "");
   // 3. Email
   const [ownerEmail, setOwnerEmail] = useState(lead?.email || "");
-  // 5. Country
+  // 4. Country
   const [country, setCountry] = useState(lead?.countryName || "Nigeria");
-  // 6. Date of Birth
+  // 5. Date of Birth
   const [dateOfBirth, setDateOfBirth] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (lead) {
+      if (lead.contactName) setOwnerName(lead.contactName);
+      if (lead.phone) setOwnerPhone(lead.phone);
+      if (lead.email) setOwnerEmail(lead.email);
+      if (lead.countryName) {
+        const match = GLOBAL_COUNTRY_CURRENCIES.find(
+          (c) =>
+            c.countryName.toLowerCase() === lead.countryName?.toLowerCase() ||
+            c.countryCode.toLowerCase() === lead.countryCode?.toLowerCase()
+        );
+        if (match) setCountry(match.countryName);
+        else setCountry(lead.countryName);
+      } else if (lead.countryCode) {
+        const match = GLOBAL_COUNTRY_CURRENCIES.find(
+          (c) => c.countryCode.toLowerCase() === lead.countryCode?.toLowerCase()
+        );
+        if (match) setCountry(match.countryName);
+      }
+    }
+  }, [lead?.id]);
 
   usePageHeader(
     lead ? `Convert: ${lead.businessName}` : "Convert Lead",
@@ -97,8 +114,6 @@ export default function ConvertLeadPageView({ leadId }: Props) {
     );
   }
 
-
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!ownerName.trim()) {
@@ -117,6 +132,12 @@ export default function ConvertLeadPageView({ leadId }: Props) {
     }
     if (!dateOfBirth) {
       newErrors.dateOfBirth = "Date of birth is required.";
+    } else {
+      const dob = new Date(dateOfBirth);
+      const today = new Date();
+      if (dob > today) {
+        newErrors.dateOfBirth = "Date of birth cannot be in the future.";
+      }
     }
 
     setErrors(newErrors);
@@ -132,7 +153,11 @@ export default function ConvertLeadPageView({ leadId }: Props) {
   const handleConvert = () => {
     if (!validate()) return;
 
-    const selectedGeo = GLOBAL_COUNTRY_CURRENCIES.find((c) => c.countryName === country);
+    const selectedGeo = GLOBAL_COUNTRY_CURRENCIES.find(
+      (c) =>
+        c.countryName.toLowerCase() === country.toLowerCase() ||
+        c.countryCode.toLowerCase() === country.toLowerCase()
+    );
 
     const values: ConvertLeadValues = {
       ownerName: ownerName.trim(),
@@ -192,251 +217,211 @@ export default function ConvertLeadPageView({ leadId }: Props) {
         </div>
       </div>
 
-      {/* Main Conversion Form Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        {/* Form Container (8 columns) */}
-        <Card className="md:col-span-8 border shadow-xs">
-          <CardHeader className="border-b bg-muted/20 pb-4">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              Owner Account Information
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Fill in the 6 required fields below to initialize the business owner profile and secure platform credentials.
-            </CardDescription>
-          </CardHeader>
+      {/* Converted Banner if already converted */}
+      {lead.status === "converted" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">This lead has already been converted to an organization.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                The tenant account and onboarding invitation have already been generated.
+              </p>
+            </div>
+          </div>
+          {lead.convertedOrganizationId ? (
+            <Link href={`/admin/organizations/${lead.convertedOrganizationId}`}>
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                View Organization <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/admin/leads/pipeline">
+              <Button size="sm" variant="outline" className="gap-1.5">
+                Return to Pipeline <ArrowLeft className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
 
-          <CardContent className="p-6 space-y-5">
-            {/* Field 1: Business Owner Name */}
+      {/* Conversion Form */}
+      <Card className="border shadow-xs">
+        <CardHeader className="border-b bg-muted/20 pb-4">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            Owner Account Information
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Fill in the required fields below to initialize the business owner profile and provision the organization.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="p-6 space-y-5">
+          {/* Field 1: Business Owner Name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ownerName" className="text-sm font-semibold flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
+              Business Owner Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="ownerName"
+              value={ownerName}
+              onChange={(e) => {
+                setOwnerName(e.target.value);
+                if (errors.ownerName) setErrors((prev) => ({ ...prev, ownerName: "" }));
+              }}
+              placeholder="e.g. Musa Abdullahi"
+              className="h-11"
+            />
+            {errors.ownerName && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" /> {errors.ownerName}
+              </p>
+            )}
+          </div>
+
+          {/* Field 2 & 3: Phone Number and Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Phone Number */}
             <div className="space-y-1.5">
-              <Label htmlFor="ownerName" className="text-sm font-semibold flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                Business Owner Name <span className="text-destructive">*</span>
+              <Label htmlFor="ownerPhone" className="text-sm font-semibold flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                Phone Number <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="ownerName"
-                value={ownerName}
+                id="ownerPhone"
+                type="tel"
+                value={ownerPhone}
                 onChange={(e) => {
-                  setOwnerName(e.target.value);
-                  if (errors.ownerName) setErrors((prev) => ({ ...prev, ownerName: "" }));
+                  setOwnerPhone(e.target.value);
+                  if (errors.ownerPhone) setErrors((prev) => ({ ...prev, ownerPhone: "" }));
                 }}
-                placeholder="e.g. Musa Abdullahi"
+                placeholder="e.g. +234 806 112 3344"
                 className="h-11"
               />
-              {errors.ownerName && (
+              {errors.ownerPhone && (
                 <p className="text-xs text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3.5 w-3.5" /> {errors.ownerName}
+                  <AlertCircle className="h-3.5 w-3.5" /> {errors.ownerPhone}
                 </p>
               )}
             </div>
 
-            {/* Field 2 & 3: Phone Number and Email */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Phone Number */}
-              <div className="space-y-1.5">
-                <Label htmlFor="ownerPhone" className="text-sm font-semibold flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                  Phone Number <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="ownerPhone"
-                  type="tel"
-                  value={ownerPhone}
-                  onChange={(e) => {
-                    setOwnerPhone(e.target.value);
-                    if (errors.ownerPhone) setErrors((prev) => ({ ...prev, ownerPhone: "" }));
-                  }}
-                  placeholder="e.g. +234 806 112 3344"
-                  className="h-11"
-                />
-                {errors.ownerPhone && (
-                  <p className="text-xs text-destructive flex items-center gap-1">
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.ownerPhone}
-                  </p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="ownerEmail" className="text-sm font-semibold flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                  Email <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="ownerEmail"
-                  type="email"
-                  value={ownerEmail}
-                  onChange={(e) => {
-                    setOwnerEmail(e.target.value);
-                    if (errors.ownerEmail) setErrors((prev) => ({ ...prev, ownerEmail: "" }));
-                  }}
-                  placeholder="e.g. musa@zariagrain.com"
-                  className="h-11"
-                />
-                {errors.ownerEmail && (
-                  <p className="text-xs text-destructive flex items-center gap-1">
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.ownerEmail}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* The owner sets their own password.
-                POST /admin/leads/{id}/convert creates the account with a hash of
-                a secret that is generated, hashed and immediately discarded,
-                then emails them a single-use link valid for 7 days. An admin
-                choosing, seeing or holding a customer's password is not
-                something the endpoint accepts. */}
-            <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 p-4">
-              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                We&rsquo;ll email <span className="font-medium text-foreground">{ownerEmail || "the owner"}</span> a
-                secure link to set their own password. It works once and expires in 7 days.
-              </p>
-            </div>
-
-            {/* Field 5 & 6: Country and Date of Birth */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Country */}
-              <div className="space-y-1.5">
-                <Label htmlFor="country" className="text-sm font-semibold flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                  Country <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={country}
-                  onValueChange={(val) => {
-                    if (val) {
-                      setCountry(val);
-                      if (errors.country) setErrors((prev) => ({ ...prev, country: "" }));
-                    }
-                  }}
-                >
-                  <SelectTrigger className="h-11 w-full">
-                    <SelectValue placeholder="Select Country" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-56">
-                    {GLOBAL_COUNTRY_CURRENCIES.map((c) => (
-                      <SelectItem key={c.countryCode} value={c.countryName}>
-                        {c.flag} {c.countryName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.country && (
-                  <p className="text-xs text-destructive flex items-center gap-1">
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.country}
-                  </p>
-                )}
-              </div>
-
-              {/* Date of Birth */}
-              <div className="space-y-1.5">
-                <Label htmlFor="dateOfBirth" className="text-sm font-semibold flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  Date of Birth <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => {
-                    setDateOfBirth(e.target.value);
-                    if (errors.dateOfBirth) setErrors((prev) => ({ ...prev, dateOfBirth: "" }));
-                  }}
-                  className="h-11"
-                />
-                {errors.dateOfBirth && (
-                  <p className="text-xs text-destructive flex items-center gap-1">
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.dateOfBirth}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-4 border-t flex items-center justify-end gap-3">
-              <Link href="/admin/leads/pipeline">
-                <Button variant="outline">Cancel</Button>
-              </Link>
-              <Button
-                onClick={handleConvert}
-                disabled={isConverting}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2 px-6"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {isConverting ? "Converting..." : "Convert Lead"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Lead Intelligence Card (4 columns) */}
-        <div className="md:col-span-4 space-y-4">
-          <Card className="border shadow-xs">
-            <CardHeader className="pb-3 border-b bg-muted/10">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Lead Information
-                </span>
-                <span className="text-xs font-mono text-muted-foreground">{lead.id}</span>
-              </div>
-              <CardTitle className="text-base font-bold text-foreground">
-                {lead.businessName}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {LEAD_INTENDED_TYPE_LABELS[lead.intendedType]}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3 text-xs">
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Original Contact:</span>
-                <span className="font-semibold text-foreground">{lead.contactName}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Original Phone:</span>
-                <span className="font-semibold text-foreground">{lead.phone}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Source:</span>
-                <span className="font-semibold text-foreground uppercase">
-                  {LEAD_SOURCE_LABELS[lead.source]}
-                </span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Captured Date:</span>
-                <span className="font-semibold text-foreground">{lead.createdAt}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant="outline" className="capitalize text-[11px]">
-                  {lead.status.replace("_", " ")}
-                </Badge>
-              </div>
-
-              {lead.notes && (
-                <div className="pt-2 border-t">
-                  <span className="text-muted-foreground block mb-1">Notes:</span>
-                  <p className="text-muted-foreground italic text-[11px]">{lead.notes}</p>
-                </div>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <Label htmlFor="ownerEmail" className="text-sm font-semibold flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                Email <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="ownerEmail"
+                type="email"
+                value={ownerEmail}
+                onChange={(e) => {
+                  setOwnerEmail(e.target.value);
+                  if (errors.ownerEmail) setErrors((prev) => ({ ...prev, ownerEmail: "" }));
+                }}
+                placeholder="e.g. musa@zariagrain.com"
+                className="h-11"
+              />
+              {errors.ownerEmail && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" /> {errors.ownerEmail}
+                </p>
               )}
-            </CardContent>
-          </Card>
-
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
-            <h5 className="font-semibold text-primary text-xs flex items-center gap-1.5">
-              <FileCheck2 className="h-4 w-4" />
-              Conversion Actions:
-            </h5>
-            <ul className="text-[11px] text-muted-foreground space-y-1 list-disc pl-4">
-              <li>Creates tenant organization in directory</li>
-              <li>Saves owner profile with phone, birthdate & country</li>
-              <li>Emails the owner a single-use link to set their password</li>
-              <li>Marks lead as converted in pipeline</li>
-            </ul>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Password Notice */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 p-4">
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We&rsquo;ll email <span className="font-medium text-foreground">{ownerEmail || "the owner"}</span> a
+              secure link to set their own password. It works once and expires in 7 days.
+            </p>
+          </div>
+
+          {/* Field 4 & 5: Country and Date of Birth */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Country */}
+            <div className="space-y-1.5">
+              <Label htmlFor="country" className="text-sm font-semibold flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                Country <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={country}
+                onValueChange={(val) => {
+                  if (val) {
+                    setCountry(val);
+                    if (errors.country) setErrors((prev) => ({ ...prev, country: "" }));
+                  }
+                }}
+              >
+                <SelectTrigger className="h-11 w-full">
+                  <SelectValue placeholder="Select Country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-56">
+                  {GLOBAL_COUNTRY_CURRENCIES.map((c) => (
+                    <SelectItem key={c.countryCode} value={c.countryName}>
+                      {c.flag} {c.countryName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.country && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" /> {errors.country}
+                </p>
+              )}
+            </div>
+
+            {/* Date of Birth */}
+            <div className="space-y-1.5">
+              <Label htmlFor="dateOfBirth" className="text-sm font-semibold flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                Date of Birth <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                max={new Date().toISOString().split("T")[0]}
+                value={dateOfBirth}
+                onChange={(e) => {
+                  setDateOfBirth(e.target.value);
+                  if (errors.dateOfBirth) setErrors((prev) => ({ ...prev, dateOfBirth: "" }));
+                }}
+                className="h-11"
+              />
+              {errors.dateOfBirth && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" /> {errors.dateOfBirth}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-4 border-t flex items-center justify-end gap-3">
+            <Link href="/admin/leads/pipeline">
+              <Button variant="outline">Cancel</Button>
+            </Link>
+            <Button
+              onClick={handleConvert}
+              disabled={isConverting || lead.status === "converted"}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2 px-6"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {isConverting
+                ? "Converting..."
+                : lead.status === "converted"
+                ? "Already Converted"
+                : "Convert Lead"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+

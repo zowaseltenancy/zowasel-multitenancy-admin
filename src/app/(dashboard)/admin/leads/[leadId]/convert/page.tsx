@@ -7,7 +7,8 @@ interface Props {
 }
 
 export default async function ConvertLeadPage({ params }: Props) {
-  const { leadId } = await params;
+  const { leadId: rawLeadId } = await params;
+  const leadId = decodeURIComponent(rawLeadId || "").trim();
 
   return <ConvertLeadPageView leadId={leadId} />;
 }
