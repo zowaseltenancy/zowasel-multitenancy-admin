@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import LeadClassificationFields, { FormField } from "./LeadClassificationFields";
 
 interface Props {
   lead: Lead | null;
@@ -159,60 +160,43 @@ export default function EditLeadDialog({ lead, open, onOpenChange, onSave }: Pro
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Business Name</label>
+          <FormField label="Business Name" error={errors.businessName?.message}>
             <Input
               {...register("businessName")}
               placeholder="Business Name"
               className={errors.businessName ? "border-destructive focus-visible:ring-destructive" : ""}
             />
-            {errors.businessName && (
-              <p className="mt-1 text-xs text-destructive">{errors.businessName.message}</p>
-            )}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Contact Name</label>
+            <FormField label="Contact Name" error={errors.contactName?.message}>
               <Input
                 {...register("contactName")}
                 placeholder="Contact Name"
                 className={errors.contactName ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors.contactName && (
-                <p className="mt-1 text-xs text-destructive">{errors.contactName.message}</p>
-              )}
-            </div>
+            </FormField>
 
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Phone</label>
+            <FormField label="Phone" error={errors.phone?.message}>
               <Input
                 {...register("phone")}
                 placeholder="e.g. +2348012345678"
                 className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors.phone && (
-                <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>
-              )}
-            </div>
+            </FormField>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Email</label>
+            <FormField label="Email" error={errors.email?.message}>
               <Input
                 type="email"
                 {...register("email")}
                 placeholder="email@example.com"
                 className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
               />
-              {errors.email && (
-                <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+            </FormField>
 
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Source</label>
+            <FormField label="Source">
               <Select
                 value={selectedSource || lead.source}
                 onValueChange={(val: Lead["source"]) => setValue("source", val, { shouldValidate: true })}
@@ -228,7 +212,7 @@ export default function EditLeadDialog({ lead, open, onOpenChange, onSave }: Pro
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
           </div>
 
           <div>
@@ -243,173 +227,20 @@ export default function EditLeadDialog({ lead, open, onOpenChange, onSave }: Pro
             </p>
           </div>
 
-          {/* Merchant Fields */}
-          {lead.intendedType === "merchant" && (
-            <div className="rounded-lg border bg-muted/20 p-3.5 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Merchant Details
-              </h4>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground">Store Name</label>
-                <Input
-                  {...register("storeName")}
-                  placeholder="Store / Shop Name"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">POS Count</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    {...register("posCount")}
-                    placeholder="e.g. 2"
-                    className={errors.posCount ? "border-destructive focus-visible:ring-destructive" : ""}
-                  />
-                  {errors.posCount && (
-                    <p className="mt-1 text-xs text-destructive">{errors.posCount.message}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Monthly Volume (₦)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    {...register("monthlyVolume")}
-                    placeholder="e.g. 5000000"
-                    className={errors.monthlyVolume ? "border-destructive focus-visible:ring-destructive" : ""}
-                  />
-                  {errors.monthlyVolume && (
-                    <p className="mt-1 text-xs text-destructive">{errors.monthlyVolume.message}</p>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Outlet Latitude</label>
-                  <Input
-                    type="number"
-                    step="any"
-                    {...register("outletLat")}
-                    placeholder="e.g. 6.5244"
-                    className={errors.outletLat ? "border-destructive focus-visible:ring-destructive" : ""}
-                  />
-                  {errors.outletLat && (
-                    <p className="mt-1 text-xs text-destructive">{errors.outletLat.message}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Outlet Longitude</label>
-                  <Input
-                    type="number"
-                    step="any"
-                    {...register("outletLng")}
-                    placeholder="e.g. 3.3792"
-                    className={errors.outletLng ? "border-destructive focus-visible:ring-destructive" : ""}
-                  />
-                  {errors.outletLng && (
-                    <p className="mt-1 text-xs text-destructive">{errors.outletLng.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Classification details (Merchant, Agrodealer, Corporate) */}
+          <LeadClassificationFields
+            intendedType={lead.intendedType}
+            register={register}
+            errors={errors}
+          />
 
-          {/* Agrodealer Fields */}
-          {lead.intendedType === "agrodealer" && (
-            <div className="rounded-lg border bg-muted/20 p-3.5 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Agrodealer Details
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">License No.</label>
-                  <Input
-                    {...register("licenseNo")}
-                    placeholder="e.g. AG-2024-001"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Storage (MT)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    {...register("storageMt")}
-                    placeholder="e.g. 50"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground">Input Specialties (comma separated)</label>
-                <Input
-                  {...register("inputSpecialties")}
-                  placeholder="e.g. Seeds, Fertilizers, Agrochemicals"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground">LGA Coverage (comma separated)</label>
-                <Input
-                  {...register("lgaCoverage")}
-                  placeholder="e.g. Ikeja, Alimosho, Oshodi"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Cooperative / Buyer Fields */}
-          {(lead.intendedType === "cooperative" || lead.intendedType === "buyer") && (
-            <div className="rounded-lg border bg-muted/20 p-3.5 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Corporate Details
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">CAC Number</label>
-                  <Input
-                    {...register("cacNumber")}
-                    placeholder="e.g. RC-1234567"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Tax ID</label>
-                  <Input
-                    {...register("taxId")}
-                    placeholder="e.g. 10293847-0001"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Annual Turnover (₦)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    {...register("annualTurnover")}
-                    placeholder="e.g. 25000000"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Decision Maker Title</label>
-                  <Input
-                    {...register("decisionMakerTitle")}
-                    placeholder="e.g. Managing Director"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Notes</label>
+          <FormField label="Notes">
             <Textarea
               {...register("notes")}
               rows={3}
               placeholder="Internal operator notes..."
             />
-          </div>
+          </FormField>
 
           <DialogFooter className="gap-2 sm:gap-0 pt-2">
             <Button
