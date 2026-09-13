@@ -21,7 +21,13 @@ function loadInitialMockLeads(): Lead[] {
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed: Lead[] = JSON.parse(stored);
+        return parsed.map((item) => {
+          const defaultMock = mockLeads.find((m) => m.id === item.id);
+          return defaultMock ? { ...defaultMock, ...item } : item;
+        });
+      }
     } catch {
       // ignore JSON parse error
     }
@@ -156,6 +162,29 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
 
     addLead: (values: CreateLeadSchema, options?: { onSuccess?: () => void }) => {
       const geo = GLOBAL_COUNTRY_CURRENCIES.find((c) => c.countryCode === values.countryCode);
+      const classificationFields: Partial<Lead> =
+        values.intendedType === "merchant"
+          ? {
+              storeName: values.storeName,
+              outletLat: values.outletLat,
+              outletLng: values.outletLng,
+              posCount: values.posCount,
+              monthlyVolume: values.monthlyVolume,
+            }
+          : values.intendedType === "agrodealer"
+          ? {
+              licenseNo: values.licenseNo,
+              storageMt: values.storageMt,
+              inputSpecialties: values.inputSpecialties,
+              lgaCoverage: values.lgaCoverage,
+            }
+          : {
+              cacNumber: values.cacNumber,
+              taxId: values.taxId,
+              annualTurnover: values.annualTurnover,
+              decisionMakerTitle: values.decisionMakerTitle,
+            };
+
       const newMockLead: Lead = {
         id: `lead_${Date.now()}`,
         businessName: values.businessName,
@@ -172,6 +201,7 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
         subRegion: geo?.subRegion ?? "west_africa",
         continent: geo?.continent ?? "africa",
         createdAt: new Date().toISOString().slice(0, 10),
+        ...classificationFields,
       };
 
       createMutation.mutate(values, {
@@ -193,29 +223,66 @@ export function useLeads(params: ListLeadsQuery = { page: 1, limit: 100 }) {
       toast.success("Lead removed from the pipeline.");
     },
 
+    updateLead: (leadId: string, updates: Partial<Lead>, options?: { onSuccess?: () => void }) => {
+      updateMockLeads((prev) =>
+        prev.map((lead) => (lead.id === leadId ? { ...lead, ...updates } : lead))
+      );
+      queryClient.setQueryData(leadsKeys.detail(leadId), (old: Lead | undefined) =>
+        old ? { ...old, ...updates } : undefined
+      );
+      queryClient.invalidateQueries({ queryKey: leadsKeys.all });
+      toast.success("Lead details updated successfully.");
+      options?.onSuccess?.();
+    },
+
     isMutating: markLostMutation.isPending || convertMutation.isPending || createMutation.isPending,
     isCreating: createMutation.isPending,
   };
 }
 
 /**
- * One lead, from GET /admin/leads/{id}, with mock fallback if backend is unavailable.
+ * One lead, from GET /admin/leads/{id}, with robust fallback to cache, local store and mock data.
  */
 export function useLead(leadId: string) {
+  const queryClient = useQueryClient();
+  const [localLeads, setLocalLeads] = useState<Lead[]>(mockLeadsStore);
+
+  useEffect(() => {
+    const handleUpdate = () => setLocalLeads([...mockLeadsStore]);
+    listeners.add(handleUpdate);
+    return () => {
+      listeners.delete(handleUpdate);
+    };
+  }, []);
+
+  const decodedId = decodeURIComponent(leadId);
+
   const query = useQuery({
-    queryKey: leadsKeys.detail(leadId),
-    queryFn: () => leadsApi.detail(leadId),
+    queryKey: leadsKeys.detail(decodedId),
+    queryFn: () => leadsApi.detail(decodedId),
     select: mapLead,
-    enabled: leadId.length > 0,
+    enabled: decodedId.length > 0,
     retry: 1,
   });
 
-  const mockItem = mockLeadsStore.find((lead) => lead.id === leadId);
+  // 1. Check if the lead is in the React Query cache from any list query
+  const cachedFromList = queryClient
+    .getQueriesData<{ items?: Lead[] }>({ queryKey: leadsKeys.all })
+    .flatMap(([_, res]) => res?.items ?? [])
+    .find((l) => l.id === decodedId);
+
+  // 2. Check local store (persisted in localStorage)
+  const localItem = localLeads.find((lead) => lead.id === decodedId);
+
+  // 3. Check base static mockLeads
+  const staticItem = mockLeads.find((lead) => lead.id === decodedId);
+
+  const fallbackLead = cachedFromList ?? localItem ?? staticItem;
 
   return {
     ...query,
-    data: query.data ?? mockItem,
-    isLoading: query.isLoading && !mockItem,
-    isError: query.isError && !mockItem,
+    data: query.data ?? fallbackLead,
+    isLoading: (query.isLoading || query.isPending) && !fallbackLead,
+    isError: query.isError && !fallbackLead,
   };
 }

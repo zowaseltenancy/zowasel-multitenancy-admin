@@ -51,6 +51,8 @@ export function useLeadConversion() {
         name: ownerName,
         email: ownerEmail,
         phone: ownerPhone,
+        dateOfBirth: values?.dateOfBirth,
+        country: values?.country ?? geo?.countryName ?? lead.countryName ?? "Nigeria",
       },
       teamMembers: [],
       kybStatus: values?.kybStatus ?? "not_submitted",
@@ -72,6 +74,9 @@ export function useLeadConversion() {
       subRegion: geo?.subRegion ?? lead.subRegion ?? "west_africa",
       continent: geo?.continent ?? lead.continent ?? "africa",
       createdAt: new Date().toISOString().slice(0, 10),
+      notes: values?.notes ?? lead.notes,
+      source: lead.source,
+      onboardedByAgent: lead.source === "field_agent" ? { id: "agent_lead", name: "Field Agent" } : undefined,
     });
 
     convertLead(lead.id, organizationId, values?.notes ?? lead.notes);

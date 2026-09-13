@@ -16,7 +16,6 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  FileCheck2,
 } from "lucide-react";
 
 import { usePageHeader } from "@/components/layout/PageHeaderContext";
@@ -35,12 +34,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GLOBAL_COUNTRY_CURRENCIES } from "@/data/geoData";
-import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
+import { LEAD_INTENDED_TYPE_LABELS } from "@/constants/lead";
 import { getPasswordStrength } from "@/lib/password";
 
 interface Props {
   leadId: string;
 }
+
+const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
 function generateStrongPassword(): string {
   const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -117,6 +118,7 @@ export default function ConvertLeadPageView({ leadId }: Props) {
   }
 
   const passwordStrength = getPasswordStrength(password);
+  const passwordStrengthPercentage = Math.round((passwordStrength.score / 3) * 100);
 
   const handleGeneratePassword = () => {
     const newPwd = generateStrongPassword();
@@ -141,7 +143,7 @@ export default function ConvertLeadPageView({ leadId }: Props) {
     }
     if (!ownerEmail.trim()) {
       newErrors.ownerEmail = "Email address is required.";
-    } else if (!/^\S+@\S+\.\S+$/.test(ownerEmail)) {
+    } else if (!EMAIL_REGEX.test(ownerEmail)) {
       newErrors.ownerEmail = "Please enter a valid email address.";
     }
     if (!password) {
@@ -228,10 +230,8 @@ export default function ConvertLeadPageView({ leadId }: Props) {
         </div>
       </div>
 
-      {/* Main Conversion Form Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        {/* Form Container (8 columns) */}
-        <Card className="md:col-span-8 border shadow-xs">
+      {/* Main Conversion Form */}
+      <Card className="border shadow-xs">
           <CardHeader className="border-b bg-muted/20 pb-4">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
@@ -366,7 +366,7 @@ export default function ConvertLeadPageView({ leadId }: Props) {
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all duration-300 ${passwordStrength.color}`}
-                      style={{ width: `${(passwordStrength.score / 3) * 100}%` }}
+                      style={{ width: `${passwordStrengthPercentage}%` }}
                     />
                   </div>
                 </div>
@@ -453,74 +453,7 @@ export default function ConvertLeadPageView({ leadId }: Props) {
               </Button>
             </div>
           </CardContent>
-        </Card>
-
-        {/* Lead Intelligence Card (4 columns) */}
-        <div className="md:col-span-4 space-y-4">
-          <Card className="border shadow-xs">
-            <CardHeader className="pb-3 border-b bg-muted/10">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Lead Information
-                </span>
-                <span className="text-xs font-mono text-muted-foreground">{lead.id}</span>
-              </div>
-              <CardTitle className="text-base font-bold text-foreground">
-                {lead.businessName}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {LEAD_INTENDED_TYPE_LABELS[lead.intendedType]}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3 text-xs">
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Original Contact:</span>
-                <span className="font-semibold text-foreground">{lead.contactName}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Original Phone:</span>
-                <span className="font-semibold text-foreground">{lead.phone}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Source:</span>
-                <span className="font-semibold text-foreground uppercase">
-                  {LEAD_SOURCE_LABELS[lead.source]}
-                </span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Captured Date:</span>
-                <span className="font-semibold text-foreground">{lead.createdAt}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant="outline" className="capitalize text-[11px]">
-                  {lead.status.replace("_", " ")}
-                </Badge>
-              </div>
-
-              {lead.notes && (
-                <div className="pt-2 border-t">
-                  <span className="text-muted-foreground block mb-1">Notes:</span>
-                  <p className="text-muted-foreground italic text-[11px]">{lead.notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
-            <h5 className="font-semibold text-primary text-xs flex items-center gap-1.5">
-              <FileCheck2 className="h-4 w-4" />
-              Conversion Actions:
-            </h5>
-            <ul className="text-[11px] text-muted-foreground space-y-1 list-disc pl-4">
-              <li>Creates tenant organization in directory</li>
-              <li>Saves owner profile with phone, birthdate & country</li>
-              <li>Initializes password and login credentials</li>
-              <li>Marks lead as converted in pipeline</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }

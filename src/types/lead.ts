@@ -27,4 +27,23 @@ export interface Lead {
   continent?: string;
   createdAt: string;
   convertedOrganizationId?: string;
+
+  // Merchant details
+  storeName?: string;
+  outletLat?: number;
+  outletLng?: number;
+  posCount?: number;
+  monthlyVolume?: number;
+
+  // Agrodealer details
+  licenseNo?: string;
+  storageMt?: number;
+  inputSpecialties?: string[];
+  lgaCoverage?: string[];
+
+  // Corporate details
+  cacNumber?: string;
+  taxId?: string;
+  annualTurnover?: number;
+  decisionMakerTitle?: string;
 }

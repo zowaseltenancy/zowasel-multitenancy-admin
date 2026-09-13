@@ -70,13 +70,20 @@ export default function DashboardLayout({ children }: Props) {
     });
   }, []);
 
+  // Determine if this is the convert page (e.g. /admin/leads/:leadId/convert)
+  const isConvertPage = Boolean(
+    pathname && /^\/admin\/leads\/[^\/]+\/convert\/?$/.test(pathname)
+  );
+
   return (
     <PageHeaderProvider>
       <div className="flex h-screen w-full overflow-hidden bg-background">
-        <Sidebar collapsed={mounted ? collapsed : false} onToggle={toggleSidebar} />
+        {!isConvertPage && (
+          <Sidebar collapsed={mounted ? collapsed : false} onToggle={toggleSidebar} />
+        )}
 
         <div className="flex h-screen flex-1 flex-col overflow-hidden">
-          <Header onToggle={toggleSidebar} />
+          {!isConvertPage && <Header onToggle={toggleSidebar} />}
 
           <MemoizedPageContent>{children}</MemoizedPageContent>
         </div>
