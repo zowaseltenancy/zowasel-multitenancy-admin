@@ -57,7 +57,45 @@ function missingFields(dto: LeadDto) {
   return missing;
 }
 
+function metadataNumber(metadata: Record<string, unknown> | null, key: string): number | undefined {
+  const value = metadata?.[key];
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+}
+
+function metadataStringArray(metadata: Record<string, unknown> | null, key: string): string[] | undefined {
+  const value = metadata?.[key];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === "string" && value.trim()) {
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return undefined;
+}
+
 export function mapLead(dto: LeadDto): Lead {
+  const meta = dto.typeMetadata;
+  const outletGps = meta?.outletGps as { lat?: number; lng?: number } | undefined;
+  const storeName = metadataString(meta, "storeName") || undefined;
+  const outletLat = metadataNumber(meta, "outletLat") ?? outletGps?.lat;
+  const outletLng = metadataNumber(meta, "outletLng") ?? outletGps?.lng;
+  const posCount = metadataNumber(meta, "posCount");
+  const monthlyVolume = metadataNumber(meta, "monthlyVolume");
+
+  const licenseNo = metadataString(meta, "licenseNo") || undefined;
+  const storageMt = metadataNumber(meta, "storageMt");
+  const inputSpecialties = metadataStringArray(meta, "inputSpecialties");
+  const lgaCoverage = metadataStringArray(meta, "lgaCoverage");
+
+  const cacNumber = metadataString(meta, "cacNumber") || undefined;
+  const taxId = metadataString(meta, "taxId") || undefined;
+  const annualTurnover = metadataNumber(meta, "annualTurnover");
+  const decisionMaker = meta?.decisionMaker as { title?: string } | undefined;
+  const decisionMakerTitle = metadataString(meta, "decisionMakerTitle") || decisionMaker?.title || undefined;
+
   return {
     id: dto.id,
     businessName: dto.name,
@@ -72,6 +110,19 @@ export function mapLead(dto: LeadDto): Lead {
     createdAt: dto.createdAt,
     convertedOrganizationId: dto.convertedTenantId ?? undefined,
     stage: dto.stage,
+    storeName,
+    outletLat,
+    outletLng,
+    posCount,
+    monthlyVolume,
+    licenseNo,
+    storageMt,
+    inputSpecialties,
+    lgaCoverage,
+    cacNumber,
+    taxId,
+    annualTurnover,
+    decisionMakerTitle,
   };
 }
 

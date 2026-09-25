@@ -24,7 +24,8 @@ interface Props {
  * the checks.
  */
 export default async function ConvertLeadPage({ params }: Props) {
-  const { leadId } = await params;
+  const { leadId: rawLeadId } = await params;
+  const leadId = decodeURIComponent(rawLeadId || "").trim();
 
   redirect(`/admin/leads/${leadId}`);
 }

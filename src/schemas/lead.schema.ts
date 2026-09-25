@@ -77,3 +77,40 @@ export const createLeadSchema = z.discriminatedUnion("intendedType", [
 export type CreateLeadSchema = z.infer<typeof createLeadSchema>;
 /** The form's own shape before zod's coercions — what the inputs bind to. */
 export type CreateLeadFormValues = z.input<typeof createLeadSchema>;
+
+export const updateLeadSchema = z.object({
+  businessName: z.string().min(2, "Business name must be at least 2 characters"),
+  contactName: z.string().min(2, "Contact name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(8, "Phone number is required"),
+  source: z.enum([
+    "referral",
+    "marketing_campaign",
+    "field_agent",
+    "inbound_website",
+    "partner_organization",
+  ]),
+  notes: z.string().optional(),
+
+  // Merchant fields
+  storeName: z.string().optional(),
+  outletLat: z.union([z.coerce.number().min(-90, "Latitude must be between -90 and 90").max(90), z.literal(""), z.nan()]).optional(),
+  outletLng: z.union([z.coerce.number().min(-180, "Longitude must be between -180 and 180").max(180), z.literal(""), z.nan()]).optional(),
+  posCount: z.union([z.coerce.number().int("POS count must be a whole number").nonnegative("POS count cannot be negative"), z.literal(""), z.nan()]).optional(),
+  monthlyVolume: z.union([z.coerce.number().nonnegative("Monthly volume cannot be negative"), z.literal(""), z.nan()]).optional(),
+
+  // Agrodealer fields
+  licenseNo: z.string().optional(),
+  storageMt: z.union([z.coerce.number().nonnegative("Storage capacity cannot be negative"), z.literal(""), z.nan()]).optional(),
+  inputSpecialties: z.string().optional(),
+  lgaCoverage: z.string().optional(),
+
+  // Cooperative / Buyer fields
+  cacNumber: z.string().optional(),
+  taxId: z.string().optional(),
+  annualTurnover: z.union([z.coerce.number().nonnegative("Annual turnover cannot be negative"), z.literal(""), z.nan()]).optional(),
+  decisionMakerTitle: z.string().optional(),
+});
+
+export type UpdateLeadSchema = z.infer<typeof updateLeadSchema>;
+export type UpdateLeadFormValues = z.input<typeof updateLeadSchema>;

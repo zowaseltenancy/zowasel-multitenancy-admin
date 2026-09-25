@@ -17,6 +17,16 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  async redirects() {
+    return [
+      {
+        source: "/admin/leads/pipline",
+        destination: "/admin/leads/pipeline",
+        permanent: false,
+      },
+    ];
+  },
+
   /**
    * Proxy /api/<service>/* → the matching microservice.
    *

@@ -4,6 +4,11 @@ export interface PasswordStrength {
   color: string;
 }
 
+const HAS_UPPERCASE = new RegExp("[A-Z]");
+const HAS_LOWERCASE = new RegExp("[a-z]");
+const HAS_NUMBER = new RegExp("[0-9]");
+const HAS_SPECIAL = new RegExp("[^A-Za-z0-9]");
+
 /**
  * Evaluates password strength based on length, character variety, and complexity.
  */
@@ -12,9 +17,9 @@ export function getPasswordStrength(password: string): PasswordStrength {
 
   let score = 0;
   if (password.length >= 8) score += 1;
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
-  if (/[0-9]/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  if (HAS_UPPERCASE.test(password) && HAS_LOWERCASE.test(password)) score += 1;
+  if (HAS_NUMBER.test(password)) score += 1;
+  if (HAS_SPECIAL.test(password)) score += 1;
 
   if (score <= 1) return { score: 1, label: "Weak", color: "bg-amber-400" };
   if (score <= 3) return { score: 2, label: "Fair", color: "bg-[#ED8B00]" };

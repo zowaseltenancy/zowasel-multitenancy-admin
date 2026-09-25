@@ -36,4 +36,23 @@ export interface Lead {
    * screens offered Convert on all four and the server refused three of them.
    */
   stage?: string;
+
+  // Merchant details
+  storeName?: string;
+  outletLat?: number;
+  outletLng?: number;
+  posCount?: number;
+  monthlyVolume?: number;
+
+  // Agrodealer details
+  licenseNo?: string;
+  storageMt?: number;
+  inputSpecialties?: string[];
+  lgaCoverage?: string[];
+
+  // Corporate details
+  cacNumber?: string;
+  taxId?: string;
+  annualTurnover?: number;
+  decisionMakerTitle?: string;
 }
