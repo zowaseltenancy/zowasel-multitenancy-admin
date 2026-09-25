@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StaffMember, StaffRole, DepartmentRole } from '@/types/staff';
-import { useStaff } from '@/hooks/useStaff';
+import { useDepartments, useStaff } from '@/features/staff/hooks/useStaff';
+import { nextStaffStatus } from '@/features/staff/utils/statusCycle';
+import { mapStaff } from '@/features/staff/api/staff.mappers';
 
 // Profile Subcomponents & Tabs
 import { ProfileHeader } from './profile/ProfileHeader';
@@ -13,6 +15,7 @@ import { OverviewTab } from './profile/tabs/OverviewTab';
 import { DepartmentTeamTab } from './profile/tabs/DepartmentTeamTab';
 import { StatusHistoryTab } from './profile/tabs/StatusHistoryTab';
 import { StaffProfileModals } from './profile/StaffProfileModals';
+import { toast } from 'sonner';
 
 interface StaffProfileViewProps {
   staff: StaffMember;
@@ -27,7 +30,14 @@ export function StaffProfileView({
   onRefresh,
 }: StaffProfileViewProps) {
   const router = useRouter();
-  const { repo, refresh } = useStaff();
+  const { changeStatus } = useStaff();
+  const { departments } = useDepartments({ limit: 100 });
+
+  // Colleagues in the same department, from GET /admin/staff?departmentId=
+  // rather than a filter over every staff record held locally.
+  const { staff: colleagueDtos } = useStaff(
+    staff.departmentId ? { departmentId: staff.departmentId, limit: 100 } : { limit: 1 },
+  );
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
@@ -37,13 +47,14 @@ export function StaffProfileView({
   const [editPhotoOpen, setEditPhotoOpen] = useState(false);
 
   const roleName = roles.find((r) => r.id === staff.roleId)?.name || staff.roleId || 'Staff Member';
-  const allDepartments = repo.getDepartments().map((d) => d.name);
-  const departmentColleagues = repo
-    .getAllStaff()
-    .filter((s) => s.department === staff.department && s.id !== staff.id);
+  const allDepartments = departments.map((d) => ({ id: d.id, name: d.name }));
+  const departmentColleagues = colleagueDtos
+    .filter((c) => c.id !== staff.id)
+    .map(mapStaff);
 
+  // The mutations invalidate the staff queries themselves; onRefresh is kept
+  // for callers that also need to react.
   const handleRefresh = () => {
-    refresh();
     onRefresh?.();
   };
 
@@ -107,14 +118,19 @@ export function StaffProfileView({
         editPhotoOpen={editPhotoOpen}
         setEditPhotoOpen={setEditPhotoOpen}
         onRefresh={handleRefresh}
-        onPhotoUpdated={(url) => {
-          repo.updateStaff(staff.id, { avatarUrl: url });
-          handleRefresh();
+        // No avatar endpoint, and no avatar column on the admins table — the
+        // upload cannot be persisted, so it says so rather than appearing to
+        // save and silently reverting on the next fetch.
+        onPhotoUpdated={() => {
+          toast.error("Profile photos aren't available yet — there's no endpoint for it.");
         }}
+        // PATCH /admin/staff/{id}/status. Suspending revokes the account's
+        // sessions server-side; the endpoint refuses your own account and the
+        // last active super admin.
         onStatusUpdated={() => {
-          const nextStatus = staff.status?.toLowerCase() === 'suspended' ? 'active' : 'suspended';
-          repo.updateStaff(staff.id, { status: nextStatus });
-          handleRefresh();
+          changeStatus(staff.id, nextStaffStatus(staff.status), undefined, {
+            onSuccess: handleRefresh,
+          });
         }}
       />
     </div>

@@ -3,23 +3,45 @@
 import Link from 'next/link';
 import { ArrowRight, Eye, Lock, CalendarDays } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { StaffDepartment } from '@/types/user';
-import { DEPARTMENT_META, DEPARTMENTS } from './departmentMeta';
+import { getDepartmentTheme } from './departmentMeta';
 
-interface StaffDepartmentGridProps {
-  staffCounts: Record<StaffDepartment, number>;
+export interface DepartmentCount {
+  id: string;
+  name: string;
+  count: number;
 }
 
-export function StaffDepartmentGrid({ staffCounts }: StaffDepartmentGridProps) {
+interface StaffDepartmentGridProps {
+  /**
+   * The real departments, from GET /admin/staff/stats — which returns every
+   * one including those with no staff, so an empty department still gets a
+   * card. This replaced a hardcoded list of nine names: only three matched
+   * the actual departments, so four cards read zero permanently and the staff
+   * in the unlisted ones were counted nowhere.
+   */
+  departments: DepartmentCount[];
+}
+
+export function StaffDepartmentGrid({ departments }: StaffDepartmentGridProps) {
+  if (departments.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border/60 p-8 text-center">
+        <p className="text-sm font-medium text-foreground">No departments yet</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Create one from Staff &rsaquo; Departments to start placing staff.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {DEPARTMENTS.map((dept) => {
-        const meta = DEPARTMENT_META[dept];
+      {departments.map(({ id, name: dept, count }) => {
+        const meta = getDepartmentTheme(dept);
         const Icon = meta.icon;
-        const count = staffCounts[dept] || 0;
 
         return (
-          <div key={dept} className="group relative">
+          <div key={id} className="group relative">
             <Card className={`border shadow-2xs transition-all hover:scale-[1.02] ${meta.cardBg}`}>
               <CardContent className="flex flex-col justify-between p-4 min-h-[140px]">
                 <div className="flex items-center justify-between">
@@ -41,7 +63,7 @@ export function StaffDepartmentGrid({ staffCounts }: StaffDepartmentGridProps) {
                 {/* Quick action links */}
                 <div className="mt-3 flex items-center gap-2 border-t pt-2">
                   <Link
-                    href={`/admin/staff/directory?department=${encodeURIComponent(dept)}`}
+                    href={`/admin/staff/directory?departmentId=${id}`}
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
                     title="View Staff"
                   >
@@ -49,7 +71,7 @@ export function StaffDepartmentGrid({ staffCounts }: StaffDepartmentGridProps) {
                     View
                   </Link>
                   <Link
-                    href={`/admin/staff/permissions?department=${encodeURIComponent(dept)}`}
+                    href={`/admin/staff/permissions?departmentId=${id}`}
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
                     title="Manage Permissions"
                   >
@@ -57,7 +79,7 @@ export function StaffDepartmentGrid({ staffCounts }: StaffDepartmentGridProps) {
                     Permissions
                   </Link>
                   <Link
-                    href={`/admin/staff/leave?department=${encodeURIComponent(dept)}`}
+                    href={`/admin/staff/leave?departmentId=${id}`}
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
                     title="Leave Requests"
                   >

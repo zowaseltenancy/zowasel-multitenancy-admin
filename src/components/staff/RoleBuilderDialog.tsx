@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { useStaff } from '@/hooks/useStaff';
+import { useAdminRoles } from '@/features/staff/hooks/useStaff';
 import { DepartmentRole } from '@/types/staff';
 import { ShieldCheck } from 'lucide-react';
 import { RoleBuilderPermissionsList } from './roles/RoleBuilderPermissionsList';
@@ -33,7 +33,10 @@ export function RoleBuilderDialog({
   existingRole,
   onSave,
 }: Props) {
-  const { repo, refresh } = useStaff();
+  // POST/PATCH /admin/roles for the role itself, then PUT
+  // /admin/roles/{id}/permissions for its set — two endpoints, because the
+  // permission set is replaced wholesale rather than patched.
+  const { create, update, savePermissions, roles } = useAdminRoles({ limit: 100 });
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
@@ -59,33 +62,45 @@ export function RoleBuilderDialog({
   const handleSave = () => {
     if (!name.trim()) return toast.error('Role name required');
 
-    const newRole: DepartmentRole = {
-      id: existingRole?.id || `role-dept-${Date.now()}`,
-      departmentId,
+    const fields = {
       name: name.trim(),
       description: description.trim(),
-      permissions: selectedPermissions,
-      isSystemRole: false,
+      departmentId,
     };
 
-    const rolePayload = {
-      name: newRole.name,
-      description: newRole.description || '',
-      permissions: selectedPermissions,
-      departmentId,
-      isSystemRole: false,
+    // The permission set is applied once the role exists, so a rejected
+    // create (a duplicate name, say) never leaves an empty role behind with
+    // permissions attached to nothing.
+    const applyPermissions = (roleId: string) => {
+      savePermissions(roleId, selectedPermissions, {
+        onSuccess: () => {
+          onSave({
+            id: roleId,
+            departmentId,
+            name: fields.name,
+            description: fields.description,
+            permissions: selectedPermissions,
+            isSystemRole: false,
+          } satisfies DepartmentRole);
+          onOpenChange(false);
+        },
+      });
     };
 
     if (existingRole) {
-      repo.updateRole(existingRole.id, rolePayload);
-    } else {
-      repo.addRole(rolePayload);
+      update(existingRole.id, fields, { onSuccess: () => applyPermissions(existingRole.id) });
+      return;
     }
 
-    onSave(newRole);
-    refresh();
-    toast.success(`Department role "${name}" saved and synced to the RBAC Access Matrix.`);
-    onOpenChange(false);
+    create(fields, {
+      onSuccess: () => {
+        // POST does not hand the new id to this callback, so it is recovered
+        // by name — unique server-side, which is what makes that safe.
+        const created = roles.find((r) => r.name === fields.name);
+        if (created) applyPermissions(created.id);
+        else onOpenChange(false);
+      },
+    });
   };
 
   return (

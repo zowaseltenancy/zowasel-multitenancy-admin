@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,12 +18,33 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { authErrorMessage, useLogin } from "@/features/auth/hooks/useAuth";
 import { setStoredAdmin } from "@/lib/auth-session";
 
-export default function LoginPage() {
+// Only in-app paths are honoured as a post-login destination. An absolute URL
+// or a protocol-relative one ("//evil.test") arriving in ?next= would turn this
+// form into an open redirect, so anything that is not a single-slash path is
+// discarded in favour of the dashboard.
+function safeNext(raw: string | null | undefined): string {
+  if (!raw) return "/admin";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/admin";
+  return raw;
+}
+
+function LoginForm() {
   const router = useRouter();
+  // The interceptor sends an expired session here as
+  // ?expired=1&next=<where they were>, so sign-in returns them to the page
+  // they were on rather than always to the dashboard root.
+  const searchParams = useSearchParams();
+  const nextPath = safeNext(searchParams?.get("next"));
+  const wasExpired = searchParams?.get("expired") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    // Reuses the alert below rather than adding a second banner. This is what
+    // ?expired=1 is for: without it the user is silently returned to a login
+    // form with no indication that their session ran out.
+    wasExpired ? "Your session expired. Please sign in again to continue." : null,
+  );
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   const login = useLogin();
@@ -79,7 +100,7 @@ export default function LoginPage() {
       // navigate; the dashboard's requests all need that token.
       await login.mutateAsync({ email: email.trim(), password });
       toast.success("Signed in successfully!");
-      router.push("/admin");
+      router.replace(nextPath);
     } catch (error) {
       const message = authErrorMessage(
         error,
@@ -200,5 +221,20 @@ export default function LoginPage() {
         </div>
       </AuthCard>
     </AuthLayout>
+  );
+}
+
+// useSearchParams needs a Suspense boundary.
+//
+// Without one this page — which Next prerenders statically — bails out of
+// client rendering, and the bail-out is silent: the server HTML still shows
+// the form, inputs still accept text, but React never binds onSubmit, so
+// pressing "Sign in" does nothing at all. No console error, no network
+// request. Same pattern the staff leave screen already uses.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

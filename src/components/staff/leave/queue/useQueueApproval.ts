@@ -4,26 +4,34 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { LeaveRequest } from '@/types/staff';
 import { isOverlapping } from './queueExport';
+import { useLeaveOverview } from '@/features/staff/hooks/useStaff';
 
 interface UseQueueApprovalProps {
-  repo: any;
-  refresh: () => void;
   pendingRequests: LeaveRequest[];
   allLeaveRequests: LeaveRequest[];
+  /** From /admin/me. Used only to keep the self-review guard's message local. */
   currentUserId: string;
   onClearDetail: (ids: string[]) => void;
   onRemoveSelectedIds: (ids: string[]) => void;
 }
 
+// PATCH /admin/leave/requests/{id}/review.
+//
+// Approving is what deducts days from the applicant's balance, in the same
+// transaction as the status change — which is why this cannot be a local edit:
+// the previous version set a status string and the balance never moved.
+//
+// The self-review check below is a courtesy, not the enforcement. The server
+// refuses it outright regardless of seniority; checking here only turns a
+// round-trip into an immediate message.
 export function useQueueApproval({
-  repo,
-  refresh,
   pendingRequests,
   allLeaveRequests,
   currentUserId,
   onClearDetail,
   onRemoveSelectedIds,
 }: UseQueueApprovalProps) {
+  const { review } = useLeaveOverview();
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectTargetIds, setRejectTargetIds] = useState<string[]>([]);
   const [rejectReason, setRejectReason] = useState('');
@@ -56,11 +64,11 @@ export function useQueueApproval({
       toast.error('Self-review blocked: You cannot approve your own leave request.');
       return;
     }
-    ids.forEach((id) =>
-      repo.updateLeaveStatus(id, 'approved', currentUserId, 'Alice Johnson')
-    );
-    refresh();
-    toast.success(`Approved ${ids.length} leave request${ids.length === 1 ? '' : 's'}.`);
+    // One call per request: the endpoint reviews a single request, because
+    // each approval is its own balance deduction and can fail independently
+    // (insufficient balance, already reviewed). A bulk route would have to
+    // define what a partial failure means.
+    ids.forEach((id) => review(id, 'APPROVED'));
     onRemoveSelectedIds(ids);
     onClearDetail(ids);
   };
@@ -83,14 +91,9 @@ export function useQueueApproval({
       toast.error('Please specify a rejection reason');
       return;
     }
-    rejectTargetIds.forEach((id) =>
-      repo.updateLeaveRequest(id, {
-        status: 'rejected',
-        rejectionReason: rejectReason.trim(),
-      })
-    );
-    refresh();
-    toast.success(`Rejected ${rejectTargetIds.length} request${rejectTargetIds.length === 1 ? '' : 's'}.`);
+    // The reason rides on the review call as `note`, which is what the
+    // request's reviewNote surfaces to the applicant.
+    rejectTargetIds.forEach((id) => review(id, 'REJECTED', rejectReason.trim()));
     onRemoveSelectedIds(rejectTargetIds);
     onClearDetail(rejectTargetIds);
     setRejectModalOpen(false);

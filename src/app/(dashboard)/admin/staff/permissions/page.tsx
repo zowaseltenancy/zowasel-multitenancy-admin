@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -18,13 +18,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useStaff } from '@/hooks/useStaff';
+import { useSearchParams } from 'next/navigation';
+import { useAdminRoles } from '@/features/staff/hooks/useStaff';
+import { mapAdminRole } from '@/features/staff/api/staff.mappers';
 import { ALL_PERMISSIONS, PERMISSION_CATEGORIES } from '@/constants/permissions';
 import { PermissionsTable } from '@/components/staff/permissions/PermissionsTable';
 import { PermissionsStatsCards } from '@/components/staff/permissions/PermissionsStatsCards';
 
-export default function PermissionsAuditPage() {
-  const { repo } = useStaff();
+function PermissionsAuditPageContent() {
+  // The roles this matrix shows, from GET /admin/roles. The permission
+  // *vocabulary* still comes from the ALL_PERMISSIONS constant rather than
+  // GET /admin/permissions — see the note at the bottom of this file.
+  // The dashboard's department cards link here as ?departmentId=<uuid>, so the
+  // matrix opens scoped to that department's roles. The roles endpoint filters
+  // on it server-side.
+  const departmentParam = useSearchParams()?.get('departmentId');
+
+  const { roles: roleDtos, isLoading } = useAdminRoles({
+    limit: 100,
+    ...(departmentParam ? { departmentId: departmentParam } : {}),
+  });
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
@@ -36,7 +49,7 @@ export default function PermissionsAuditPage() {
     setMounted(true);
   }, []);
 
-  const roles = useMemo(() => repo.getRoles(), [repo]);
+  const roles = useMemo(() => roleDtos.map(mapAdminRole), [roleDtos]);
 
   const filteredPermissions = useMemo(() => {
     return ALL_PERMISSIONS.filter((perm) => {
@@ -129,5 +142,32 @@ export default function PermissionsAuditPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// The permission catalogue rendered here is the ALL_PERMISSIONS constant, not
+// GET /admin/permissions.
+//
+// The two are different vocabularies: the constant carries display metadata
+// this screen needs — a category, a label, and an isSensitive flag driving the
+// warning styling — while the endpoint returns only { id, key, description }.
+// Reading the endpoint instead would lose the grouping and the sensitivity
+// marking that the matrix is built around.
+//
+// The consequence is that a permission added to the catalogue server-side does
+// not appear here until it is also added to the constant. Reconciling them
+// means either moving the display metadata onto the API rows or deriving the
+// category from the key prefix, and either is a product decision rather than a
+// wiring one.
+
+// useSearchParams requires a Suspense boundary. Without one this page bails
+// out of client rendering silently — the markup still appears but no handler
+// binds, which is how the login form ended up accepting input and doing
+// nothing when the same hook was added there.
+export default function PermissionsAuditPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading…</div>}>
+      <PermissionsAuditPageContent />
+    </Suspense>
   );
 }

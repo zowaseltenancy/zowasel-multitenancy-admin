@@ -91,3 +91,39 @@ export type StaffFormValues = z.input<typeof staffFormSchema>;
 
 /** The resolved payload handed to onSubmit, with `.default([])` applied. */
 export type StaffFormSubmitValues = z.output<typeof staffFormSchema>;
+
+// ── Edit mode ────────────────────────────────────────────────────────────────
+// The staff edit screen renders this same form against an existing record, but
+// the staff endpoint stores only part of it — there is no column for date of
+// birth, home address, phone or joining date, so the screen has no way to fill
+// those in.
+//
+// Validating them anyway made "Save Changes" impossible to submit: the resolver
+// rejected six fields seeded empty, and the review stage renders no error UI,
+// so the button silently did nothing on every edit.
+//
+// Every format rule is kept — an email still has to be an email — and only the
+// required-ness of fields the record cannot hold is dropped. Name and email
+// stay required because they are always seeded from the record.
+const notRequired = z.string().optional();
+
+export const staffEditFormSchema = staffFormSchema.extend({
+  personalInfo: personalInfoSchema.extend({
+    phone:       notRequired,
+    dateOfBirth: notRequired,
+    gender:      notRequired,
+  }),
+  employment: employmentSchema.extend({
+    // Blank for a staff member with no placement yet — which is exactly the
+    // record an operator opens this screen to fix.
+    roleId:        notRequired,
+    department:    notRequired,
+    dateOfJoining: notRequired,
+  }),
+  address: addressSchema.extend({
+    line1:   notRequired,
+    city:    notRequired,
+    state:   notRequired,
+    country: notRequired,
+  }),
+});

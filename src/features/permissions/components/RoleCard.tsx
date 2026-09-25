@@ -3,18 +3,23 @@
 import { Shield, ShieldAlert, Users, CheckCircle2 } from "lucide-react";
 import { Role } from "@/types/permissions";
 import { Card, CardContent } from "@/components/ui/card";
-import { ALL_PERMISSIONS } from "@/constants/permissions";
 
 interface RoleCardProps {
   role: Role;
   isSelected: boolean;
   onSelect: (roleId: string) => void;
+  /**
+   * Size of the server's catalogue, which is what coverage is a share of.
+   * Measuring against the ALL_PERMISSIONS constant instead made every role
+   * look far narrower than it is — that list carries 37 codes, 24 of which
+   * the platform cannot grant at all.
+   */
+  totalScopes: number;
 }
 
-export default function RoleCard({ role, isSelected, onSelect }: RoleCardProps) {
-  const totalSystemPermissions = ALL_PERMISSIONS.length;
+export default function RoleCard({ role, isSelected, onSelect, totalScopes }: RoleCardProps) {
   const assignedCount = role.permissions.length;
-  const coveragePercentage = Math.round((assignedCount / totalSystemPermissions) * 100);
+  const coveragePercentage = totalScopes > 0 ? Math.round((assignedCount / totalScopes) * 100) : 0;
 
   return (
     <Card
@@ -71,7 +76,7 @@ export default function RoleCard({ role, isSelected, onSelect }: RoleCardProps) 
           </div>
 
           <div className="font-medium">
-            <span className="text-foreground">{assignedCount}</span> / {totalSystemPermissions} scopes ({coveragePercentage}%)
+            <span className="text-foreground">{assignedCount}</span> / {totalScopes} scopes ({coveragePercentage}%)
           </div>
         </div>
       </CardContent>

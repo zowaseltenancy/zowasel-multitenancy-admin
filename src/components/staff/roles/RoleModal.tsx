@@ -11,9 +11,16 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Shield } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import { StaffRole } from '@/types/staff';
 import { toast } from 'sonner';
 import { RolePermissionSelector } from './RolePermissionSelector';
@@ -23,6 +30,18 @@ interface RoleModalProps {
   onOpenChange: (open: boolean) => void;
   editingRole: StaffRole | null;
   onSaveRole: (data: { name: string; description: string; departmentId?: string; permissions: string[] }) => void;
+  /**
+   * Real departments, for the scope select.
+   *
+   * This field used to be a free-text box bound straight to `departmentId`,
+   * which the API validates as a UUID — so whatever was typed into it ("Field
+   * Operations", or in one report the role's own description) came back as
+   * 422 Must be a valid UUID, with nothing on screen to suggest the box wanted
+   * an identifier rather than a name.
+   */
+  departments: { id: string; name: string }[];
+  /** A create/update is in flight; the modal stays open until it settles. */
+  isSubmitting?: boolean;
 }
 
 export function RoleModal({
@@ -30,6 +49,8 @@ export function RoleModal({
   onOpenChange,
   editingRole,
   onSaveRole,
+  departments,
+  isSubmitting = false,
 }: RoleModalProps) {
   const [roleName, setRoleName] = useState('');
   const [roleDescription, setRoleDescription] = useState('');
@@ -89,12 +110,25 @@ export function RoleModal({
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Department Scope (Optional)</Label>
-              <Input
-                value={selectedDeptId}
-                onChange={(e) => setSelectedDeptId(e.target.value)}
-                placeholder="e.g. Field Operations / Agronomy"
-                className="h-9 text-xs"
-              />
+              <Select
+                value={selectedDeptId || 'none'}
+                onValueChange={(value) => setSelectedDeptId(value === 'none' ? '' : value)}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Platform-wide" />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* 'none' rather than '', which Select treats as no value. */}
+                  <SelectItem value="none" className="text-xs">
+                    Platform-wide (no department)
+                  </SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id} className="text-xs">
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -115,10 +149,26 @@ export function RoleModal({
           />
 
           <DialogFooter className="p-4 bg-muted/20 border-t border-border/60 gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="text-xs">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+              className="text-xs"
+            >
               Cancel
             </Button>
-            <Button type="submit" size="sm" className="bg-[#00A651] hover:bg-[#008C44] text-white font-bold text-xs">
+            {/* The modal closes when the write settles, not on the click — the
+                page's onSuccess does it, so a rejected name or permission set
+                leaves the form filled in next to the toast explaining why. */}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmitting}
+              className="bg-[#00A651] hover:bg-[#008C44] text-white font-bold text-xs gap-1.5"
+            >
+              {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {editingRole ? 'Save Changes' : 'Create Role'}
             </Button>
           </DialogFooter>

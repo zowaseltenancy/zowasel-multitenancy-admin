@@ -181,19 +181,22 @@ export interface StaffRole {
   updatedAt?: string;
 }
 
+/**
+ * The API's enum, and only it.
+ *
+ * This union used to carry the display spellings alongside the wire values —
+ * 'Annual', 'Casual', 'Maternity/Paternity' — which made every mismatch
+ * type-check: a form could hold 'Casual', send it, and be refused at runtime
+ * by an endpoint that has never had such a type. Display strings live in
+ * constants/leave.ts now, so a label can never be mistaken for a value.
+ */
 export type LeaveType =
   | 'ANNUAL'
   | 'SICK'
   | 'MATERNITY'
   | 'PATERNITY'
   | 'COMPASSIONATE'
-  | 'UNPAID'
-  | 'Annual'
-  | 'Sick'
-  | 'Casual'
-  | 'Maternity/Paternity'
-  | 'Bereavement'
-  | 'Unpaid';
+  | 'UNPAID';
 
 export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'pending' | 'approved' | 'rejected';
 
@@ -302,6 +305,32 @@ export interface Department {
   isArchived?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * A department head as GET /admin/departments returns them.
+ *
+ * Deliberately leaner than StaffMember: the endpoint projects only what the
+ * cards render, so requiring a full StaffMember here would force a second
+ * request per department to fill in fields nothing displays. `avatarUrl` is
+ * optional and absent here specifically because this projection omits it — the
+ * admins table does carry the column (see StaffDto.avatarUrl), the departments
+ * endpoint just does not select it.
+ */
+export interface DepartmentHead {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  /**
+   * Both optional and not populated by this endpoint. `avatarUrl` exists on the
+   * staff record itself and would have to be added to the departments
+   * projection to arrive here; there is still no phone column at all. Declared
+   * because the header and card render them behind a truthiness guard, so the
+   * fields are part of the contract either way.
+   */
+  avatarUrl?: string;
+  phone?: string;
 }
 
 // Department-specific Role (Aligned with backend Custom Role & Permission Matrix API)

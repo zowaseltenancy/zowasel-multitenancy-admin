@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LeaveType } from '@/types/staff';
+import { LEAVE_TYPE_OPTIONS } from '@/constants/leave';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 
 interface RequestLeaveModalProps {
@@ -84,11 +85,14 @@ export function RequestLeaveModal({
                 <SelectValue placeholder="Select classification" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Annual" className="text-xs">Annual Vacation (20d Entitled)</SelectItem>
-                <SelectItem value="Sick" className="text-xs">Sick Leave (Medical Cert required &gt; 2 days)</SelectItem>
-                <SelectItem value="Casual" className="text-xs">Casual / Personal Emergency</SelectItem>
-                <SelectItem value="Maternity/Paternity" className="text-xs">Maternity / Paternity</SelectItem>
-                <SelectItem value="Unpaid" className="text-xs">Unpaid Leave</SelectItem>
+                {/* Driven by the API's enum rather than a hand-written list:
+                    two of the five options here were types the platform does
+                    not have, and picking either produced a 422 on submit. */}
+                {LEAVE_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="text-xs">
+                    {option.hint}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

@@ -20,11 +20,12 @@ function DepartmentDetailContent() {
   const tabParam = searchParams?.get('tab');
 
   const {
-    repo,
-    mounted,
+    isLoading,
     dept,
+    head,
     members,
     roles,
+    allRoles,
     filteredMembers,
     memberSearch,
     setMemberSearch,
@@ -38,7 +39,7 @@ function DepartmentDetailContent() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<DepartmentRole | null>(null);
 
-  if (!mounted) {
+  if (isLoading) {
     return (
       <div className="p-8 flex justify-center items-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -49,10 +50,6 @@ function DepartmentDetailContent() {
   if (!dept) {
     return <DepartmentNotFound />;
   }
-
-  // getStaffById returns undefined for a missing id; the header prop is
-  // `StaffMember | null`, so the two are reconciled here.
-  const head = (dept.headId ? repo.getStaffById(dept.headId) : null) ?? null;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
@@ -80,7 +77,7 @@ function DepartmentDetailContent() {
           <DepartmentMembersTab
             deptName={dept.name}
             filteredMembers={filteredMembers}
-            roles={repo.getRoles()}
+            roles={allRoles}
           />
         </TabsContent>
 

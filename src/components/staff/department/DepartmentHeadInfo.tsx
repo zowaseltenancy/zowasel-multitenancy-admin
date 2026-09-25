@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Department, StaffMember } from '@/types/staff';
+import { Department, DepartmentHead } from '@/types/staff';
 
 interface DepartmentHeadInfoProps {
   dept: Department;
-  head: StaffMember | null;
+  head: DepartmentHead | null;
   onEdit: (dept: Department) => void;
 }
 

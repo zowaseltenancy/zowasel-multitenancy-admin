@@ -9,6 +9,7 @@ import {
   Globe,
   LucideIcon,
 } from 'lucide-react';
+import { getDepartmentIcon } from '@/lib/departmentIcons';
 
 export interface DepartmentTheme {
   icon: LucideIcon;
@@ -145,7 +146,88 @@ export const DEPARTMENT_THEMES: Record<string, DepartmentTheme> = {
   },
 };
 
+// Which palette a department gets.
+//
+// The map above is keyed by department NAME, which only works for departments
+// that happen to be named that way. Departments are database rows admins
+// create, rename and delete through /admin/departments, so a name lookup falls
+// through to the default for most real ones — 'Field Agents' and 'Technology'
+// are not among Zowasel's actual departments.
+//
+// Resolution is therefore two-step, and shared with the staff dashboard's card
+// themes so a department looks the same everywhere:
+//
+//   1. Match the name against domain keywords, so a recognisable purpose keeps
+//      the palette that has always represented it.
+//   2. Otherwise take a stable hash of the name, so an arbitrary department
+//      gets a consistent colour rather than everything landing on the default
+//      blue.
+const THEMES_BY_HUE: readonly DepartmentTheme[] = Object.values(DEPARTMENT_THEMES);
+
+const DOMAIN_KEYWORDS: ReadonlyArray<{ keywords: readonly string[]; theme: string }> = [
+  { keywords: ['field', 'agronom', 'farm', 'crop', 'extension'], theme: 'Field Agents' },
+  { keywords: ['tech', 'software', 'engineer', 'developer', 'devops', 'system'], theme: 'Technology' },
+  { keywords: ['sale', 'market', 'growth', 'commercial', 'partnership'], theme: 'Sales' },
+  { keywords: ['finance', 'account', 'wallet', 'payment', 'billing', 'treasury', 'fintech'], theme: 'Finance' },
+  { keywords: ['compliance', 'legal', 'audit', 'risk', 'regulatory'], theme: 'Compliance' },
+  { keywords: ['admin', 'people', 'culture', 'hr', 'human resource', 'executive', 'leadership'], theme: 'Executive' },
+  { keywords: ['regional', 'global', 'international', 'territory', 'operation'], theme: 'Regional Operations' },
+  { keywords: ['program', 'project', 'product'], theme: 'Programs' },
+];
+
+// Every `theme` above must name a key in DEPARTMENT_THEMES; a typo would fall
+// silently through to the hash and look like a palette choice rather than a
+// bug. Checked at module load, which is cheap and runs once.
+if (process.env.NODE_ENV !== 'production') {
+  for (const { theme } of DOMAIN_KEYWORDS) {
+    if (!DEPARTMENT_THEMES[theme]) {
+      console.warn(`departmentThemes: DOMAIN_KEYWORDS references unknown theme '${theme}'`);
+    }
+  }
+}
+
+/** djb2 — deterministic, so a department keeps its colour across sessions. */
+function hashIndex(value: string, buckets: number): number {
+  let hash = 5381;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) + hash + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % buckets;
+}
+
+/**
+ * The palette for a department, colours and icon.
+ *
+ * Colours resolve here; the icon comes from lib/departmentIcons, which is the
+ * single icon authority and already covers domains this palette map does not
+ * name (logistics, programs, product). Composing them rather than letting each
+ * theme carry its own icon is what stops the dashboard card and the department
+ * detail header disagreeing about what a department is — they call different
+ * helpers, and both now end up at the same two sources.
+ */
 export function getDepartmentTheme(deptName?: string): DepartmentTheme {
+  const palette = resolvePalette(deptName);
+  return deptName ? { ...palette, icon: getDepartmentIcon(deptName) } : palette;
+}
+
+function resolvePalette(deptName?: string): DepartmentTheme {
   if (!deptName) return DEFAULT_DEPT_THEME;
-  return DEPARTMENT_THEMES[deptName] || DEFAULT_DEPT_THEME;
+
+  // An exact name match still wins, so a department deliberately named after
+  // one of the curated entries gets exactly that treatment.
+  const exact = DEPARTMENT_THEMES[deptName];
+  if (exact) return exact;
+
+  const normalized = deptName.toLowerCase().trim();
+
+  const domain = DOMAIN_KEYWORDS.find((entry) =>
+    entry.keywords.some((keyword) => normalized.includes(keyword)),
+  );
+  if (domain) {
+    const themed = DEPARTMENT_THEMES[domain.theme];
+    if (themed) return themed;
+  }
+
+  if (THEMES_BY_HUE.length === 0) return DEFAULT_DEPT_THEME;
+  return THEMES_BY_HUE[hashIndex(normalized, THEMES_BY_HUE.length)] ?? DEFAULT_DEPT_THEME;
 }

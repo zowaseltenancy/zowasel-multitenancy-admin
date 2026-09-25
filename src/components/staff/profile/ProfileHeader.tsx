@@ -1,5 +1,6 @@
 'use client';
 
+import { staffStatusActionLabel } from '@/features/staff/utils/statusCycle';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -115,13 +116,16 @@ export function ProfileHeader({
                   staff.status === 'active' ? 'text-amber-600 dark:text-amber-400' : 'text-[#00A651]'
                 }`}
               >
+                {/* The label names what the click does, which is the shared cycle:
+                    active suspends, and anything stopped — suspended or inactive —
+                    goes back to active. */}
                 {staff.status === 'active' ? (
                   <>
-                    <UserX className="h-3.5 w-3.5" /> Deactivate Staff
+                    <UserX className="h-3.5 w-3.5" /> {staffStatusActionLabel(staff.status)} Staff
                   </>
                 ) : (
                   <>
-                    <UserCheck className="h-3.5 w-3.5" /> Activate Staff
+                    <UserCheck className="h-3.5 w-3.5" /> {staffStatusActionLabel(staff.status)}
                   </>
                 )}
               </DropdownMenuItem>

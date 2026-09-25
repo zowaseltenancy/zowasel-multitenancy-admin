@@ -4,9 +4,11 @@ import { useMemo, useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
-import { useStaff } from '@/hooks/useStaff';
+import { useAdminMe } from '@/features/auth/hooks/useAuth';
+import { useDepartments, useLeaveOverview, useMyLeave } from '@/features/staff/hooks/useStaff';
+import { mapLeaveRequest } from '@/features/staff/api/staff.mappers';
 import { LeaveRequest, LeaveType } from '@/types/staff';
-import { CURRENT_USER, calculateWorkingDays } from '@/components/staff/leave/leaveUtils';
+import { calculateWorkingDays } from '@/components/staff/leave/leaveUtils';
 import { LeaveHeader } from '@/components/staff/leave/LeaveHeader';
 import { LeaveBalanceCards } from '@/components/staff/leave/LeaveBalanceCards';
 import { DepartmentCalendarView } from '@/components/staff/leave/DepartmentCalendarView';
@@ -19,28 +21,46 @@ function LeaveManagementContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab');
 
-  const { repo, refresh, version } = useStaff();
+  // Two views, two endpoints:
+  //
+  //   GET /admin/leave/requests/overview  every admin's requests (leave:review)
+  //   GET /admin/leave/requests/me        the signed-in admin's own
+  //   GET /admin/leave/balances/me        their entitlement and what's left
+  //
+  // The previous version read one local array for all three and identified the
+  // current user from a hardcoded CURRENT_USER constant — so "my requests" was
+  // whatever matched the name "Alice Johnson".
+  const { data: me } = useAdminMe();
+  // ?departmentId=<uuid> from the dashboard's department cards. The overview
+  // endpoint filters on it, so the card's Leave action lands on that
+  // department's requests rather than everyone's.
+  const departmentParam = searchParams?.get('departmentId');
 
-  const [requests, setRequests] = useState<LeaveRequest[]>([]);
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const { requests: overviewDtos } = useLeaveOverview({
+    limit: 100,
+    ...(departmentParam ? { departmentId: departmentParam } : {}),
+  });
+  const { balances, requests: myDtos, submit, withdraw } = useMyLeave({ limit: 100 });
+  const { departments } = useDepartments({ limit: 100 });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAbsence, setSelectedAbsence] = useState<LeaveRequest | null>(null);
 
   const [form, setForm] = useState({
-    type: 'Annual' as LeaveType,
+    type: 'ANNUAL' as LeaveType,
     startDate: '',
     endDate: '',
     reason: '',
     attachment: null as File | null,
   });
 
-  useEffect(() => {
-    setRequests(repo.getLeaveRequests());
-    setDepartments(repo.getDepartments());
-  }, [repo, version]);
+  const requests = useMemo(() => overviewDtos.map(mapLeaveRequest), [overviewDtos]);
+  const myRequests = useMemo(() => myDtos.map(mapLeaveRequest), [myDtos]);
 
   const cal = useLeaveCalendar(requests, tabParam === 'calendar');
 
+  // Kept as a preview only — the server recomputes the working days from the
+  // dates, so this figure never becomes the stored value.
   const workingDays = useMemo(() => {
     if (form.startDate && form.endDate) {
       return calculateWorkingDays(form.startDate, form.endDate);
@@ -48,47 +68,53 @@ function LeaveManagementContent() {
     return 0;
   }, [form.startDate, form.endDate]);
 
-  const myRequests = useMemo(() => {
-    return requests.filter(
-      (r) =>
-        r.staffId === CURRENT_USER.id ||
-        (r.employeeName && r.employeeName.toLowerCase().includes(CURRENT_USER.name.toLowerCase()))
-    );
-  }, [requests]);
+  const pendingApprovalCount = useMemo(
+    () => requests.filter((r) => (r.status || '').toLowerCase() === 'pending').length,
+    [requests],
+  );
 
-  const pendingApprovalCount = useMemo(() => {
-    return requests.filter((r) => (r.status || '').toLowerCase() === 'pending').length;
-  }, [requests]);
-
+  // POST /admin/leave/requests. The server checks the request against
+  // availableDays (entitled - used - pending) and refuses an overdraw, so the
+  // form does not pre-compute that — it would only disagree with the server.
+  //
+  // `attachment` is collected but has no endpoint: leave requests have a
+  // document column server-side but no upload route, so a file cannot be sent
+  // and the user is told rather than left believing it attached.
   const handleSubmitRequest = () => {
     if (!form.startDate || !form.endDate || !form.reason.trim()) {
       toast.error('Please complete all required fields.');
       return;
     }
 
-    repo.addLeaveRequest({
-      staffId: CURRENT_USER.id,
-      employeeName: CURRENT_USER.name,
-      department: CURRENT_USER.department,
-      type: form.type,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      reason: form.reason.trim(),
-      status: 'pending',
-      workingDays,
-      attachment: form.attachment?.name,
-    });
+    if (form.attachment) {
+      toast.warning('The attachment cannot be uploaded yet — the request will be submitted without it.');
+    }
 
-    refresh();
-    setIsModalOpen(false);
-    setForm({ type: 'Annual', startDate: '', endDate: '', reason: '', attachment: null });
-    toast.success('Leave request submitted successfully and queued for managerial review.');
+    submit(
+      {
+        // The form already holds the wire value — see constants/leave.ts. It
+        // used to hold a display string and upper-case it on the way out,
+        // which turned 'Maternity/Paternity' into a type the enum has never
+        // had and the request into a 422.
+        type: form.type,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.reason.trim(),
+      },
+      {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          setForm({ type: 'ANNUAL', startDate: '', endDate: '', reason: '', attachment: null });
+        },
+      },
+    );
   };
 
+  // PATCH /admin/leave/requests/{id}/cancel. Only a pending request, and only
+  // your own — the server refuses the rest, so the button does not try to
+  // decide that here.
   const handleWithdraw = (id: string) => {
-    repo.deleteLeaveRequest(id);
-    refresh();
-    toast.success('Leave request withdrawn.');
+    withdraw(id);
   };
 
   return (
@@ -100,7 +126,7 @@ function LeaveManagementContent() {
         onRequestTimeOff={() => setIsModalOpen(true)}
       />
 
-      <LeaveBalanceCards />
+      <LeaveBalanceCards balances={balances} />
 
       <DepartmentCalendarView
         open={cal.isCalendarOpen}
@@ -125,8 +151,10 @@ function LeaveManagementContent() {
 
       <MyLeaveHistoryTable
         requests={myRequests}
-        userName={CURRENT_USER.name}
-        userDepartment={CURRENT_USER.department}
+        userName={
+          me ? [me.firstName, me.lastName].filter(Boolean).join(' ') || me.email : ''
+        }
+        userDepartment={me?.department?.name ?? ''}
         onWithdraw={handleWithdraw}
         onSelectAbsence={setSelectedAbsence}
       />

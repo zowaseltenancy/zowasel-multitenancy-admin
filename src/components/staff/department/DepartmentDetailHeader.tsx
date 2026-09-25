@@ -4,13 +4,13 @@ import { ArrowLeft, Edit3, UserPlus, UserX, Mail, Phone, ShieldCheck, Building2 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Department, StaffMember } from '@/types/staff';
+import { Department, DepartmentHead } from '@/types/staff';
 import { getDepartmentIcon } from '@/lib/departmentIcons';
 import { useRouter } from 'next/navigation';
 
 interface DepartmentDetailHeaderProps {
   dept: Department;
-  head: StaffMember | null;
+  head: DepartmentHead | null;
   membersCount: number;
   onEditDept: () => void;
 }

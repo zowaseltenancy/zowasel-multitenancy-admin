@@ -3,12 +3,10 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Shield, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { Shield, Lock, Loader2 } from "lucide-react";
 
-import { Role } from "@/types/permissions";
+import { PermissionCategoryGroup, Role } from "@/types/permissions";
 import { roleFormSchema, RoleFormValues } from "@/schemas/permissions.schema";
-import { PERMISSION_GROUPS } from "@/constants/permissions";
 
 import {
   Dialog,
@@ -28,6 +26,16 @@ interface RoleFormDialogProps {
   onOpenChange: (open: boolean) => void;
   roleToEdit?: Role | null;
   onSubmitRole: (values: RoleFormValues) => void;
+  /**
+   * The grantable catalogue, from GET /admin/permissions. Passed in rather
+   * than read from the PERMISSION_GROUPS constant, which lists scopes the
+   * server has never heard of — ticking one of those produced a role the API
+   * refused to save, with the rejection naming a key the operator had no way
+   * to know was fictional.
+   */
+  groups: PermissionCategoryGroup[];
+  /** A create/update request is in flight; the dialog stays open until it settles. */
+  isSubmitting?: boolean;
 }
 
 export default function RoleFormDialog({
@@ -35,6 +43,8 @@ export default function RoleFormDialog({
   onOpenChange,
   roleToEdit,
   onSubmitRole,
+  groups,
+  isSubmitting: isSaving = false,
 }: RoleFormDialogProps) {
   const isEditing = !!roleToEdit;
 
@@ -87,7 +97,7 @@ export default function RoleFormDialog({
 
   const toggleCategory = (category: string, enable: boolean) => {
     if (roleToEdit?.isSystemRole) return;
-    const group = PERMISSION_GROUPS.find((g) => g.category === category);
+    const group = groups.find((g) => g.category === category);
     if (!group) return;
 
     const current = new Set(selectedPermissions);
@@ -101,18 +111,13 @@ export default function RoleFormDialog({
     setValue("permissions", Array.from(current), { shouldValidate: true });
   };
 
+  // No toast and no close here. Both used to fire the instant the button was
+  // pressed, reporting a success that had not happened — `onSubmitRole` starts
+  // a request and returns immediately, so a role the server went on to reject
+  // still announced itself as created. The mutation owns the toast; the parent
+  // closes the dialog when the write actually settles.
   const onSubmit = (values: RoleFormValues) => {
-    try {
-      onSubmitRole(values);
-      toast.success(
-        isEditing
-          ? `Role "${values.name}" updated successfully`
-          : `Custom role "${values.name}" created successfully`
-      );
-      onOpenChange(false);
-    } catch {
-      toast.error("Failed to save role configuration");
-    }
+    onSubmitRole(values);
   };
 
   return (
@@ -190,7 +195,7 @@ export default function RoleFormDialog({
             )}
 
             <div className="space-y-6">
-              {PERMISSION_GROUPS.map((group) => {
+              {groups.map((group) => {
                 const groupCodes = group.permissions.map((p) => p.code);
                 const allSelected = groupCodes.every((c) => selectedPermissions.includes(c));
 
@@ -271,11 +276,13 @@ export default function RoleFormDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isSaving}
             >
               Cancel
             </Button>
             {!roleToEdit?.isSystemRole && (
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? "Save Changes" : "Create Role"}
               </Button>
             )}

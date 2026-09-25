@@ -1,63 +1,77 @@
 'use client';
 
 import { useMemo } from 'react';
-import { StaffDepartment } from '@/types/user';
-import { DEPARTMENTS } from '@/components/staff/dashboard/departmentMeta';
 import { StaffDashboardSummary } from '@/components/staff/dashboard/StaffDashboardSummary';
 import { StaffDepartmentGrid } from '@/components/staff/dashboard/StaffDepartmentGrid';
-import { useDepartments, useStaff } from '@/features/staff/hooks/useStaff';
+import { useLeaveOverview, useStaffStats } from '@/features/staff/hooks/useStaff';
 
-// The extracted dashboard components come from the RVE-78 refactor; the data
-// behind them is the real staff directory rather than useUsers, which reads
-// mockUsers out of local React state.
+// The staff dashboard, entirely from GET /admin/staff/stats.
 //
-// `meta.total` is the server's count, not the length of the fetched page — the
-// two only agree while the whole directory fits in one request.
-const STAFF_PAGE_SIZE = 100;
-
+// One request rather than three: the stats endpoint computes the headcount,
+// the active count and the per-department breakdown server-side with grouped
+// queries. The previous version fetched a page of staff and tallied it, which
+// made every figure mean "rows on the current page", and read the department
+// list from a hardcoded array of nine names.
 export default function ZowaselStaffOverviewPage() {
-  const { staff, meta } = useStaff({ page: 1, limit: STAFF_PAGE_SIZE });
-  const { departments } = useDepartments();
+  const { stats, isLoading } = useStaffStats();
 
-  const totalStaff = meta?.total ?? staff.length;
-  const activeCount = staff.filter((member) => member.status === 'ACTIVE').length;
+  // The only figure the stats endpoint does not carry. The overview is the
+  // real source and is gated on leave:review — an admin without that
+  // permission gets a 403, which the hook reports as an error and leaves the
+  // list empty, so the tile reads zero rather than breaking the page.
+  const { requests: leaveRequests } = useLeaveOverview({ status: 'PENDING', limit: 100 });
 
-  // Keyed by department NAME, because that is what StaffDepartmentGrid indexes
-  // with. Note this only lands for departments whose server-side name matches
-  // the hardcoded StaffDepartment union — the seeded set is Sales, Operations,
-  // Compliance, Finance and People & Culture, so Sales/Finance/Compliance count
-  // and the rest of the grid reads zero. Reconciling the two vocabularies is a
-  // separate change: either rename the departments server-side or widen the
-  // union, both of which alter what the grid renders.
-  const staffCounts = useMemo(() => {
-    const counts = {} as Record<StaffDepartment, number>;
-    for (const member of staff) {
-      const name = member.department?.name as StaffDepartment | undefined;
-      if (name) counts[name] = (counts[name] || 0) + 1;
+  // byDepartment includes departments with no staff, so an empty department
+  // still gets a card — a card reading zero is information; a missing card is
+  // a gap. `unassigned` is appended as its own card for the same reason: staff
+  // with no department are otherwise invisible on this screen.
+  const departments = useMemo(() => {
+    if (!stats) return [];
+
+    const cards = stats.byDepartment.map((d) => ({
+      id: d.id,
+      name: d.name,
+      count: d.count,
+    }));
+
+    if (stats.unassigned > 0) {
+      cards.push({
+        // Not a real department, so it carries a sentinel id. The grid's quick
+        // links point at ?departmentId=, which the directory reads — and
+        // "unassigned" is not a uuid, so those links deliberately go nowhere
+        // useful for this card rather than pretending to filter.
+        id: 'unassigned',
+        name: 'Unassigned',
+        count: stats.unassigned,
+      });
     }
-    return counts;
-  }, [staff]);
 
-  // The department count is the server's, falling back to the hardcoded list
-  // only until that query resolves.
-  const departmentCount = departments.length || DEPARTMENTS.length;
+    return cards;
+  }, [stats]);
 
-  // No endpoint returns a platform-wide pending-leave tally. The nearest thing
-  // is GET /admin/leave/requests/overview, which is gated on leave:review and
-  // returns rows rather than a count. Left at zero rather than derived from a
-  // partial page, which would understate it.
-  const pendingLeaveCount = 0;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-24 animate-pulse rounded-xl bg-muted/40" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-[140px] animate-pulse rounded-xl bg-muted/40" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <StaffDashboardSummary
-        totalStaff={totalStaff}
-        activeCount={activeCount}
-        departmentCount={departmentCount}
-        pendingLeaveCount={pendingLeaveCount}
+        totalStaff={stats?.total ?? 0}
+        activeCount={stats?.active ?? 0}
+        departmentCount={stats?.byDepartment.length ?? 0}
+        pendingLeaveCount={leaveRequests.length}
       />
 
-      <StaffDepartmentGrid staffCounts={staffCounts} />
+      <StaffDepartmentGrid departments={departments} />
     </div>
   );
 }

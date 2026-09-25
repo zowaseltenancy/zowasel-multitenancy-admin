@@ -1,5 +1,6 @@
 'use client';
 
+import { LEAVE_TYPE_OPTIONS } from '@/constants/leave';
 import React from 'react';
 import { Search, CheckSquare, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,10 +66,15 @@ export function QueueFilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-xs">All Leave Types</SelectItem>
-              <SelectItem value="Annual" className="text-xs">Annual</SelectItem>
-              <SelectItem value="Sick" className="text-xs">Sick</SelectItem>
-              <SelectItem value="Casual" className="text-xs">Casual</SelectItem>
-              <SelectItem value="Unpaid" className="text-xs">Unpaid</SelectItem>
+              {/* Values are the API's enum, so the option picked is the one the
+                  query sends. The hand-written list here offered 'Casual',
+                  which is not a leave type, and omitted maternity, paternity
+                  and compassionate, which are. */}
+              {LEAVE_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="text-xs">
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

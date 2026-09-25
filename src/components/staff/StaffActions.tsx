@@ -7,7 +7,7 @@ import { StaffRoleDialog, StaffDepartmentDialog } from './actions/StaffRoleDeptD
 interface Props {
   staff: StaffMember;
   roles: StaffRole[];
-  departments: string[];
+  departments: { id: string; name: string }[];
   onSuccess: () => void;
 }
 

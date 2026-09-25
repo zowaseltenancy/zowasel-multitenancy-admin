@@ -15,7 +15,8 @@ interface OnboardingStepSwitcherProps {
   watch: UseFormWatch<StaffFormValues>;
   setValue: UseFormSetValue<StaffFormValues>;
   currentValues: StaffFormValues;
-  departments: string[];
+  /** { id, name }: the staff endpoint takes departmentId. */
+  departments: { id: string; name: string }[];
   roles: { id: string; name: string }[];
   personalPhoneCode: string;
   setPersonalPhoneCode: (code: string) => void;

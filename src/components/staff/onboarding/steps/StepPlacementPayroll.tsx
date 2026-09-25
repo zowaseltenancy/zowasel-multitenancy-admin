@@ -11,7 +11,8 @@ interface StepPlacementPayrollProps {
   errors: FieldErrors<StaffFormValues>;
   watch: UseFormWatch<StaffFormValues>;
   setValue: UseFormSetValue<StaffFormValues>;
-  departments: string[];
+  /** { id, name }: the staff endpoint takes departmentId. */
+  departments: { id: string; name: string }[];
   roles: { id: string; name: string }[];
 }
 

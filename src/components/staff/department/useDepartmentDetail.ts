@@ -1,94 +1,143 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useStaff } from '@/hooks/useStaff';
-import { Department, StaffMember, DepartmentRole } from '@/types/staff';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  useAdminRoles,
+  useDepartment,
+  useDepartments,
+  useStaff,
+} from '@/features/staff/hooks/useStaff';
+import {
+  mapAdminRole,
+  mapDepartment,
+  mapDepartmentRole,
+  mapStaff,
+} from '@/features/staff/api/staff.mappers';
+import { Department, DepartmentHead, DepartmentRole, StaffMember, StaffRole } from '@/types/staff';
 
+// One department, backed by GET /admin/departments/{id}.
+//
+// The route parameter is normally the uuid, but the previous version also
+// resolved a slugged name ("regional-operations") by scanning the whole local
+// store. That is preserved — links of that shape may exist — by looking the
+// name up against the department list, which is a bounded query rather than a
+// full-store scan.
+//
+// Members come from GET /admin/staff?departmentId=, so the list is the server's
+// and is searchable server-side rather than filtered out of one page.
 export function useDepartmentDetail(rawParam?: string | string[]) {
-  const { repo, refresh } = useStaff();
-  const [mounted, setMounted] = useState(false);
-  const [dept, setDept] = useState<Department | null>(null);
-  const [members, setMembers] = useState<StaffMember[]>([]);
-  const [roles, setRoles] = useState<DepartmentRole[]>([]);
-  const [memberSearch, setMemberSearch] = useState('');
+  const rawId = Array.isArray(rawParam) ? rawParam[0] : rawParam;
+  const isUuid = Boolean(
+    rawId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId),
+  );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Only fetched when the parameter is not already an id — this is the
+  // slug/name fallback path.
+  const { departments: allDepartments } = useDepartments(isUuid ? { limit: 1 } : { limit: 100 });
 
-  useEffect(() => {
-    if (!mounted) return;
-    const rawId = Array.isArray(rawParam) ? rawParam[0] : rawParam;
-    if (!rawId) return;
+  const resolvedId = useMemo(() => {
+    if (!rawId) return '';
+    if (isUuid) return rawId;
 
-    const allDepts = repo.getDepartments();
     const decoded = decodeURIComponent(rawId).toLowerCase().trim();
-
-    const d = (allDepts || []).find(
-      (item) =>
-        item &&
-        (item.id === rawId ||
-          (item.name || '').toLowerCase() === decoded ||
-          (item.name || '').toLowerCase().replace(/\s+/g, '-') === decoded)
+    const match = allDepartments.find(
+      (d) =>
+        d.name.toLowerCase() === decoded ||
+        d.name.toLowerCase().replace(/\s+/g, '-') === decoded,
     );
+    return match?.id ?? '';
+  }, [rawId, isUuid, allDepartments]);
 
-    if (d) {
-      setDept(d);
-      setMembers((repo.getAllStaff() || []).filter((s) => s && s.department === d.name));
-      setRoles(repo.getDepartmentRoles(d.id) || []);
-    }
-  }, [mounted, rawParam, repo]);
+  const detailQuery = useDepartment(resolvedId);
 
-  const filteredMembers = useMemo(() => {
-    if (!memberSearch.trim()) return members;
-    const query = memberSearch.toLowerCase();
-    return (members || []).filter(
-      (m) =>
-        m &&
-        ((m.firstName || '').toLowerCase().includes(query) ||
-          (m.lastName || '').toLowerCase().includes(query) ||
-          (m.email || '').toLowerCase().includes(query))
-    );
-  }, [members, memberSearch]);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(memberSearch), 300);
+    return () => clearTimeout(timer);
+  }, [memberSearch]);
 
+  const { staff: memberDtos } = useStaff(
+    resolvedId
+      ? {
+          departmentId: resolvedId,
+          limit: 100,
+          ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+        }
+      : { limit: 1 },
+  );
+
+  // Roles scoped to this department. The API has one role table; a role belongs
+  // to a department exactly when it carries that departmentId.
+  const { roles: departmentRoleDtos, create, update, remove } = useAdminRoles(
+    resolvedId ? { departmentId: resolvedId, limit: 100 } : { limit: 1 },
+  );
+
+  // The full catalogue, for the role builder's picker.
+  const { roles: allRoleDtos } = useAdminRoles({ limit: 100 });
+
+  const dept: Department | null = detailQuery.data ? mapDepartment(detailQuery.data) : null;
+
+  const head: DepartmentHead | null = detailQuery.data?.head
+    ? {
+        id: detailQuery.data.head.id,
+        firstName: detailQuery.data.head.firstName ?? '',
+        lastName: detailQuery.data.head.lastName ?? '',
+        email: detailQuery.data.head.email,
+      }
+    : null;
+
+  const members = useMemo<StaffMember[]>(() => memberDtos.map(mapStaff), [memberDtos]);
+
+  const roles = useMemo<DepartmentRole[]>(
+    () => departmentRoleDtos.map((dto) => mapDepartmentRole(dto, resolvedId)),
+    [departmentRoleDtos, resolvedId],
+  );
+
+  const allRoles = useMemo<StaffRole[]>(() => allRoleDtos.map(mapAdminRole), [allRoleDtos]);
+
+  // POST/PATCH /admin/roles with this department's id, so a role created here
+  // is department-scoped. Permissions are a separate PUT, applied after the
+  // role exists.
   const handleRoleSave = (role: DepartmentRole, editingRole: DepartmentRole | null) => {
+    const fields = {
+      name: role.name,
+      description: role.description ?? '',
+      departmentId: resolvedId,
+    };
+
     if (editingRole) {
-      repo.updateDepartmentRole(role.id, role);
-    } else {
-      repo.addDepartmentRole(role);
+      update(editingRole.id, fields);
+      return;
     }
-    refresh();
-    if (dept) setRoles(repo.getDepartmentRoles(dept.id) || []);
+    create(fields);
   };
 
   const deleteRole = (roleId: string) => {
-    repo.deleteDepartmentRole(roleId);
-    refresh();
-    if (dept) setRoles(repo.getDepartmentRoles(dept.id) || []);
-  };
-
-  const refreshDept = () => {
-    refresh();
-    if (dept) {
-      const updated = repo.getDepartmentById(dept.id);
-      if (updated) {
-        setDept(updated);
-        setMembers(repo.getAllStaff().filter((s) => s.department === updated.name));
-      }
-    }
+    // The API refuses while admins still hold the role, and says how many.
+    remove(roleId);
   };
 
   return {
-    repo,
-    mounted,
+    // Kept for the page's loading gate.
+    mounted: !detailQuery.isLoading,
+    isLoading: detailQuery.isLoading,
+    // A slug that matches no department resolves to '', so the detail query
+    // never runs — that is a 404, not a loading state.
+    notFound: Boolean(rawId) && !isUuid && !resolvedId && allDepartments.length > 0,
     dept,
+    head,
     members,
     roles,
-    filteredMembers,
+    allRoles,
+    // The server applied the search.
+    filteredMembers: members,
     memberSearch,
     setMemberSearch,
     handleRoleSave,
     deleteRole,
-    refreshDept,
+    // Mutations invalidate the department queries themselves, so there is
+    // nothing left to refresh by hand.
+    refreshDept: () => {},
   };
 }

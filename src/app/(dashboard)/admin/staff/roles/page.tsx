@@ -16,6 +16,7 @@ import { useRolesPage } from '@/components/staff/roles/useRolesPage';
 export default function RolesManagementPage() {
   const {
     mounted,
+    isMutating,
     activeTab,
     setActiveTab,
     search,
@@ -29,6 +30,7 @@ export default function RolesManagementPage() {
     setIsAssignedStaffOpen,
     newlyCreatedRoleId,
     roles,
+    departments,
     stats,
     filteredRoles,
     getStaffForRole,
@@ -88,6 +90,8 @@ export default function RolesManagementPage() {
       <RoleModal
         open={isRoleModalOpen}
         onOpenChange={setIsRoleModalOpen}
+        departments={departments}
+        isSubmitting={isMutating}
         editingRole={editingRole}
         onSaveRole={handleSaveRole}
       />

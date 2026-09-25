@@ -1,4 +1,4 @@
-import { BuyerTier, PlatformUserCategory, PlatformUserRole, StaffDepartment } from "@/types/user";
+import { BuyerTier, PlatformUserCategory, PlatformUserRole } from "@/types/user";
 import { StatusTone } from "@/lib/statusTone";
 
 export const USER_CATEGORY_LABELS: Record<PlatformUserCategory, string> = {
@@ -21,19 +21,10 @@ export const USER_CATEGORY_COLORS: Record<Exclude<PlatformUserCategory, "staff">
   buyer: "bg-orange-500",
 };
 
-// Matches the icon colors already assigned to each department on the
-// Zowasel Staff overview page (src/app/(dashboard)/admin/staff/page.tsx).
-export const STAFF_DEPARTMENT_COLORS: Record<StaffDepartment, string> = {
-  Executive: "bg-cyan-500",
-  Technology: "bg-indigo-500",
-  Programs: "bg-emerald-500",
-  Fintech: "bg-amber-500",
-  Sales: "bg-rose-500",
-  Finance: "bg-purple-500",
-  Administration: "bg-slate-500",
-  Compliance: "bg-red-500",
-  "Regional Operations": "bg-teal-500",
-};
+// STAFF_DEPARTMENT_COLORS is gone. It mapped the nine hardcoded department
+// names to a swatch and had no consumers; a fixed map cannot serve departments
+// that admins create at will. getDepartmentTheme() in
+// components/staff/dashboard/departmentMeta resolves a palette for any name.
 
 // Which roles are selectable once a category (the "overarching" entity type)
 // has been chosen when creating a new user.

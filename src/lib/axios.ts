@@ -93,10 +93,21 @@ let redirectingToLogin = false;
  * them home again afterwards.
  */
 export function endSessionAndRedirect(): void {
+  // Already on the login screen: nothing to end and nowhere to go.
+  //
+  // The clear used to happen before this check, which made it destructive at
+  // exactly the wrong moment. A 401 from a request still in flight from the
+  // previous page can land just after a successful sign-in has stored its
+  // token but before the router has left /login — and wiping it there sends
+  // the freshly-authenticated user straight back, because RequireAdminAuth
+  // then finds no token. Signing in must not be undoable by a stale response.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith(LOGIN_PATH)) {
+    return;
+  }
+
   clearAdminSession();
 
   if (typeof window === "undefined" || redirectingToLogin) return;
-  if (window.location.pathname.startsWith(LOGIN_PATH)) return;
 
   redirectingToLogin = true;
   const next = encodeURIComponent(window.location.pathname + window.location.search);

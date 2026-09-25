@@ -12,7 +12,8 @@ import { EditPhotoModal } from './modals/EditPhotoModal';
 interface StaffProfileModalsProps {
   staff: StaffMember;
   roles: StaffRole[];
-  allDepartments: string[];
+  /** { id, name }: reassignment PATCHes departmentId. */
+  allDepartments: { id: string; name: string }[];
   resetPasswordOpen: boolean;
   setResetPasswordOpen: (open: boolean) => void;
   sendMessageOpen: boolean;

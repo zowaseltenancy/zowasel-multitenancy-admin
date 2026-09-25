@@ -10,11 +10,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { KeyRound, Loader2, CheckCircle2, Copy } from 'lucide-react';
 import { StaffMember } from '@/types/staff';
 import { toast } from 'sonner';
+import { useStaff } from '@/features/staff/hooks/useStaff';
 
 interface ResetPasswordModalProps {
   open: boolean;
@@ -22,22 +21,29 @@ interface ResetPasswordModalProps {
   staff: StaffMember;
 }
 
+// POST /admin/staff/{id}/reset-password.
+//
+// This used to be theatre: a 600ms sleep, `Math.random()` in the browser, and a
+// line claiming the staff member had been emailed. No request was made, so the
+// account's password never changed — the admin walked away holding a string
+// that would not sign anyone in, and the real password was still whatever it
+// had been.
+//
+// The server generates the password now, sets it, ends every session the
+// account holds, and emails a notice that carries no credential. What comes
+// back is shown here once; there is no way to retrieve it afterwards.
 export function ResetPasswordModal({ open, onOpenChange, staff }: ResetPasswordModalProps) {
-  const [loading, setLoading] = useState(false);
+  const { resetPassword, isResettingPassword } = useStaff();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [noticeSent, setNoticeSent] = useState(true);
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    try {
-      await new Promise((r) => setTimeout(r, 600));
-      const generated = `Zowa_${Math.random().toString(36).slice(2, 6).toUpperCase()}!${Math.floor(100 + Math.random() * 900)}`;
-      setTempPassword(generated);
-      toast.success(`Temporary credentials created for ${staff.firstName}`);
-    } catch {
-      toast.error('Failed to generate password');
-    } finally {
-      setLoading(false);
-    }
+  const handleGenerate = () => {
+    resetPassword(staff.id, {
+      onSuccess: (result) => {
+        setTempPassword(result.temporaryPassword);
+        setNoticeSent(result.noticeSent);
+      },
+    });
   };
 
   const handleClose = () => {
@@ -75,7 +81,9 @@ export function ResetPasswordModal({ open, onOpenChange, staff }: ResetPasswordM
           {!tempPassword ? (
             <div className="p-3.5 rounded-xl bg-muted/20 border border-border/60 space-y-2">
               <p className="text-muted-foreground">
-                Generating a temporary password will expire the staff member's previous credentials. They will be prompted to choose a new password upon their next login.
+                This sets a new password on the account immediately and signs {staff.firstName} out
+                everywhere. The password is shown here once, for you to pass on directly — it is not
+                emailed and cannot be retrieved later.
               </p>
               <div className="text-[11px] text-muted-foreground">
                 Official Email: <strong className="font-mono text-foreground">{staff.email}</strong>
@@ -100,7 +108,9 @@ export function ResetPasswordModal({ open, onOpenChange, staff }: ResetPasswordM
                 </Button>
               </div>
               <p className="text-[10px] text-muted-foreground pt-1">
-                Share this securely with {staff.firstName}. A notification has also been sent to their official email.
+                {noticeSent
+                  ? `Share this securely with ${staff.firstName}. They have been emailed that you reset it — the email does not contain the password.`
+                  : `Share this securely with ${staff.firstName}. The notice email could not be sent, so they have no other warning that their sessions ended.`}
               </p>
             </div>
           )}
@@ -114,6 +124,7 @@ export function ResetPasswordModal({ open, onOpenChange, staff }: ResetPasswordM
                 variant="ghost"
                 size="sm"
                 onClick={handleClose}
+                disabled={isResettingPassword}
                 className="text-xs cursor-pointer"
               >
                 Cancel
@@ -122,10 +133,10 @@ export function ResetPasswordModal({ open, onOpenChange, staff }: ResetPasswordM
                 type="button"
                 size="sm"
                 onClick={handleGenerate}
-                disabled={loading}
+                disabled={isResettingPassword}
                 className="bg-[#00A651] hover:bg-[#008C44] text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
               >
-                {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {isResettingPassword && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Generate & Reset
               </Button>
             </>

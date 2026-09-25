@@ -16,7 +16,8 @@ interface PlacementDeptRoleFieldsProps {
   watch: UseFormWatch<StaffFormValues>;
   setValue: UseFormSetValue<StaffFormValues>;
   errors: FieldErrors<StaffFormValues>;
-  departments: string[];
+  /** { id, name }: the staff endpoint takes departmentId. */
+  departments: { id: string; name: string }[];
   roles: { id: string; name: string }[];
 }
 
@@ -44,12 +45,14 @@ export function PlacementDeptRoleFields({
           </SelectTrigger>
           <SelectContent>
             {departments.map((dept) => {
-              const DeptIcon = getDepartmentIcon(dept);
+              // The icon is chosen from the name; the option's value is the id,
+              // which is what the endpoint stores.
+              const DeptIcon = getDepartmentIcon(dept.name);
               return (
-                <SelectItem key={dept} value={dept} className="text-xs">
+                <SelectItem key={dept.id} value={dept.id} className="text-xs">
                   <div className="flex items-center gap-2">
                     <DeptIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{dept}</span>
+                    <span>{dept.name}</span>
                   </div>
                 </SelectItem>
               );

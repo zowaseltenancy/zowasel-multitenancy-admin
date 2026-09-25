@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { StaffFormValues, DEPARTMENTS_LIST } from './staffFormSchema';
+import { StaffFormValues } from './staffFormSchema';
 
 interface StaffFormFieldsProps {
   register: UseFormRegister<StaffFormValues>;
@@ -18,10 +18,18 @@ interface StaffFormFieldsProps {
   setValue: UseFormSetValue<StaffFormValues>;
   watch: UseFormWatch<StaffFormValues>;
   roles: any[];
+  /**
+   * The real departments, from GET /admin/departments. Replaces the
+   * DEPARTMENTS_LIST constant, which offered nine names that mostly did not
+   * exist — and which, being names rather than ids, could not have been sent
+   * to an endpoint that stores departmentId.
+   */
+  departments: { id: string; name: string }[];
 }
 
 export function StaffFormFields({
   register,
+  departments,
   errors,
   setValue,
   watch,
@@ -71,9 +79,9 @@ export function StaffFormFields({
               <SelectValue placeholder="Select department" />
             </SelectTrigger>
             <SelectContent>
-              {DEPARTMENTS_LIST.map((dept) => (
-                <SelectItem key={dept} value={dept}>
-                  {dept}
+              {departments.map((dept) => (
+                <SelectItem key={dept.id} value={dept.id}>
+                  {dept.name}
                 </SelectItem>
               ))}
             </SelectContent>

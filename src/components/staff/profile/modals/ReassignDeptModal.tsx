@@ -21,12 +21,14 @@ import {
 import { Building2, Loader2 } from 'lucide-react';
 import { StaffMember } from '@/types/staff';
 import { toast } from 'sonner';
+import { useStaff } from '@/features/staff/hooks/useStaff';
 
 interface ReassignDeptModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   staff: StaffMember;
-  departments: string[];
+  /** { id, name }: PATCH /admin/staff/{id} takes departmentId. */
+  departments: { id: string; name: string }[];
   onSuccess?: () => void;
 }
 
@@ -37,22 +39,21 @@ export function ReassignDeptModal({
   departments,
   onSuccess,
 }: ReassignDeptModalProps) {
-  const [selectedDept, setSelectedDept] = useState(staff.department);
-  const [loading, setLoading] = useState(false);
+  // PATCH /admin/staff/{id}. This was a setTimeout that reported success
+  // without contacting the server, so the department appeared to change and
+  // reverted on the next fetch.
+  const { edit, isMutating: loading } = useStaff();
+  const [selectedDept, setSelectedDept] = useState(staff.departmentId ?? '');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      await new Promise((r) => setTimeout(r, 500));
-      toast.success(`Assigned department changed to ${selectedDept}.`);
-      onOpenChange(false);
-      onSuccess?.();
-    } catch {
-      toast.error('Failed to reassign department');
-    } finally {
-      setLoading(false);
-    }
+    if (!selectedDept) return;
+    edit(staff.id, { departmentId: selectedDept }, {
+      onSuccess: () => {
+        onOpenChange(false);
+        onSuccess?.();
+      },
+    });
   };
 
   return (
@@ -83,8 +84,8 @@ export function ReassignDeptModal({
               </SelectTrigger>
               <SelectContent>
                 {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept} className="text-xs">
-                    {dept}
+                  <SelectItem key={dept.id} value={dept.id}>
+                    {dept.name}
                   </SelectItem>
                 ))}
               </SelectContent>

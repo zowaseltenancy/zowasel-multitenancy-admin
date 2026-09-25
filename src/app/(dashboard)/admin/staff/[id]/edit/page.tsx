@@ -3,7 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { StaffOnboardingForm } from '@/components/staff/StaffOnboardingForm';
-import { useStaff } from '@/hooks/useStaff';
+import {
+  useAdminRoles,
+  useDepartments,
+  useStaff,
+  useStaffMember,
+} from '@/features/staff/hooks/useStaff';
+import { mapAdminRole, mapStaff } from '@/features/staff/api/staff.mappers';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,90 +24,123 @@ function EditStaffContent() {
   // Default to 3 (the final stage of onboarding: Final Dossier Review & Provisioning)
   const initialStep = stepParam !== null ? parseInt(stepParam, 10) : 3;
 
-  const { repo, refresh } = useStaff();
-  const [defaultValues, setDefaultValues] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const staffId = params.id as string;
 
-  const roles = repo.getRoles();
-  const departments = Array.from(new Set(repo.getAllStaff().map(s => s.department)));
+  const { edit, assignRoles, isMutating: submitting } = useStaff();
+  const memberQuery = useStaffMember(staffId);
+  const { roles: roleDtos } = useAdminRoles({ limit: 100 });
+  const { departments: departmentDtos } = useDepartments({ limit: 100 });
+
+  const [defaultValues, setDefaultValues] = useState<any>(null);
+
+  const roles = roleDtos.map(mapAdminRole);
+  const departments = departmentDtos.map((d) => ({ id: d.id, name: d.name }));
+  const loading = memberQuery.isLoading || !defaultValues;
 
   useEffect(() => {
-    const staff = repo.getStaffById(params.id as string);
-    if (!staff) {
+    if (memberQuery.isLoading) return;
+
+    if (!memberQuery.data) {
       toast.error('Staff not found');
       router.push('/admin/staff/directory');
       return;
     }
 
-    // Map flat staff object to nested form structure
+    const staff = mapStaff(memberQuery.data);
+
+    // Seeded from the server record, not from local state: the headshot, next
+    // of kin and payroll account are columns on the staff record now, so the
+    // form shows what is actually stored. The sections still without a home
+    // server-side (biodata, education, work history, documents) stay empty
+    // rather than showing a value the server does not hold.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDefaultValues({
       personalInfo: {
         firstName: staff.firstName,
         lastName: staff.lastName,
         email: staff.email,
-        phone: staff.phone,
-        avatarUrl: staff.avatarUrl || '',
-        dateOfBirth: staff.dateOfBirth,
-        gender: staff.gender || 'male',
-        maritalStatus: staff.maritalStatus,
-        nationality: staff.nationality,
+        phone: staff.phone ?? '',
+        avatarUrl: staff.avatarUrl ?? '',
+        dateOfBirth: '',
+        gender: 'male',
+        maritalStatus: '',
+        nationality: '',
       },
       employment: {
         roleId: staff.roleId,
-        department: staff.department,
-        managerId: staff.managerId,
-        employeeId: staff.employeeId,
-        dateOfJoining: staff.dateJoined || '',
-        employmentType: staff.employmentType || 'full-time',
-        workLocation: staff.workLocation,
+        // The id, matching the option values in the placement select.
+        department: staff.departmentId ?? '',
+        managerId: staff.manager?.id ?? '',
+        employeeId: '',
+        dateOfJoining: staff.dateJoined ?? '',
+        employmentType: 'full-time',
+        workLocation: '',
       },
-      address: staff.address || { line1: '', city: '', state: '', country: 'Nigeria' },
-      nextOfKin: staff.nextOfKin || { fullName: '', relationship: '', phone: '' },
-      education: staff.education || [],
-      workExperience: staff.workExperience || [],
-      bank: staff.bank || {},
-      documents: staff.documents || [],
+      address: { line1: '', city: '', state: '', country: 'Nigeria' },
+      // '' rather than undefined for each absent field: react-hook-form treats
+      // undefined as "uncontrolled", which warns and leaves the input unbound.
+      nextOfKin: {
+        fullName:     staff.nextOfKin?.fullName ?? '',
+        relationship: staff.nextOfKin?.relationship ?? '',
+        phone:        staff.nextOfKin?.phone ?? '',
+        email:        staff.nextOfKin?.email ?? '',
+        address:      staff.nextOfKin?.address ?? '',
+      },
+      education: [],
+      workExperience: [],
+      bank: {
+        bankName:      staff.bank?.bankName ?? '',
+        accountNumber: staff.bank?.accountNumber ?? '',
+        sortCode:      staff.bank?.sortCode ?? '',
+        taxId:         staff.bank?.taxId ?? '',
+      },
+      documents: [],
     });
-    setLoading(false);
-  }, [params.id]);
+  }, [memberQuery.isLoading, memberQuery.data, router]);
 
-  const handleUpdate = async (data: StaffFormValues) => {
-    setSubmitting(true);
-    try {
-      const updated = {
-        firstName: data.personalInfo.firstName,
-        lastName: data.personalInfo.lastName,
-        email: data.personalInfo.email,
-        phone: data.personalInfo.phone,
-        avatarUrl: data.personalInfo.avatarUrl,
-        dateOfBirth: data.personalInfo.dateOfBirth,
-        gender: toGender(data.personalInfo.gender),
-        maritalStatus: data.personalInfo.maritalStatus,
-        nationality: data.personalInfo.nationality,
-        department: data.employment.department,
-        roleId: data.employment.roleId,
-        managerId: data.employment.managerId,
-        employeeId: data.employment.employeeId,
-        dateJoined: data.employment.dateOfJoining,
-        employmentType: data.employment.employmentType,
-        workLocation: data.employment.workLocation,
-        address: data.address,
-        nextOfKin: data.nextOfKin,
-        education: data.education,
-        workExperience: data.workExperience,
-        bank: data.bank,
-        documents: data.documents,
-      };
-      repo.updateStaff(params.id as string, updated);
-      refresh();
-      toast.success('Staff updated successfully');
-      router.push(`/admin/staff/${params.id}`);
-    } catch (error) {
-      toast.error('Update failed');
-    } finally {
-      setSubmitting(false);
-    }
+  // PATCH /admin/staff/{id} takes the placement plus the headshot, next of kin
+  // and payroll account. Name, email and the remaining HR sections (biodata,
+  // education, work history, documents) still have no columns on the staff
+  // record, so they are not sent. The assignable role is its own PUT,
+  // sequenced after the placement write so a refusal on the first does not
+  // leave the two half-applied.
+  //
+  // The sub-sections are sent as they appear on screen, blanks included: the
+  // endpoint reads a wholly blank section as "clear it", which is what an
+  // operator who emptied those inputs is asking for. Filtering the blanks out
+  // here would make clearing a field impossible.
+  const handleUpdate = (data: StaffFormValues) => {
+    edit(
+      staffId,
+      {
+        departmentId: data.employment.department || null,
+        managerId: data.employment.managerId || null,
+        avatarUrl: data.personalInfo.avatarUrl || null,
+        nextOfKin: {
+          fullName: data.nextOfKin?.fullName ?? '',
+          relationship: data.nextOfKin?.relationship ?? '',
+          phone: data.nextOfKin?.phone ?? '',
+          email: data.nextOfKin?.email ?? '',
+          address: data.nextOfKin?.address ?? '',
+        },
+        bank: {
+          bankName: data.bank?.bankName ?? '',
+          accountNumber: data.bank?.accountNumber ?? '',
+          sortCode: data.bank?.sortCode ?? '',
+          taxId: data.bank?.taxId ?? '',
+        },
+      },
+      {
+        onSuccess: () => {
+          const finish = () => router.push(`/admin/staff/${staffId}`);
+          if (data.employment.roleId) {
+            assignRoles(staffId, [data.employment.roleId], { onSuccess: finish });
+          } else {
+            finish();
+          }
+        },
+      },
+    );
   };
 
   if (loading) {
@@ -128,6 +167,10 @@ function EditStaffContent() {
       </div>
 
       <StaffOnboardingForm
+        // Editing an existing record validates only what this screen can save;
+        // the strict onboarding schema demands six fields the staff record has
+        // no column for, which made Save Changes unsubmittable.
+        mode="edit"
         initialStep={initialStep}
         title="Edit Staff Member"
         submitLabel="Save Changes"

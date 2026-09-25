@@ -33,7 +33,7 @@ interface Props {
 
 export default function LeadsListView({ initialStatus = "all" }: Props) {
   const { leads, addLead, markLost, removeLead, isCreating } = useLeads();
-  const { convert } = useLeadConversion();
+  const { convert, isConverting } = useLeadConversion();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">(initialStatus);
   const [page, setPage] = useState(1);
@@ -101,6 +101,7 @@ export default function LeadsListView({ initialStatus = "all" }: Props) {
         lead={convertTarget}
         onClose={() => setConvertTarget(null)}
         onConfirm={handleConfirmConvert}
+        isSubmitting={isConverting}
       />
       <RemoveLeadDialog
         lead={removeTarget}

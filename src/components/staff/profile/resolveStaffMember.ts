@@ -68,7 +68,10 @@ export function resolveStaffMember(
       nextOfKin: liveDto.nextOfKin || local?.nextOfKin,
       education: liveDto.education || local?.education,
       workExperience: liveDto.workExperience || local?.workExperience,
-      bank: liveDto.bank || local?.bank,
+      // `bankDetail` first: that is the field the staff endpoint returns (it is
+      // named for the table). Reading only `bank` — the form's name for it —
+      // meant the payroll section stayed empty even once the API had the row.
+      bank: liveDto.bankDetail || liveDto.bank || local?.bank,
       bio: liveDto.bio || local?.bio,
       documents: liveDto.documents || local?.documents,
       createdAt: liveDto.createdAt || local?.createdAt,

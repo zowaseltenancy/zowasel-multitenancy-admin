@@ -10,7 +10,7 @@ import { SendMessageDialog } from './modals/SendMessageDialog';
 interface DirectoryModalsProps {
   modalState: ReturnType<typeof useDirectoryModals>['modalState'];
   roles: StaffRole[];
-  departments: string[];
+  departments: { id: string; name: string }[];
 }
 
 export function DirectoryModals({

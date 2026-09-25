@@ -1,6 +1,6 @@
 'use client';
 import { StaffMember, StaffRole } from '@/types/staff';
-import { useStaff } from '@/hooks/useStaff';
+import { useStaff } from '@/features/staff/hooks/useStaff';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -17,16 +17,19 @@ interface Props {
 }
 
 export function StaffListTable({ staff, roles }: Props) {
-  const { repo, refresh } = useStaff();
+  const { remove } = useStaff();
   const router = useRouter();
 
   const getRoleName = (roleId: string) =>
     roles.find((r) => r.id === roleId)?.name || 'Unknown';
 
+  // DELETE /admin/staff/{id} — a soft delete server-side, so audit and lead
+  // attribution survive. The endpoint refuses your own account, a super admin
+  // unless you are one, and the last active super admin; those arrive as
+  // toasts from the hook rather than being guessed at here.
   const handleDelete = (id: string) => {
     if (confirm('Delete this staff member?')) {
-      repo.deleteStaff(id);
-      refresh();
+      remove(id);
     }
   };
 

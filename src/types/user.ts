@@ -30,16 +30,20 @@ export type PlatformUserCategory =
 
 // Internal Zowasel staff are organized by department — a separate axis from
 // PlatformUserCategory, since staff are not tenant/platform users at all.
-export type StaffDepartment =
-  | "Executive"
-  | "Technology"
-  | "Programs"
-  | "Fintech"
-  | "Sales"
-  | "Finance"
-  | "Administration"
-  | "Compliance"
-  | "Regional Operations";
+/**
+ * A department name.
+ *
+ * Was a closed union of nine names. Departments are database rows that admins
+ * create, rename and delete through /admin/departments, so a closed union was
+ * wrong in both directions: it rejected real departments (Operations, People &
+ * Culture) and asserted ones that do not exist (Fintech, Programs).
+ *
+ * Kept as a named alias rather than replaced with `string` everywhere so the
+ * intent still reads at each use site — and so the compiler flags anything
+ * that starts treating a department name as an identifier. The id is what
+ * addresses a department; this is only ever for display and matching.
+ */
+export type StaffDepartment = string;
 
 // Geographic oversight scope for Regional Operations and Finance staff — the
 // level at which they operate (a Continental Director oversees an entire

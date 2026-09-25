@@ -5,7 +5,7 @@ import { z } from 'zod';
 import Webcam from 'react-webcam';
 import { toast } from 'sonner';
 
-import { staffFormSchema, StaffFormValues } from '@/lib/validations/staff';
+import { staffEditFormSchema, staffFormSchema, StaffFormValues } from '@/lib/validations/staff';
 import { ONBOARDING_STAGES, getDefaultStaffFormValues, formatStaffSubmitData } from './onboardingConstants';
 import { useOnboardingChecklist } from './useOnboardingChecklist';
 import { usePhoneCountryCodes } from './usePhoneCountryCodes';
@@ -14,7 +14,14 @@ interface UseStaffOnboardingFormOptions {
   initialStep?: number;
   defaultValues?: Partial<StaffFormValues>;
   roles: { id: string; name: string }[];
-  onSubmit: (data: StaffFormValues) => Promise<void>;
+  onSubmit: (data: StaffFormValues) => void;
+  /**
+   * 'edit' relaxes the required-ness of the fields the staff record has no
+   * column for — see staffEditFormSchema. Without it the edit screen could
+   * never submit, because those fields are seeded empty and the review stage
+   * shows no validation errors.
+   */
+  mode?: 'onboard' | 'edit';
 }
 
 export function useStaffOnboardingForm({
@@ -22,6 +29,7 @@ export function useStaffOnboardingForm({
   defaultValues,
   roles,
   onSubmit,
+  mode = 'onboard',
 }: UseStaffOnboardingFormOptions) {
   const [step, setStep] = useState(initialStep);
 
@@ -37,7 +45,13 @@ export function useStaffOnboardingForm({
   const formScrollRef = useRef<HTMLDivElement>(null);
 
   const methods = useForm<z.input<typeof staffFormSchema>>({
-    resolver: zodResolver(staffFormSchema),
+    // The form stays typed on the strict shape either way: the edit schema
+    // differs only in what it demands, and getDefaultStaffFormValues fills
+    // every field, so the values handed to onSubmit have the same shape in
+    // both modes.
+    resolver: zodResolver(
+      (mode === 'edit' ? staffEditFormSchema : staffFormSchema) as typeof staffFormSchema,
+    ),
     defaultValues: getDefaultStaffFormValues(defaultValues),
     mode: 'onTouched',
   });
@@ -73,7 +87,7 @@ export function useStaffOnboardingForm({
 
   const onFinalSubmit = async (data: any) => {
     try {
-      await onSubmit(formatStaffSubmitData(data, personalPhoneCode, kinPhoneCode));
+      onSubmit(formatStaffSubmitData(data, personalPhoneCode, kinPhoneCode));
     } catch {
       toast.error('Submission failed. Please check form errors.');
     }

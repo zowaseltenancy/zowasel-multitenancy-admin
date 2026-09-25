@@ -1,7 +1,6 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useStaff } from '@/hooks/useStaff';
 import { DirectoryHeader } from '@/components/staff/directory/DirectoryHeader';
 import { DirectoryStatsCards } from '@/components/staff/directory/DirectoryStatsCards';
 import { DirectoryFilterBar } from '@/components/staff/directory/DirectoryFilterBar';
@@ -16,10 +15,10 @@ import {
 } from '@/components/staff/directory/directoryExport';
 
 export default function StaffDirectoryPage() {
-  const { repo, refresh } = useStaff();
 
   const {
     mounted,
+    isFetching,
     search,
     setSearch,
     statusFilter,
@@ -45,7 +44,7 @@ export default function StaffDirectoryPage() {
     openRoleDialog,
     openDeptDialog,
     openMessageDialog,
-  } = useDirectoryPage(repo, refresh);
+  } = useDirectoryPage();
 
   if (!mounted) {
     return (
@@ -79,26 +78,39 @@ export default function StaffDirectoryPage() {
         stats={stats}
         hasActiveFilters={hasActiveFilters}
         onResetFilters={resetFilters}
+        isFetching={isFetching}
       />
 
-      <DirectoryTable
-        paginated={paginated}
-        filteredLength={filtered.length}
-        page={page}
-        totalPages={totalPages}
-        pageSize={PAGE_SIZE}
-        roles={roles}
-        hasActiveFilters={hasActiveFilters}
-        copiedId={copiedId}
-        onPageChange={setPage}
-        onResetFilters={resetFilters}
-        onCopyId={handleCopyId}
-        onOpenRoleDialog={openRoleDialog}
-        onOpenDeptDialog={openDeptDialog}
-        onOpenMessageDialog={openMessageDialog}
-        onStatusToggle={handleStatusToggle}
-        formatDate={formatDate}
-      />
+      {/* Dimmed, not unmounted: the rows for the previous filter stay put and
+          in place while the next set loads, so the table does not collapse to
+          an empty state and the search box keeps focus. */}
+      <div
+        aria-busy={isFetching}
+        className={
+          isFetching
+            ? 'opacity-60 transition-opacity duration-200 pointer-events-none'
+            : 'transition-opacity duration-200'
+        }
+      >
+        <DirectoryTable
+          paginated={paginated}
+          filteredLength={filtered.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          roles={roles}
+          hasActiveFilters={hasActiveFilters}
+          copiedId={copiedId}
+          onPageChange={setPage}
+          onResetFilters={resetFilters}
+          onCopyId={handleCopyId}
+          onOpenRoleDialog={openRoleDialog}
+          onOpenDeptDialog={openDeptDialog}
+          onOpenMessageDialog={openMessageDialog}
+          onStatusToggle={handleStatusToggle}
+          formatDate={formatDate}
+        />
+      </div>
 
       <DirectoryModals
         modalState={modalState}

@@ -1,5 +1,6 @@
 'use client';
 
+import { staffStatusActionLabel } from '@/features/staff/utils/statusCycle';
 import React from 'react';
 import {
   Eye,
@@ -120,13 +121,16 @@ export function DirectoryRowActions({
                 : 'text-[#44883C]'
             }`}
           >
+            {/* The label names what the click does, which is the shared cycle:
+                active suspends, and anything stopped — suspended or inactive —
+                goes back to active. */}
             {staff.status === 'active' ? (
               <>
-                <UserX className="h-3.5 w-3.5" /> Deactivate Staff
+                <UserX className="h-3.5 w-3.5" /> {staffStatusActionLabel(staff.status)} Staff
               </>
             ) : (
               <>
-                <UserCheck className="h-3.5 w-3.5" /> Activate Staff
+                <UserCheck className="h-3.5 w-3.5" /> {staffStatusActionLabel(staff.status)}
               </>
             )}
           </DropdownMenuItem>

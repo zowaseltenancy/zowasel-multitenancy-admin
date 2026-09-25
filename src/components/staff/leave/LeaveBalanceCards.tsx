@@ -4,7 +4,7 @@ import React from 'react';
 import { Palmtree, Stethoscope, Coffee, CalendarOff, CalendarCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LEAVE_BALANCES } from './leaveUtils';
+import { LeaveBalanceDto } from '@/features/staff/api/staff.types';
 
 interface LeaveTheme {
   icon: React.ElementType;
@@ -60,11 +60,31 @@ const LEAVE_CARD_THEMES: Record<string, LeaveTheme> = {
   },
 };
 
-export function LeaveBalanceCards() {
+interface LeaveBalanceCardsProps {
+  /**
+   * From GET /admin/leave/balances/me. Replaces the LEAVE_BALANCES constant,
+   * which showed the same fixed entitlement to every admin regardless of what
+   * they had actually taken.
+   */
+  balances: LeaveBalanceDto[];
+}
+
+/** Title case for the card heading and theme lookup — the API's enum is upper. */
+function labelFor(type: string): string {
+  return type.charAt(0) + type.slice(1).toLowerCase();
+}
+
+export function LeaveBalanceCards({ balances }: LeaveBalanceCardsProps) {
   return (
     <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      {Object.entries(LEAVE_BALANCES).map(([type, { total, taken }]) => {
-        const available = type === 'Unpaid' ? '∞' : total - taken;
+      {balances.map((balance) => {
+        const type = labelFor(balance.type);
+        const total = balance.entitledDays;
+        const taken = balance.usedDays;
+        // UNPAID carries no entitlement server-side, so a number here would be
+        // a cap that does not exist.
+        const available =
+          balance.type === 'UNPAID' ? '∞' : balance.availableDays;
         const theme = LEAVE_CARD_THEMES[type] || {
           icon: CalendarCheck,
           bgClass: 'bg-muted/30',
@@ -79,7 +99,7 @@ export function LeaveBalanceCards() {
 
         return (
           <Card
-            key={type}
+            key={balance.type}
             className={`border ${theme.borderClass} ${theme.bgClass} rounded-2xl shadow-2xs transition-all hover:shadow-xs`}
           >
             <CardContent className="p-4 sm:p-4.5 space-y-2.5">

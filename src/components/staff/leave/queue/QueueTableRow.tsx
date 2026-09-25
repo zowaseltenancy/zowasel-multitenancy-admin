@@ -1,5 +1,6 @@
 'use client';
 
+import { leaveTypeLabel } from '@/constants/leave';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { LeaveRequest } from '@/types/staff';
@@ -79,7 +80,7 @@ export function QueueTableRow({
       {/* Type */}
       <TableCell className="py-3.5">
         <Badge variant="outline" className="text-[11px] font-semibold px-2 py-0.5 bg-muted/30 border-border/60">
-          {req.type}
+          {leaveTypeLabel(req.type)}
         </Badge>
       </TableCell>
 

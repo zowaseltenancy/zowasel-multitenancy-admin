@@ -40,11 +40,22 @@ interface Props {
   lead: Lead | null;
   onClose: () => void;
   onConfirm: (values?: ConvertLeadValues) => void;
+  /**
+   * The conversion request is in flight. Owned by the mutation, not by this
+   * sheet: the local flag it used to keep was set and cleared in the same
+   * synchronous block, so the button never showed a pending state and nothing
+   * stopped a second submit provisioning a second tenant.
+   */
+  isSubmitting?: boolean;
 }
 
 
-export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function ConvertLeadDialog({
+  lead,
+  onClose,
+  onConfirm,
+  isSubmitting = false,
+}: Props) {
 
   // 6 conversion fields:
   // 1. Business Owner Name
@@ -102,8 +113,7 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
   const handleSubmit = () => {
     if (!validate()) return;
 
-    setIsSubmitting(true);
-    try {
+    {
       const selectedGeo = GLOBAL_COUNTRY_CURRENCIES.find((c) => c.countryName === country);
 
       const values: ConvertLeadValues = {
@@ -118,10 +128,11 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
         notes: lead.notes,
       };
 
+      // No onClose here. Conversion provisions a tenant and can be refused —
+      // a lead that is not CLOSED_WON, an email already owning a business —
+      // and closing on the click reported success for those refusals. The
+      // parent closes this sheet from the mutation's onSuccess.
       onConfirm(values);
-      onClose();
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -147,6 +158,25 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5 space-y-2">
+            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5 text-primary" />
+              What happens when you convert
+            </p>
+            <ol className="space-y-1 text-[11px] text-muted-foreground list-decimal pl-4">
+              <li>The business is provisioned and the owner&apos;s account is created.</li>
+              <li>
+                A single-use onboarding link is emailed to{" "}
+                <span className="font-medium text-foreground">{ownerEmail || lead.email}</span>.
+              </li>
+              <li>The owner opens it, sets their own password, and signs in.</li>
+            </ol>
+            <p className="text-[11px] text-muted-foreground">
+              No password is set here. Nobody — including this console — can sign in as the owner
+              until they have used that link, which expires in 7 days.
+            </p>
+          </div>
+
           {/* Field 1: Business Owner Name */}
           <div className="space-y-1.5">
             <Label htmlFor="ownerNameDialog" className="text-xs font-semibold flex items-center gap-1.5">
@@ -291,7 +321,7 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
         </div>
 
         <SheetFooter className="p-4 border-t bg-card shrink-0 flex items-center justify-end gap-2">
-          <Button variant="ghost" onClick={onClose} className="text-xs">
+          <Button variant="ghost" onClick={onClose} disabled={isSubmitting} className="text-xs">
             Cancel
           </Button>
           <Button
@@ -300,7 +330,7 @@ export default function ConvertLeadDialog({ lead, onClose, onConfirm }: Props) {
             className="text-xs font-bold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {isSubmitting ? "Converting..." : "Convert Lead"}
+            {isSubmitting ? "Converting…" : "Convert & Send Invite"}
           </Button>
         </SheetFooter>
       </SheetContent>

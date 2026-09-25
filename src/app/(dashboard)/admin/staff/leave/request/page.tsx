@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useStaff } from '@/hooks/useStaff';
-import { LeaveRequest } from '@/types/staff';
+import { useMemo, useState } from 'react';
+import { useAdminMe } from '@/features/auth/hooks/useAuth';
+import { useDepartments, useLeaveOverview } from '@/features/staff/hooks/useStaff';
+import { mapLeaveRequest } from '@/features/staff/api/staff.mappers';
+import { LeaveRequest, LeaveType } from '@/types/staff';
 import { QueueHeader } from '@/components/staff/leave/queue/QueueHeader';
 import { QueueOverviewStrip } from '@/components/staff/leave/queue/QueueOverviewStrip';
 import { QueueFilterBar } from '@/components/staff/leave/queue/QueueFilterBar';
@@ -11,46 +13,45 @@ import { QueueModals } from '@/components/staff/leave/queue/QueueModals';
 import { handleExportQueue } from '@/components/staff/leave/queue/queueExport';
 import { useQueueApproval } from '@/components/staff/leave/queue/useQueueApproval';
 
-const CURRENT_USER_STAFF_ID = 'staff-alice';
-
 export default function ApprovalQueuePage() {
-  const { repo, refresh } = useStaff();
-
-  const [mounted, setMounted] = useState(false);
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  // The API's enum value, or 'all'. It used to hold a display string ('Annual')
+  // and was compared against the mapped row type, so no leave type ever
+  // matched and the filter appeared to do nothing.
   const [filterType, setFilterType] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [detailRequest, setDetailRequest] = useState<LeaveRequest | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // GET /admin/leave/requests/overview — every admin's requests, gated on
+  // leave:review. The applicant's name and department come back on each row,
+  // so there is no second pass joining against a staff list.
+  const { data: me } = useAdminMe();
+  // Type narrows server-side, like every other list in the console — the
+  // endpoint takes it, so there is no reason to fetch rows only to drop them.
+  const { requests: overviewDtos, isLoading } = useLeaveOverview({
+    limit: 100,
+    ...(filterType !== 'all' ? { type: filterType as LeaveType } : {}),
+  });
+  const { departments: departmentDtos } = useDepartments({ limit: 100 });
 
-  const allStaff = useMemo(() => repo.getAllStaff(), [repo]);
-  const rawRequests = useMemo(() => repo.getLeaveRequests(), [repo]);
+  const allLeaveRequests = useMemo<LeaveRequest[]>(
+    () => overviewDtos.map(mapLeaveRequest),
+    [overviewDtos],
+  );
 
-  const allLeaveRequests: LeaveRequest[] = useMemo(() => {
-    return rawRequests.map((r) => {
-      const staff = allStaff.find((s) => s.id === r.staffId);
-      return {
-        ...r,
-        employeeName: r.employeeName || (staff ? `${staff.firstName} ${staff.lastName}` : 'Staff Member'),
-        department: r.department || (staff ? staff.department : 'General'),
-      };
-    });
-  }, [rawRequests, allStaff]);
+  const pendingRequests = useMemo(
+    () => allLeaveRequests.filter((r) => r.status === 'pending'),
+    [allLeaveRequests],
+  );
 
-  const pendingRequests = useMemo(() => {
-    return allLeaveRequests.filter((r) => r.status === 'pending');
-  }, [allLeaveRequests]);
-
-  const departments = useMemo(() => {
-    const set = new Set<string>();
-    allStaff.forEach((s) => s.department && set.add(s.department));
-    pendingRequests.forEach((r) => r.department && set.add(r.department));
-    return Array.from(set).sort();
-  }, [allStaff, pendingRequests]);
+  // From the departments endpoint, not from the rows on screen — a queue with
+  // no pending requests in a department would otherwise drop it from the
+  // filter entirely.
+  const departments = useMemo(
+    () => departmentDtos.map((d) => d.name).sort(),
+    [departmentDtos],
+  );
 
   const {
     rejectModalOpen,
@@ -64,11 +65,9 @@ export default function ApprovalQueuePage() {
     openRejectModal,
     handleConfirmReject,
   } = useQueueApproval({
-    repo,
-    refresh,
     pendingRequests,
     allLeaveRequests,
-    currentUserId: CURRENT_USER_STAFF_ID,
+    currentUserId: me?.id ?? '',
     onClearDetail: (ids) => {
       if (detailRequest && ids.includes(detailRequest.id)) setDetailRequest(null);
     },
@@ -82,11 +81,12 @@ export default function ApprovalQueuePage() {
       const target = `${r.employeeName || ''} ${r.department || ''} ${r.reason || ''} ${r.id || ''}`.toLowerCase();
       return (
         target.includes(search.toLowerCase()) &&
-        (filterDepartment === 'all' || r.department === filterDepartment) &&
-        (filterType === 'all' || r.type === filterType)
+        (filterDepartment === 'all' || r.department === filterDepartment)
       );
     });
-  }, [pendingRequests, search, filterDepartment, filterType]);
+    // filterType is not here: the query above already applied it, so the rows
+    // in `pendingRequests` are the filtered ones.
+  }, [pendingRequests, search, filterDepartment]);
 
   const toggleSelectAll = () => {
     setSelectedIds(selectedIds.length === filteredRequests.length ? [] : filteredRequests.map((r) => r.id));
@@ -96,7 +96,7 @@ export default function ApprovalQueuePage() {
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
-  if (!mounted) return null;
+  if (isLoading) return null;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -126,7 +126,7 @@ export default function ApprovalQueuePage() {
       <QueueTable
         filteredRequests={filteredRequests}
         selectedIds={selectedIds}
-        currentUserId={CURRENT_USER_STAFF_ID}
+        currentUserId={me?.id ?? ''}
         onToggleSelectAll={toggleSelectAll}
         onToggleSelectOne={toggleSelectOne}
         onSelectDetail={setDetailRequest}

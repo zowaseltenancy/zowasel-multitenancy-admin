@@ -1,45 +1,47 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useStaff } from '@/hooks/useStaff';
-import { useStaffMember } from '@/features/staff/hooks/useStaff';
+import { useAdminRoles, useStaffMember } from '@/features/staff/hooks/useStaff';
+import { mapAdminRole, mapDepartmentRole, mapStaff } from '@/features/staff/api/staff.mappers';
 import { StaffProfileView } from '@/components/staff/StaffProfileView';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
-import { StaffMember, DepartmentRole } from '@/types/staff';
-import { resolveStaffMember } from '@/components/staff/profile/resolveStaffMember';
+import { useMemo } from 'react';
+import { DepartmentRole, StaffMember } from '@/types/staff';
 
+// One staff member, from GET /admin/staff/{id}.
+//
+// This page used to resolve the record by merging the live response with a
+// localStorage copy through resolveStaffMember, falling back to the local one
+// when the request had not landed. That merge is what hid the API's upper-case
+// systemRole behind a `| string` type and made a super admin render as
+// "Admin" — the response is now the only source, mapped once.
 export default function StaffProfilePage() {
   const params = useParams();
   const router = useRouter();
   const staffId = (params?.id as string) || '';
 
-  const { repo, refresh } = useStaff();
-  const [mounted, setMounted] = useState(false);
+  const memberQuery = useStaffMember(staffId);
+  const { roles: roleDtos } = useAdminRoles({ limit: 100 });
 
-  // Optional live query against auth-service /admin/staff/:id
-  const liveQuery = useStaffMember(staffId);
+  const roles = useMemo(() => roleDtos.map(mapAdminRole), [roleDtos]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const staff: StaffMember | null = useMemo(
+    () => (memberQuery.data ? mapStaff(memberQuery.data) : null),
+    [memberQuery.data],
+  );
 
-  const roles = useMemo(() => repo.getRoles(), [repo]);
-
-  // Resolve staff member either from live backend (if available) or local repository
-  const resolvedStaff: StaffMember | null = useMemo(() => {
-    const local = staffId && repo ? repo.getStaffById(staffId) : null;
-    return resolveStaffMember(liveQuery.data, local, roles);
-  }, [liveQuery.data, staffId, repo, roles]);
-
+  // The department-scoped roles this member holds. Their assignments come back
+  // on the staff record itself, so this is a filter over the role catalogue
+  // rather than a second request.
   const departmentRoles: DepartmentRole[] = useMemo(() => {
-    if (!resolvedStaff) return [];
-    const allDeptRoles = repo.getDepartmentRoles() || [];
-    const assignedRoleIds = resolvedStaff.departmentRoleIds || [];
-    return allDeptRoles.filter((r) => assignedRoleIds.includes(r.id));
-  }, [repo, resolvedStaff]);
+    if (!staff) return [];
+    const held = new Set(staff.roleIds ?? []);
+    return roleDtos
+      .filter((r) => held.has(r.id) && r.department)
+      .map((r) => mapDepartmentRole(r, r.department!.id));
+  }, [staff, roleDtos]);
 
-  if (!mounted || (liveQuery.isLoading && !resolvedStaff)) {
+  if (memberQuery.isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-[#00A651]" />
@@ -47,7 +49,7 @@ export default function StaffProfilePage() {
     );
   }
 
-  if (!resolvedStaff) {
+  if (!staff) {
     router.push('/admin/staff/directory');
     return null;
   }
@@ -55,12 +57,11 @@ export default function StaffProfilePage() {
   return (
     <div className="w-full max-w-6xl mx-auto py-2 px-1 sm:px-4">
       <StaffProfileView
-        staff={resolvedStaff}
+        staff={staff}
         roles={roles}
         departmentRoles={departmentRoles}
         onRefresh={() => {
-          liveQuery.refetch?.();
-          refresh();
+          void memberQuery.refetch();
         }}
       />
     </div>

@@ -71,6 +71,7 @@ export function mapLead(dto: LeadDto): Lead {
     notes: undefined,
     createdAt: dto.createdAt,
     convertedOrganizationId: dto.convertedTenantId ?? undefined,
+    stage: dto.stage,
   };
 }
 

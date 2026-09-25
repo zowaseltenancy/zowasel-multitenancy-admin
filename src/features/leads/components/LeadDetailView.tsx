@@ -26,6 +26,7 @@ import RemoveLeadDialog from "./RemoveLeadDialog";
 import { getApiErrorMessage } from "@/lib/axios";
 import { useLead, useLeads } from "../hooks/useLeads";
 import { ConvertLeadValues, useLeadConversion } from "../hooks/useLeadConversion";
+import { convertibilityOf } from "../utils/convertibility";
 import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
 
 interface Props {
@@ -47,7 +48,7 @@ function Field({ icon: Icon, label, value }: { icon: typeof Building2; label: st
 export default function LeadDetailView({ leadId }: Props) {
   const router = useRouter();
   const { markLost, removeLead } = useLeads();
-  const { convert } = useLeadConversion();
+  const { convert, isConverting } = useLeadConversion();
   const [convertOpen, setConvertOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const removingRef = useRef(false);
@@ -91,6 +92,7 @@ export default function LeadDetailView({ leadId }: Props) {
   }
 
   const canAct = lead.status === "incomplete" || lead.status === "ready_to_convert";
+  const convertibility = convertibilityOf(lead);
   const regionLabel = [lead.countryName, lead.subRegion, lead.continent].filter(Boolean).join(" / ");
 
   // The dialog collects overrides, so they arrive here and pass straight
@@ -119,7 +121,12 @@ export default function LeadDetailView({ leadId }: Props) {
 
   return (
     <div className="space-y-6">
-      <ConvertLeadDialog lead={convertOpen ? lead : null} onClose={() => setConvertOpen(false)} onConfirm={handleConfirmConvert} />
+      <ConvertLeadDialog
+        lead={convertOpen ? lead : null}
+        onClose={() => setConvertOpen(false)}
+        onConfirm={handleConfirmConvert}
+        isSubmitting={isConverting}
+      />
       <RemoveLeadDialog lead={removeOpen ? lead : null} onClose={() => setRemoveOpen(false)} onConfirm={handleConfirmRemove} />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -140,7 +147,15 @@ export default function LeadDetailView({ leadId }: Props) {
                 <XCircle className="h-3.5 w-3.5" />
                 Mark Lost
               </Button>
-              <Button className="gap-1.5" onClick={() => setConvertOpen(true)}>
+              {/* Same verdict the table and the server apply — see
+                  convertibilityOf. Offering this for a deal that is not won
+                  only produced a 409 the operator could not act on. */}
+              <Button
+                className="gap-1.5"
+                disabled={!convertibility.canConvert}
+                title={convertibility.reason ?? "Convert this lead into a business"}
+                onClick={() => setConvertOpen(true)}
+              >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Convert to Customer
               </Button>

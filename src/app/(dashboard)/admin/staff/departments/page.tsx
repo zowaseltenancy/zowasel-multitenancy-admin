@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useStaff } from '@/hooks/useStaff';
+import { useEffect, useMemo, useState } from 'react';
+import { useDepartments } from '@/features/staff/hooks/useStaff';
+import { mapDepartment } from '@/features/staff/api/staff.mappers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Loader2 } from 'lucide-react';
@@ -11,43 +12,50 @@ import { DepartmentStatsCards } from '@/components/staff/department/DepartmentSt
 import { DepartmentCardGrid, DepartmentWithMeta } from '@/components/staff/department/DepartmentCardGrid';
 
 export default function DepartmentsPage() {
-  const { repo, refresh } = useStaff();
-  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedDept, setSelectedDept] = useState<Department | null>(null);
 
+  // Search is a server-side filter on GET /admin/departments, debounced so
+  // typing doesn't fire a request per keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const departments = repo.getDepartments();
-  const staffList = repo.getAllStaff();
+  const { departments: departmentDtos, meta, isLoading } = useDepartments({
+    limit: 100,
+    ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+  });
 
-  const deptData: DepartmentWithMeta[] = useMemo(() => {
-    return (departments || []).map((dept) => {
-      const assignedStaff = (staffList || []).filter((s) => s && s.department === dept.name);
-      const head = dept.headId ? (staffList || []).find((s) => s && s.id === dept.headId) || null : null;
-      return {
-        ...dept,
-        staffCount: assignedStaff.length,
-        head,
-      };
-    });
-  }, [departments, staffList]);
+  // adminCount and the head both come from the endpoint, so there is no second
+  // pass over a staff list to count assignments — which is what the previous
+  // version did, and which only counted the staff its local store happened to
+  // hold.
+  const deptData: DepartmentWithMeta[] = useMemo(
+    () =>
+      departmentDtos.map((dto) => ({
+        ...mapDepartment(dto),
+        staffCount: dto.adminCount,
+        head: dto.head
+          ? {
+              id: dto.head.id,
+              firstName: dto.head.firstName ?? '',
+              lastName: dto.head.lastName ?? '',
+              email: dto.head.email,
+            }
+          : null,
+      })),
+    [departmentDtos],
+  );
 
-  const filteredDepts = useMemo(() => {
-    if (!searchQuery.trim()) return deptData;
-    const query = searchQuery.toLowerCase();
-    return deptData.filter(
-      (d) =>
-        (d.name || '').toLowerCase().includes(query) ||
-        (d.description || '').toLowerCase().includes(query) ||
-        (d.head && `${d.head.firstName || ''} ${d.head.lastName || ''}`.toLowerCase().includes(query))
-    );
-  }, [deptData, searchQuery]);
+  // The server already applied the search.
+  const filteredDepts = deptData;
 
-  const totalUnits = deptData.length;
+  // The unfiltered total, so the "showing X of Y" line stays meaningful while
+  // a search is active.
+  const totalUnits = meta?.total ?? deptData.length;
   const assignedHeadsCount = deptData.filter((d) => Boolean(d.head)).length;
   const unassignedCount = totalUnits - assignedHeadsCount;
   const totalDepartmentStaff = deptData.reduce((acc, curr) => acc + curr.staffCount, 0);
@@ -62,7 +70,7 @@ export default function DepartmentsPage() {
     setDrawerOpen(true);
   };
 
-  if (!mounted) {
+  if (isLoading) {
     return (
       <div className="p-8 flex justify-center items-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -121,7 +129,8 @@ export default function DepartmentsPage() {
         onOpenChange={setDrawerOpen}
         department={selectedDept}
         onSuccess={() => {
-          refresh();
+          // The drawer's mutations invalidate the department queries, so
+          // there is nothing to refresh by hand — just close.
           setDrawerOpen(false);
         }}
       />

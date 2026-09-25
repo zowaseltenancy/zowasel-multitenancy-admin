@@ -53,6 +53,10 @@ export const PERMISSION_CATEGORIES: Record<PermissionCategory, { label: string; 
     label: "System Settings",
     description: "Access platform-wide configuration, audit logs, and webhooks",
   },
+  custom: {
+    label: "Custom Scopes",
+    description: "Capabilities added to the catalogue by an operator, outside the built-in groups",
+  },
 };
 
 export const ALL_PERMISSIONS: Permission[] = [

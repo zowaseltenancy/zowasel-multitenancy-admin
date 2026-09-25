@@ -18,14 +18,14 @@ import {
   Settings,
   ArrowRight,
 } from 'lucide-react';
-import { Department, StaffMember } from '@/types/staff';
+import { Department, DepartmentHead } from '@/types/staff';
 import { getDepartmentIcon } from '@/lib/departmentIcons';
 import { useRouter } from 'next/navigation';
 import { DepartmentHeadInfo } from './DepartmentHeadInfo';
 
 export interface DepartmentWithMeta extends Department {
   staffCount: number;
-  head: StaffMember | null;
+  head: DepartmentHead | null;
 }
 
 interface DepartmentCardItemProps {

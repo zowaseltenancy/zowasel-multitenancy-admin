@@ -1,5 +1,6 @@
 'use client';
 
+import { leaveTypeLabel } from '@/constants/leave';
 import React from 'react';
 import { CalendarRange, Building2, CheckCircle2 } from 'lucide-react';
 import {
@@ -60,7 +61,7 @@ export function AbsenceDetailsModal({ absence, onClose }: AbsenceDetailsModalPro
                   Leave Category
                 </span>
                 <span className="font-bold text-xs text-foreground mt-0.5 block">
-                  {absence.type} Leave
+                  {leaveTypeLabel(absence.type)} Leave
                 </span>
               </div>
               <div className="p-2.5 rounded-lg border border-border/50 bg-card">

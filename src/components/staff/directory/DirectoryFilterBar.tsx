@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, RotateCcw } from 'lucide-react';
+import { Search, RotateCcw, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -20,11 +20,16 @@ interface DirectoryFilterBarProps {
   onDeptFilterChange: (val: string) => void;
   roleFilter: string;
   onRoleFilterChange: (val: string) => void;
-  departments: string[];
+  // { id, name } rather than bare names, matching `roles` below: the filter
+  // is sent to the server as departmentId, so the option needs the id while
+  // the label stays the name.
+  departments: { id: string; name: string }[];
   roles: { id: string; name: string }[];
   stats: { total: number; active: number; inactive: number };
   hasActiveFilters: boolean;
   onResetFilters: () => void;
+  /** A search or filter request is in flight — shown inside the search field. */
+  isFetching?: boolean;
 }
 
 export function DirectoryFilterBar({
@@ -40,6 +45,7 @@ export function DirectoryFilterBar({
   roles,
   stats,
   hasActiveFilters,
+  isFetching = false,
   onResetFilters,
 }: DirectoryFilterBarProps) {
   return (
@@ -96,8 +102,17 @@ export function DirectoryFilterBar({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by name, official email, or Staff ID..."
-            className="pl-9 h-9.5 text-xs bg-muted/20"
+            className="pl-9 pr-9 h-9.5 text-xs bg-muted/20"
           />
+          {/* The one moving part while a query is in flight. The rows below
+              stay on screen, so without this there is no sign the typed term
+              has not been applied yet. */}
+          {isFetching && (
+            <Loader2
+              aria-hidden
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground"
+            />
+          )}
         </div>
 
         <div className="sm:col-span-3">
@@ -108,8 +123,8 @@ export function DirectoryFilterBar({
             <SelectContent>
               <SelectItem value="all" className="text-xs">All Departments</SelectItem>
               {departments.map((dept) => (
-                <SelectItem key={dept} value={dept} className="text-xs">
-                  {dept}
+                <SelectItem key={dept.id} value={dept.id} className="text-xs">
+                  {dept.name}
                 </SelectItem>
               ))}
             </SelectContent>

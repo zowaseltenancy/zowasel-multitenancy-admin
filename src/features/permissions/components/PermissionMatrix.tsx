@@ -10,6 +10,13 @@ interface PermissionMatrixProps {
   selectedRole: Role;
   filteredGroups: PermissionCategoryGroup[];
   onTogglePermission: (roleId: string, permissionCode: string) => void;
+  /**
+   * A grant is being written. Every box is frozen for the round trip, because
+   * each toggle sends the role's whole resulting set (PUT replaces it) — two
+   * toggles in flight at once would race, and the slower response would undo
+   * the faster one.
+   */
+  isSaving?: boolean;
 }
 
 export default function PermissionMatrix({
@@ -17,10 +24,16 @@ export default function PermissionMatrix({
   selectedRole,
   filteredGroups,
   onTogglePermission,
+  isSaving = false,
 }: PermissionMatrixProps) {
   return (
     <div className="space-y-6">
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+      <div
+        aria-busy={isSaving}
+        className={`overflow-x-auto rounded-xl border border-border bg-card shadow-sm transition-opacity ${
+          isSaving ? "opacity-70" : ""
+        }`}
+      >
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -122,7 +135,7 @@ export default function PermissionMatrix({
                                     <div className="flex justify-center">
                                       <Checkbox
                                         checked={isGranted}
-                                        disabled={role.isSystemRole}
+                                        disabled={role.isSystemRole || isSaving}
                                         onCheckedChange={() =>
                                           onTogglePermission(role.id, permission.code)
                                         }

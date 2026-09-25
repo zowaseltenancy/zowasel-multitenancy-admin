@@ -11,17 +11,34 @@ import { OnboardingRightRail } from './onboarding/OnboardingRightRail';
 import { OnboardingFooterNav } from './onboarding/OnboardingFooterNav';
 import { OnboardingCameraModal } from './onboarding/OnboardingCameraModal';
 import { useStaffOnboardingForm } from './onboarding/useStaffOnboardingForm';
+import { formatStaffSubmitData } from './onboarding/onboardingConstants';
 
 interface StaffOnboardingFormProps {
   initialStep?: number;
   title?: string;
   defaultValues?: Partial<StaffFormValues>;
   roles: { id: string; name: string }[];
-  departments: string[];
-  onSubmit: (data: StaffFormValues) => Promise<void>;
+  /** { id, name }: the staff endpoint takes departmentId. */
+  departments: { id: string; name: string }[];
+  // Not a promise: the mutation reports its own outcome, so the caller has
+  // nothing left to await.
+  onSubmit: (data: StaffFormValues) => void;
+  /**
+   * "Save as Draft". Receives the form's current values — the button lives in
+   * the header, which has no access to them, and where the draft is kept is the
+   * caller's business. Omitted, the button falls back to acknowledging the
+   * click, which is all it ever did.
+   */
+  onSaveDraft?: (data: StaffFormValues) => void;
   isSubmitting?: boolean;
   submitLabel?: string;
   onCancel?: () => void;
+  /**
+   * 'edit' validates against staffEditFormSchema, which does not require the
+   * fields the staff record cannot store. Onboarding keeps the strict schema —
+   * a new joiner's dossier is collected in full.
+   */
+  mode?: 'onboard' | 'edit';
 }
 
 export function StaffOnboardingForm({
@@ -31,9 +48,11 @@ export function StaffOnboardingForm({
   roles,
   departments,
   onSubmit,
+  onSaveDraft,
   isSubmitting = false,
   submitLabel,
   onCancel,
+  mode = 'onboard',
 }: StaffOnboardingFormProps) {
   const {
     step,
@@ -68,7 +87,7 @@ export function StaffOnboardingForm({
     candidateInitials,
     candidateRole,
     candidateDept,
-  } = useStaffOnboardingForm({ initialStep, defaultValues, roles, onSubmit });
+  } = useStaffOnboardingForm({ initialStep, defaultValues, roles, onSubmit, mode });
 
   return (
     <div className="space-y-3.5 w-full max-w-7xl mx-auto">
@@ -77,7 +96,18 @@ export function StaffOnboardingForm({
         step={step}
         completedDetailsCount={completedDetailsCount}
         totalDetailsCount={totalDetailsCount}
-        onSaveDraft={() => toast.success('Draft progress saved successfully. You can safely resume later.')}
+        onSaveDraft={() => {
+          if (onSaveDraft) {
+            // Same normalisation as a real submit, so the two phone fields are
+            // saved with their dialling code attached. The form's own inputs
+            // hold only the local part — the code lives in component state, and
+            // a draft of the bare digits would resume under the default +234
+            // no matter which country was picked.
+            onSaveDraft(formatStaffSubmitData(currentValues, personalPhoneCode, kinPhoneCode));
+            return;
+          }
+          toast.success('Draft progress saved successfully. You can safely resume later.');
+        }}
       />
 
       {/* DUAL-PANE DESKTOP LAYOUT: Form content scrolls internally; Side wizard remains completely fixed */}

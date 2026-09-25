@@ -11,7 +11,12 @@ export type PermissionCategory =
   | "users"
   | "roles"
   | "permissions"
-  | "system";
+  | "system"
+  // Anything in the server's catalogue whose resource prefix is not one of the
+  // categories above — including scopes an operator adds from the Permissions
+  // screen. Without it a custom scope would have nowhere to appear in the
+  // matrix, which is the same as not existing.
+  | "custom";
 
 export type PermissionAction = "read" | "create" | "update" | "delete" | "approve" | "export";
 

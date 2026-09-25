@@ -2,8 +2,12 @@ import Link from "next/link";
 import { CheckCircle2, Eye, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LeadStatusBadge from "./LeadStatusBadge";
-import { LEAD_INTENDED_TYPE_LABELS, LEAD_SOURCE_LABELS } from "@/constants/lead";
+import {
+  LEAD_INTENDED_TYPE_LABELS,
+  LEAD_SOURCE_LABELS,
+} from "@/constants/lead";
 import { Lead } from "@/types/lead";
+import { convertibilityOf } from "../utils/convertibility";
 
 interface Props {
   leads: Lead[];
@@ -12,7 +16,12 @@ interface Props {
   onRemove: (lead: Lead) => void;
 }
 
-export default function LeadTable({ leads, onConvert, onMarkLost, onRemove }: Props) {
+export default function LeadTable({
+  leads,
+  onConvert,
+  onMarkLost,
+  onRemove,
+}: Props) {
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -28,75 +37,102 @@ export default function LeadTable({ leads, onConvert, onMarkLost, onRemove }: Pr
             </tr>
           </thead>
           <tbody className="divide-y">
-            {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-muted/30 transition-colors">
-                <td className="p-4 font-medium">
-                  <Link
-                    href={`/admin/leads/${lead.id}`}
-                    className="font-semibold text-foreground hover:text-primary hover:underline"
-                  >
-                    {lead.businessName}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">{lead.countryName ?? "—"}</div>
-                </td>
-                <td className="p-4">
-                  <div className="text-foreground">{lead.contactName}</div>
-                  <div className="text-xs text-muted-foreground">{lead.email}</div>
-                </td>
-                <td className="p-4 text-muted-foreground">
-                  {LEAD_INTENDED_TYPE_LABELS[lead.intendedType]}
-                </td>
-                <td className="p-4 text-muted-foreground">{LEAD_SOURCE_LABELS[lead.source]}</td>
-                <td className="p-4">
-                  <LeadStatusBadge status={lead.status} />
-                  {lead.missingFields.length > 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Missing: {lead.missingFields.join(", ")}
-                    </p>
-                  )}
-                </td>
-                <td className="p-4">
-                  <div className="flex justify-end gap-2">
+            {leads.map((lead) => {
+              const convertibility = convertibilityOf(lead);
+              return (
+                <tr
+                  key={lead.id}
+                  className="hover:bg-muted/30 transition-colors"
+                >
+                  <td className="p-4 font-medium">
                     <Link
                       href={`/admin/leads/${lead.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+                      className="font-semibold text-foreground hover:text-primary hover:underline"
                     >
-                      <Eye className="h-3.5 w-3.5" />
-                      View
+                      {lead.businessName}
                     </Link>
-                    {(lead.status === "incomplete" || lead.status === "ready_to_convert") && (
-                      <>
-                        <Link
-                          href={`/admin/leads/${lead.id}/convert`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent text-foreground hover:text-primary"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                          Convert
-                        </Link>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="gap-1.5 text-muted-foreground"
-                          onClick={() => onMarkLost(lead)}
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          Mark Lost
-                        </Button>
-                      </>
+                    <div className="text-xs text-muted-foreground">
+                      {lead.countryName ?? "—"}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="text-foreground">{lead.contactName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {lead.email}
+                    </div>
+                  </td>
+                  <td className="p-4 text-muted-foreground">
+                    {LEAD_INTENDED_TYPE_LABELS[lead.intendedType]}
+                  </td>
+                  <td className="p-4 text-muted-foreground">
+                    {LEAD_SOURCE_LABELS[lead.source]}
+                  </td>
+                  <td className="p-4">
+                    <LeadStatusBadge status={lead.status} />
+                    {lead.missingFields.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Missing: {lead.missingFields.join(", ")}
+                      </p>
                     )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="gap-1.5 text-destructive hover:text-destructive"
-                      onClick={() => onRemove(lead)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Remove
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex justify-end gap-2">
+                      <Link
+                        href={`/admin/leads/${lead.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View
+                      </Link>
+                      {(lead.status === "incomplete" ||
+                        lead.status === "ready_to_convert") && (
+                        <>
+                          {/* An action, not a link. Converting is a write that
+                            provisions a tenant and emails the owner their
+                            onboarding link — navigating to a form first said
+                            nothing about whether this lead could be converted
+                            at all, and most could not. Disabled here with the
+                            reason on hover; the sheet collects the owner's
+                            details and performs the write. */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            // disabled={!convertibility.canConvert}
+                            title={
+                              convertibility.reason ??
+                              "Convert this lead into a business"
+                            }
+                            className="gap-1.5 text-xs font-medium"
+                            onClick={() => onConvert(lead)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                            Convert
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1.5 text-muted-foreground"
+                            onClick={() => onMarkLost(lead)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Mark Lost
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-destructive hover:text-destructive"
+                        onClick={() => onRemove(lead)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { leaveTypeLabel } from '@/constants/leave';
 import React from 'react';
 import { Paperclip } from 'lucide-react';
 import {
@@ -53,7 +54,7 @@ export function QueueDetailModal({
             <div className="grid grid-cols-2 gap-3">
               <div className="p-2.5 rounded-lg border bg-muted/20 space-y-0.5">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase">Leave Type</span>
-                <p className="font-bold text-foreground">{detailRequest.type}</p>
+                <p className="font-bold text-foreground">{leaveTypeLabel(detailRequest.type)}</p>
               </div>
               <div className="p-2.5 rounded-lg border bg-muted/20 space-y-0.5">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase">Working Days</span>

@@ -12,14 +12,7 @@ export const staffSchema = z.object({
 
 export type StaffFormValues = z.infer<typeof staffSchema>;
 
-export const DEPARTMENTS_LIST = [
-  'Executive',
-  'Technology',
-  'Programs',
-  'Fintech',
-  'Sales',
-  'Finance',
-  'Administration',
-  'Compliance',
-  'Regional Operations',
-] as const;
+// DEPARTMENTS_LIST is gone. Departments are database rows created through
+// /admin/departments, so the form takes them as a prop — a fixed list here
+// offered names that mostly did not exist, and names cannot be submitted to an
+// endpoint that stores departmentId.

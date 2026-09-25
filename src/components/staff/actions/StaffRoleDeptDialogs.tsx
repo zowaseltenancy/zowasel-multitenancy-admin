@@ -19,7 +19,7 @@ import {
 import { toast } from 'sonner';
 import { Loader2, ShieldCheck, Building2 } from 'lucide-react';
 import { StaffMember, StaffRole } from '@/types/staff';
-import { useStaff } from '@/hooks/useStaff';
+import { useStaff } from '@/features/staff/hooks/useStaff';
 
 interface RoleDialogProps {
   staff: StaffMember;
@@ -28,23 +28,20 @@ interface RoleDialogProps {
 }
 
 export function StaffRoleDialog({ staff, roles, onSuccess }: RoleDialogProps) {
-  const { repo } = useStaff();
+  const { assignRoles, isMutating: loadingRole } = useStaff();
   const [roleOpen, setRoleOpen] = useState(false);
   const [newRoleId, setNewRoleId] = useState(staff.roleId);
-  const [loadingRole, setLoadingRole] = useState(false);
 
-  const handleRoleChange = async () => {
-    setLoadingRole(true);
-    try {
-      repo.updateStaff(staff.id, { roleId: newRoleId });
-      toast.success('Role updated');
-      setRoleOpen(false);
-      onSuccess();
-    } catch {
-      toast.error('Failed to change role');
-    } finally {
-      setLoadingRole(false);
-    }
+  // PUT /admin/staff/{id}/roles replaces the whole set, so a single-select
+  // control sends a one-element array — picking a role here therefore replaces
+  // any others the member held, which is what a single-select means.
+  const handleRoleChange = () => {
+    assignRoles(staff.id, [newRoleId], {
+      onSuccess: () => {
+        setRoleOpen(false);
+        onSuccess();
+      },
+    });
   };
 
   return (
@@ -80,28 +77,24 @@ export function StaffRoleDialog({ staff, roles, onSuccess }: RoleDialogProps) {
 
 interface DeptDialogProps {
   staff: StaffMember;
-  departments: string[];
+  /** { id, name }: the PATCH takes departmentId, so the id is the value. */
+  departments: { id: string; name: string }[];
   onSuccess: () => void;
 }
 
 export function StaffDepartmentDialog({ staff, departments, onSuccess }: DeptDialogProps) {
-  const { repo } = useStaff();
+  const { edit, isMutating: loadingDept } = useStaff();
   const [deptOpen, setDeptOpen] = useState(false);
-  const [newDept, setNewDept] = useState(staff.department);
-  const [loadingDept, setLoadingDept] = useState(false);
+  // The value is the department id now, not its name — PATCH takes departmentId.
+  const [newDept, setNewDept] = useState(staff.departmentId ?? '');
 
-  const handleDeptChange = async () => {
-    setLoadingDept(true);
-    try {
-      repo.updateStaff(staff.id, { department: newDept });
-      toast.success('Department updated');
-      setDeptOpen(false);
-      onSuccess();
-    } catch {
-      toast.error('Failed to change department');
-    } finally {
-      setLoadingDept(false);
-    }
+  const handleDeptChange = () => {
+    edit(staff.id, { departmentId: newDept }, {
+      onSuccess: () => {
+        setDeptOpen(false);
+        onSuccess();
+      },
+    });
   };
 
   return (
@@ -120,8 +113,8 @@ export function StaffDepartmentDialog({ staff, departments, onSuccess }: DeptDia
           </SelectTrigger>
           <SelectContent>
             {departments.map((dept) => (
-              <SelectItem key={dept} value={dept}>
-                {dept}
+              <SelectItem key={dept.id} value={dept.id}>
+                {dept.name}
               </SelectItem>
             ))}
           </SelectContent>

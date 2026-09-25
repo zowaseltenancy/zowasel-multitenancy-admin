@@ -1,5 +1,6 @@
 'use client';
 
+import { leaveTypeLabel } from '@/constants/leave';
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +69,7 @@ export function MyLeaveHistoryTable({
               requests.map((req) => (
                 <TableRow key={req.id} className="hover:bg-muted/20 border-b border-border/40 text-xs">
                   <TableCell className="pl-4 font-semibold text-foreground">
-                    {req.type}
+                    {leaveTypeLabel(req.type)}
                   </TableCell>
                   <TableCell className="font-mono text-muted-foreground text-[11.5px]">
                     {formatDate(req.startDate)} → {formatDate(req.endDate)}

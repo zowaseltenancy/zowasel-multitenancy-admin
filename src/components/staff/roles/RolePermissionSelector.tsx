@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { PERMISSION_GROUPS } from '@/constants/permissions';
+import { usePermissionCatalog } from '@/features/permissions/hooks/usePermissionCatalog';
 import { PermissionCategory } from '@/types/permissions';
 
 interface RolePermissionSelectorProps {
@@ -14,6 +14,12 @@ export function RolePermissionSelector({
   selectedPermissions,
   onChange,
 }: RolePermissionSelectorProps) {
+  // GET /admin/permissions, not the ALL_PERMISSIONS constant. The constant
+  // lists 24 scopes the platform cannot grant, and ticking one made the role's
+  // permission write fail on a key the operator had no way to know was
+  // fictional — while two real scopes were missing from it entirely.
+  const { groups, isLoading } = usePermissionCatalog();
+
   const togglePermission = (permCode: string) => {
     onChange(
       selectedPermissions.includes(permCode)
@@ -23,7 +29,7 @@ export function RolePermissionSelector({
   };
 
   const toggleCategoryGroup = (category: PermissionCategory) => {
-    const groupPerms = (PERMISSION_GROUPS.find((g) => g.category === category)?.permissions || []).map((p) => p.code);
+    const groupPerms = (groups.find((g) => g.category === category)?.permissions || []).map((p) => p.code);
     const allSelected = groupPerms.every((code) => selectedPermissions.includes(code));
     onChange(
       allSelected
@@ -41,8 +47,14 @@ export function RolePermissionSelector({
         <span className="text-[11px] text-muted-foreground">Toggle scopes individually or select full module</span>
       </div>
 
+      {isLoading && (
+        <p className="py-4 text-center text-[11px] text-muted-foreground">
+          Loading the permission catalogue…
+        </p>
+      )}
+
       <div className="space-y-3">
-        {PERMISSION_GROUPS.map((group) => {
+        {groups.map((group) => {
           const groupPermCodes = group.permissions.map((p) => p.code);
           const isAllSelected = groupPermCodes.every((c) => selectedPermissions.includes(c));
 

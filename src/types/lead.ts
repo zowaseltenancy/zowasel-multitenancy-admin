@@ -27,4 +27,13 @@ export interface Lead {
   continent?: string;
   createdAt: string;
   convertedOrganizationId?: string;
+  /**
+   * The pipeline stage, exactly as the API reports it.
+   *
+   * `status` above is a four-way summary for badges and cannot stand in for
+   * it: it reads "ready_to_convert" for QUALIFIED, PROPOSAL and NEGOTIATION
+   * too, while POST /admin/leads/{id}/convert accepts CLOSED_WON alone. The
+   * screens offered Convert on all four and the server refused three of them.
+   */
+  stage?: string;
 }

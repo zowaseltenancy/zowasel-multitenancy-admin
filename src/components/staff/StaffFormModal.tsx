@@ -12,7 +12,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useStaff } from '@/hooks/useStaff';
+import { useDepartments, useStaff } from '@/features/staff/hooks/useStaff';
+import { toApiStatus } from '@/features/staff/api/staff.mappers';
 import { staffSchema, StaffFormValues } from './modal/staffFormSchema';
 import { StaffFormFields } from './modal/StaffFormFields';
 
@@ -25,8 +26,19 @@ interface Props {
 }
 
 export default function StaffFormModal({ open, onOpenChange, staff, roles, onSaved }: Props) {
-  const { repo } = useStaff();
-  const [submitting, setSubmitting] = useState(false);
+  // Backed by the staff endpoints. Note what they will and will not accept:
+  //
+  //   POST  /admin/staff        email, firstName, lastName, departmentId, role
+  //   PATCH /admin/staff/{id}   departmentId, managerId — and nothing else
+  //   PUT   /admin/staff/{id}/roles    the assignable role set
+  //   PATCH /admin/staff/{id}/status   the lifecycle state
+  //
+  // So name and email are settable only at creation, and role and status are
+  // separate calls sequenced after it. `phone` cannot be saved at all — the
+  // admins table has no phone column — which is why it is reported rather
+  // than silently dropped.
+  const { onboard, edit, assignRoles, changeStatus, isMutating: submitting } = useStaff();
+  const { departments } = useDepartments({ limit: 100 });
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -59,22 +71,51 @@ export default function StaffFormModal({ open, onOpenChange, staff, roles, onSav
         },
   });
 
-  const onSubmit = async (data: StaffFormValues) => {
-    setSubmitting(true);
+  const onSubmit = (data: StaffFormValues) => {
     setError(null);
-    try {
-      if (staff) {
-        repo.updateStaff(staff.id, data);
-      } else {
-        repo.addStaff(data);
-      }
-      onSaved?.();
-      reset();
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
-    } finally {
-      setSubmitting(false);
+
+    if (data.phone?.trim()) {
+      setError('Phone numbers cannot be saved yet — the staff record has no phone field.');
     }
+
+    // Applied after the placement write lands, so a refusal on the first call
+    // does not leave the three half-saved.
+    const applyRoleAndStatus = (id: string) => {
+      if (data.roleId) assignRoles(id, [data.roleId]);
+      changeStatus(id, toApiStatus(data.status), undefined, {
+        onSuccess: () => {
+          onSaved?.();
+          reset();
+        },
+      });
+    };
+
+    if (staff) {
+      edit(
+        staff.id,
+        { departmentId: data.department || null },
+        { onSuccess: () => applyRoleAndStatus(staff.id) },
+      );
+      return;
+    }
+
+    onboard(
+      {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        // The account's privilege tier, not the assignable role below — new
+        // staff always start at the lowest tier and are promoted separately.
+        role: 'STAFF',
+        ...(data.department ? { departmentId: data.department } : {}),
+      },
+      {
+        onSuccess: () => {
+          onSaved?.();
+          reset();
+        },
+      },
+    );
   };
 
   return (
@@ -90,6 +131,7 @@ export default function StaffFormModal({ open, onOpenChange, staff, roles, onSav
             setValue={setValue}
             watch={watch}
             roles={roles}
+            departments={departments.map((d) => ({ id: d.id, name: d.name }))}
           />
 
           {error && <p className="text-sm text-destructive">{error}</p>}

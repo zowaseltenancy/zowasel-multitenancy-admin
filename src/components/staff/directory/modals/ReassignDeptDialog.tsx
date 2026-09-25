@@ -24,7 +24,8 @@ interface ReassignDeptDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   staff: StaffMember | null;
-  departments: string[];
+  /** { id, name }: reassignment PATCHes departmentId, so the id is the value. */
+  departments: { id: string; name: string }[];
   selectedDept: string;
   onDeptChange: (dept: string) => void;
   onSave: (e: React.FormEvent) => void;
@@ -60,8 +61,8 @@ export function ReassignDeptDialog({
               </SelectTrigger>
               <SelectContent>
                 {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept} className="text-xs">
-                    {dept}
+                  <SelectItem key={dept.id} value={dept.id}>
+                    {dept.name}
                   </SelectItem>
                 ))}
               </SelectContent>
