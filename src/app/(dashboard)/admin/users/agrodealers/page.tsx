@@ -7,7 +7,7 @@ export default function AgrodealersUserPage() {
     <UsersListView
       title="Agrodealers Directory"
       description="View agrodealers supplying farm inputs (agrochemicals, fertilizers, certified seeds) and storage facilities."
-      categoryFilter="agrodealer"
+      dataSource="platform"
     />
   );
 }

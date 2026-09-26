@@ -7,7 +7,7 @@ export default function BuyersUserPage() {
     <UsersListView
       title="Commodity Buyers Directory"
       description="View institutional offtakers, grain buyers, and commodity procurement leads."
-      categoryFilter="buyer"
+      dataSource="platform"
     />
   );
 }

@@ -1,8 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { FileCheck, LayoutGrid, Lock, CreditCard, Check, CheckCheck } from "lucide-react";
+import {
+  FileCheck,
+  LayoutGrid,
+  Lock,
+  CreditCard,
+  Check,
+  CheckCheck,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,17 +38,21 @@ export default function NotificationsListView({
   description,
   categoryFilter = "all",
 }: Props) {
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
-  const filtered = useMemo(() => {
-    return notifications
-      .filter((n) => categoryFilter === "all" || n.category === categoryFilter)
-      .filter((n) => !showUnreadOnly || !n.isRead)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [notifications, categoryFilter, showUnreadOnly]);
+  // Category and unread narrow server-side rather than over whatever page
+  // happened to load: the feed grows without bound, and filtering a page means
+  // "unread" quietly meant "unread among the newest 50".
+  const { notifications, isLoading, error, markAsRead, markAllAsRead } = useNotifications({
+    page: 1,
+    limit: 50,
+    ...(categoryFilter !== "all" ? { category: categoryFilter } : {}),
+    ...(showUnreadOnly ? { unreadOnly: true } : {}),
+  });
 
-  const unreadCount = filtered.filter((n) => !n.isRead).length;
+  // Already ordered newest-first by the endpoint; sorting again would only
+  // matter if the server's order were wrong, and then this would hide it.
+  const filtered = notifications;
 
   return (
     <div className="space-y-6">
@@ -64,7 +77,25 @@ export default function NotificationsListView({
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <Card className="border shadow-2xs">
+          <CardContent className="flex items-center justify-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="flex items-start gap-3 p-6">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">
+                Notifications could not be loaded
+              </p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : filtered.length === 0 ? (
         <Card className="border shadow-2xs">
           <CardContent className="p-12 text-center text-sm text-muted-foreground">
             No notifications to show.

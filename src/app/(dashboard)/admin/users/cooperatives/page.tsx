@@ -7,7 +7,7 @@ export default function CooperativesUserPage() {
     <UsersListView
       title="Farmer Cooperatives Directory"
       description="View farmer cooperative leaders, general secretaries, credit officers, and governance structures."
-      categoryFilter="cooperative"
+      dataSource="platform"
     />
   );
 }

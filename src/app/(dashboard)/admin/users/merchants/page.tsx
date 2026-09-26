@@ -7,7 +7,7 @@ export default function MerchantsUserPage() {
     <UsersListView
       title="Merchants Directory"
       description="View individual and organization commodity merchants trading grains, cash crops, and produce."
-      categoryFilter="merchant"
+      dataSource="platform"
     />
   );
 }

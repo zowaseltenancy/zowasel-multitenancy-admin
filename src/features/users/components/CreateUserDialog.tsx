@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Loader2 } from "lucide-react";
 
 import { createUserSchema, CreateUserSchema } from "@/schemas/user.schema";
 import { CATEGORY_ROLE_OPTIONS, USER_CATEGORY_LABELS } from "@/constants/user";
@@ -33,6 +33,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   organizations: Organization[];
   onCreate: (values: CreateUserSchema) => void;
+  /** The create request is in flight; the dialog stays open until it settles. */
+  isCreating?: boolean;
 }
 
 // Staff are a separate domain — not creatable from the Platform Users dialog.
@@ -45,6 +47,7 @@ export default function CreateUserDialog({
   onOpenChange,
   organizations,
   onCreate,
+  isCreating = false,
 }: Props) {
   const {
     register,
@@ -84,9 +87,12 @@ export default function CreateUserDialog({
     setValue("role", CATEGORY_ROLE_OPTIONS[value][0] as CreateUserSchema["role"]);
   };
 
+  // No close here. onCreate starts a request; closing on the click reported
+  // success for a duplicate email that the server went on to reject, and threw
+  // away everything the operator had typed. The parent closes this on the
+  // mutation settling.
   const onSubmit = (values: CreateUserSchema) => {
     onCreate(values);
-    onOpenChange(false);
   };
 
   return (
@@ -215,10 +221,16 @@ export default function CreateUserDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting || isCreating}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || isCreating} className="gap-1.5">
+              {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
               Create User
             </Button>
           </DialogFooter>

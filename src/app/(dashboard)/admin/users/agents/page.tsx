@@ -7,7 +7,7 @@ export default function AgentsUserPage() {
     <UsersListView
       title="Field Agents Directory"
       description="View all field agents, their coverage areas, and the merchants, agrodealers, and cooperatives onboarded under them."
-      categoryFilter="agent"
+      dataSource="platform"
     />
   );
 }
