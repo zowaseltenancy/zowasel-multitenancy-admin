@@ -9,6 +9,7 @@ const personalInfoSchema = z.object({
   gender: z.enum(['male', 'female', 'other']),
   maritalStatus: z.string().optional(),
   nationality: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 const employmentSchema = z.object({

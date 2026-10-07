@@ -246,7 +246,7 @@ export function StaffProfileView({ staff, roles, departmentRoles  }: Props) {
               <CardContent>
                 <ul className="space-y-1">
                   {staff.departmentRoleIds.map(roleId => {
-                    const role = repo.getDepartmentRoles().find(r => r.id === roleId);
+                    const role = departmentRoles?.find(r => r.id === roleId);
                     return role ? (
                       <li key={roleId} className="flex items-center gap-2 text-sm">
                         <Badge variant="outline">{role.name}</Badge>

@@ -78,6 +78,34 @@ export class StaffRepository {
     return this.readDB().roles;
   }
 
+  addRole(role: Pick<StaffRole, 'name' | 'permissions'> & Partial<StaffRole>): StaffRole {
+    const db = this.readDB();
+    const newRole: StaffRole = {
+      description: '',
+      isSystemRole: false,
+      ...role,
+      id: `role-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    };
+    db.roles.push(newRole);
+    this.writeDB(db);
+    return newRole;
+  }
+
+  updateRole(id: string, updates: Partial<StaffRole>) {
+    const db = this.readDB();
+    const idx = db.roles.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      db.roles[idx] = { ...db.roles[idx], ...updates };
+      this.writeDB(db);
+    }
+  }
+
+  deleteRole(id: string) {
+    const db = this.readDB();
+    db.roles = db.roles.filter(r => r.id !== id);
+    this.writeDB(db);
+  }
+
   // ---- Departments ----
   getDepartments(): Department[] {
     return this.readDB().departments;

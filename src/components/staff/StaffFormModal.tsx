@@ -87,7 +87,7 @@ export default function StaffFormModal({ open, onOpenChange, staff, roles, onSav
       if (staff) {
         repo.updateStaff(staff.id, data);
       } else {
-        repo.addStaff(data);
+        repo.addStaff({ ...data, phone: data.phone ?? '' });
       }
       onSaved?.();
       reset();

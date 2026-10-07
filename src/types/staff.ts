@@ -6,8 +6,10 @@ export interface StaffMember {
   phone: string;
   department: string;
   roleId: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   avatarUrl?: string;
+  departmentRoleIds?: string[];
+  personalInfo?: { avatarUrl?: string };
   dateJoined?: string;
   lastActive?: string;
 

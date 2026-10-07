@@ -19,6 +19,8 @@ export interface NavigationChild {
   href: string;
   permission?: string | null;
   badge?: string | null;
+  icon?: React.ComponentType<{ className?: string }>;
+  children?: NavigationChild[];
 }
 
 export interface NavigationItem {

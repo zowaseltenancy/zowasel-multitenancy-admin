@@ -55,10 +55,7 @@ export const SimulationProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!autoIncoming || !targetChatId) return;
     const interval = setInterval(() => {
-      const chats = repo.getConversations(
-        { userId: 'sim', role: 'super_admin', permissions: [] },
-        undefined,
-      );
+      const chats = repo.getConversations();
       const chat = chats.find((c) => c.id === targetChatId);
       if (!chat) return;
       mutate((r) => injectIncoming(r, chat.id, chat.contactId, 'text'));

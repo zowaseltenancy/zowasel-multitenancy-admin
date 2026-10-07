@@ -86,7 +86,7 @@ export default function RoleManagementPage() {
 
   const handleDeleteRole = (roleId: string) => {
     const role = roles.find((r) => r.id === roleId);
-    if (role?.isSystem) {
+    if (role?.isSystemRole) {
       toast.error("Cannot delete system roles");
       return;
     }
@@ -165,8 +165,8 @@ export default function RoleManagementPage() {
                     <Shield className="h-5 w-5 text-primary" />
                     {role.name}
                   </CardTitle>
-                  <Badge variant={role.isSystem ? "secondary" : "outline"}>
-                    {role.isSystem ? "System" : "Custom"}
+                  <Badge variant={role.isSystemRole ? "secondary" : "outline"}>
+                    {role.isSystemRole ? "System" : "Custom"}
                   </Badge>
                 </div>
                 <CardDescription className="flex items-center gap-2">
@@ -210,14 +210,14 @@ export default function RoleManagementPage() {
                           variant="ghost"
                           size="sm"
                           className="text-destructive"
-                          disabled={role.isSystem}
+                          disabled={role.isSystemRole}
                           onClick={() => handleDeleteRole(role.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-1" /> Delete
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {role.isSystem
+                        {role.isSystemRole
                           ? "System roles cannot be deleted"
                           : "Delete role"}
                       </TooltipContent>

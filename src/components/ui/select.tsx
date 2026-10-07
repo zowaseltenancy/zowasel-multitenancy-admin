@@ -6,7 +6,23 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+// Callers pass plain `useState<string>` setters, which base-ui's
+// `(value: string | null) => void` signature rejects. Values are forwarded
+// unchanged; the loose handler type only relaxes the compile-time check.
+function Select({
+  onValueChange,
+  ...props
+}: Omit<SelectPrimitive.Root.Props<string>, "onValueChange"> & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onValueChange?: (value: any) => void
+}) {
+  return (
+    <SelectPrimitive.Root<string>
+      onValueChange={(value) => onValueChange?.(value)}
+      {...props}
+    />
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
